@@ -1,0 +1,46 @@
+{
+  "name": "zn-story-line",
+  "productName": "ZN Story Line",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Visual story planning — a structured 2D grid (characters × timeline). Filesystem-first.",
+  "author": "Kapil Sharma",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^25.9.3",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^5.2.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "electron": "^43.1.0",
+    "electron-vite": "^5.0.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "chokidar": "^5.0.0",
+    "gray-matter": "^4.0.3",
+    "marked": "^18.0.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

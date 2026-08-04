@@ -1,0 +1,18 @@
+node_modules/
+out/
+dist/
+*.tsbuildinfo
+*.log
+test-results/
+playwright-report/
+.playwright/
+.DS_Store
+.env
+.env.*
+Requirements
+
+# Test coverage reports
+coverage/
+
+# Local agent/editor tooling config (machine-specific paths — not for sharing)
+.claude/

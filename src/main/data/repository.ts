@@ -1,0 +1,327 @@
+import { promises as fs } from 'fs'
+import { basename, join } from 'path'
+import type { Board, Character, Note, Project, TimelineUnit } from '@shared/types'
+import { parseFrontmatter, serializeFrontmatter } from './frontmatter'
+import { exists, readText, writeTextGuarded } from './fsutil'
+import {
+  characterToFrontmatter,
+  frontmatterToCharacter,
+  frontmatterToNote,
+  frontmatterToTimelineUnit,
+  noteToFrontmatter,
+  timelineUnitToFrontmatter
+} from './mappers'
+
+/**
+ * High-level read/write over a project folder.
+ *
+ * Since schema v2, characters, timeline units and notes are **per board** and
+ * live under `boards/<boardId>/{characters,timeline,notes}/`; the board file is
+ * `boards/<boardId>/board.json`. Markdown entities round-trip frontmatter while
+ * preserving the body; boards and project metadata are plain JSON.
+ */
+
+/** A value loaded from disk together with its mtime (for guarded writes). */
+export interface Loaded<T> {
+  value: T
+  /** Carry into the matching write to detect external edits. */
+  mtimeMs: number
+  path: string
+}
+
+/** Default body for a freshly-created character/timeline file. */
+const ENTITY_BODY_TEMPLATE = '\n## Notes\n\n\n## Research\n\n'
+
+// ── Path helpers ─────────────────────────────────────────────────────────────
+
+const projectFile = (root: string): string => join(root, 'project.json')
+const boardsDir = (root: string): string => join(root, 'boards')
+const boardDir = (root: string, boardId: string): string => join(boardsDir(root), boardId)
+const boardFile = (root: string, boardId: string): string => join(boardDir(root, boardId), 'board.json')
+const charsDir = (root: string, boardId: string): string => join(boardDir(root, boardId), 'characters')
+const timelineDir = (root: string, boardId: string): string => join(boardDir(root, boardId), 'timeline')
+const notesDir = (root: string, boardId: string): string => join(boardDir(root, boardId), 'notes')
+
+const charPath = (root: string, boardId: string, id: string): string =>
+  join(charsDir(root, boardId), `${id}.md`)
+const timelinePath = (root: string, boardId: string, id: string): string =>
+  join(timelineDir(root, boardId), `${id}.md`)
+const notePath = (root: string, boardId: string, id: string): string =>
+  join(notesDir(root, boardId), `${id}.md`)
+
+/** List the `.md` filename stems in a directory (returns [] if absent). */
+async function listStems(dir: string, ext: string): Promise<string[]> {
+  let entries: string[]
+  try {
+    entries = await fs.readdir(dir)
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return []
+    throw err
+  }
+  return entries.filter((f) => f.endsWith(ext)).map((f) => basename(f, ext)).sort()
+}
+
+/** Create the folder structure for a board (idempotent). */
+export async function ensureBoardDirs(root: string, boardId: string): Promise<void> {
+  await Promise.all([
+    fs.mkdir(charsDir(root, boardId), { recursive: true }),
+    fs.mkdir(timelineDir(root, boardId), { recursive: true }),
+    fs.mkdir(notesDir(root, boardId), { recursive: true })
+  ])
+}
+
+// ── Project ──────────────────────────────────────────────────────────────────
+
+/** Backfill defaults so older / partial project.json files load cleanly. */
+function normalizeProject(raw: Partial<Project>): Project {
+  return {
+    schemaVersion: typeof raw.schemaVersion === 'number' ? raw.schemaVersion : 1,
+    name: raw.name ?? 'Untitled',
+    timelineLabel: raw.timelineLabel ?? 'Chapter',
+    boards: raw.boards ?? [],
+    created: raw.created ?? '',
+    lastOpened: raw.lastOpened ?? ''
+  }
+}
+
+export async function readProject(root: string): Promise<Loaded<Project>> {
+  const { text, mtimeMs } = await readText(projectFile(root))
+  const value = normalizeProject(JSON.parse(text) as Partial<Project>)
+  return { value, mtimeMs, path: projectFile(root) }
+}
+
+export async function writeProject(
+  root: string,
+  project: Project,
+  expectedMtimeMs?: number
+): Promise<number> {
+  return writeTextGuarded(projectFile(root), JSON.stringify(project, null, 2) + '\n', expectedMtimeMs)
+}
+
+/** True if the folder looks like a ZN Story Line project (has project.json). */
+export async function isProject(root: string): Promise<boolean> {
+  return exists(projectFile(root))
+}
+
+// ── Characters (per board) ─────────────────────────────────────────────────────
+
+export function listCharacterIds(root: string, boardId: string): Promise<string[]> {
+  return listStems(charsDir(root, boardId), '.md')
+}
+
+export async function readCharacter(root: string, boardId: string, id: string): Promise<Loaded<Character>> {
+  const path = charPath(root, boardId, id)
+  const { text, mtimeMs } = await readText(path)
+  const { data } = parseFrontmatter(text)
+  return { value: frontmatterToCharacter(data, id), mtimeMs, path }
+}
+
+export async function listCharacters(root: string, boardId: string): Promise<Character[]> {
+  const ids = await listCharacterIds(root, boardId)
+  return Promise.all(ids.map(async (id) => (await readCharacter(root, boardId, id)).value))
+}
+
+export async function writeCharacter(
+  root: string,
+  boardId: string,
+  char: Character,
+  expectedMtimeMs?: number
+): Promise<number> {
+  const path = charPath(root, boardId, char.id)
+  let body = ENTITY_BODY_TEMPLATE
+  if (await exists(path)) body = parseFrontmatter((await readText(path)).text).body
+  await fs.mkdir(charsDir(root, boardId), { recursive: true })
+  return writeTextGuarded(path, serializeFrontmatter(characterToFrontmatter(char), body), expectedMtimeMs)
+}
+
+export function deleteCharacter(root: string, boardId: string, id: string): Promise<void> {
+  return fs.rm(charPath(root, boardId, id), { force: true })
+}
+
+// ── Timeline units (per board) ──────────────────────────────────────────────────
+
+export function listTimelineIds(root: string, boardId: string): Promise<string[]> {
+  return listStems(timelineDir(root, boardId), '.md')
+}
+
+export async function readTimelineUnit(
+  root: string,
+  boardId: string,
+  id: string
+): Promise<Loaded<TimelineUnit>> {
+  const path = timelinePath(root, boardId, id)
+  const { text, mtimeMs } = await readText(path)
+  const { data } = parseFrontmatter(text)
+  return { value: frontmatterToTimelineUnit(data, id), mtimeMs, path }
+}
+
+/** All timeline units on a board, sorted by their `order` field. */
+export async function listTimeline(root: string, boardId: string): Promise<TimelineUnit[]> {
+  const ids = await listTimelineIds(root, boardId)
+  const units = await Promise.all(ids.map(async (id) => (await readTimelineUnit(root, boardId, id)).value))
+  return units.sort((a, b) => a.order - b.order)
+}
+
+export async function writeTimelineUnit(
+  root: string,
+  boardId: string,
+  unit: TimelineUnit,
+  expectedMtimeMs?: number
+): Promise<number> {
+  const path = timelinePath(root, boardId, unit.id)
+  let body = ENTITY_BODY_TEMPLATE
+  if (await exists(path)) body = parseFrontmatter((await readText(path)).text).body
+  await fs.mkdir(timelineDir(root, boardId), { recursive: true })
+  return writeTextGuarded(path, serializeFrontmatter(timelineUnitToFrontmatter(unit), body), expectedMtimeMs)
+}
+
+export function deleteTimelineUnit(root: string, boardId: string, id: string): Promise<void> {
+  return fs.rm(timelinePath(root, boardId, id), { force: true })
+}
+
+// ── Entity body (character / timeline markdown body, for the dedicated editor) ──
+
+type BodyKind = 'character' | 'timeline'
+const entityPath = (root: string, boardId: string, kind: BodyKind, id: string): string =>
+  kind === 'character' ? charPath(root, boardId, id) : timelinePath(root, boardId, id)
+
+/** Read the markdown body (prose after frontmatter) of a character/timeline file. */
+export async function readEntityBody(
+  root: string,
+  boardId: string,
+  kind: BodyKind,
+  id: string
+): Promise<string> {
+  const { text } = await readText(entityPath(root, boardId, kind, id))
+  return parseFrontmatter(text).body
+}
+
+/** Write a new body to a character/timeline file, preserving its frontmatter exactly. */
+export async function writeEntityBody(
+  root: string,
+  boardId: string,
+  kind: BodyKind,
+  id: string,
+  body: string
+): Promise<void> {
+  const path = entityPath(root, boardId, kind, id)
+  const { data } = parseFrontmatter((await readText(path)).text)
+  await writeTextGuarded(path, serializeFrontmatter(data, body))
+}
+
+// ── Notes (per board) ───────────────────────────────────────────────────────────
+
+export function listNoteIds(root: string, boardId: string): Promise<string[]> {
+  return listStems(notesDir(root, boardId), '.md')
+}
+
+export async function readNote(root: string, boardId: string, id: string): Promise<Loaded<Note>> {
+  const path = notePath(root, boardId, id)
+  const { text, mtimeMs } = await readText(path)
+  const { data, body } = parseFrontmatter(text)
+  return { value: frontmatterToNote(data, id, body), mtimeMs, path }
+}
+
+export async function listNotes(root: string, boardId: string): Promise<Note[]> {
+  const ids = await listNoteIds(root, boardId)
+  return Promise.all(ids.map(async (id) => (await readNote(root, boardId, id)).value))
+}
+
+export async function writeNote(
+  root: string,
+  boardId: string,
+  note: Note,
+  expectedMtimeMs?: number
+): Promise<number> {
+  await fs.mkdir(notesDir(root, boardId), { recursive: true })
+  const out = serializeFrontmatter(noteToFrontmatter(note), note.body)
+  return writeTextGuarded(notePath(root, boardId, note.id), out, expectedMtimeMs)
+}
+
+/**
+ * Note metadata for a board — everything except the body. Used for board/list
+ * views (cards show only the title now); the body is fetched lazily when a note
+ * popup opens. Still opens each file (needed for uid + title).
+ */
+export async function listNoteMetas(root: string, boardId: string): Promise<Note[]> {
+  const ids = await listNoteIds(root, boardId)
+  return Promise.all(
+    ids.map(async (id) => {
+      const { value } = await readNote(root, boardId, id)
+      return { ...value, body: '' }
+    })
+  )
+}
+
+export function deleteNote(root: string, boardId: string, id: string): Promise<void> {
+  return fs.rm(notePath(root, boardId, id), { force: true })
+}
+
+/** Rename a note's markdown file within a board (uid/frontmatter untouched). */
+export async function renameNoteFile(
+  root: string,
+  boardId: string,
+  oldId: string,
+  newId: string
+): Promise<void> {
+  await fs.rename(notePath(root, boardId, oldId), notePath(root, boardId, newId))
+}
+
+// ── Boards ───────────────────────────────────────────────────────────────────
+
+/** Board ids = subfolders of boards/ that contain a board.json. */
+export async function listBoardIds(root: string): Promise<string[]> {
+  let entries: import('fs').Dirent[]
+  try {
+    entries = await fs.readdir(boardsDir(root), { withFileTypes: true })
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return []
+    throw err
+  }
+  const dirs = entries.filter((e) => e.isDirectory() && !e.name.startsWith('.')).map((e) => e.name)
+  const withBoard = await Promise.all(dirs.map(async (d) => ((await exists(boardFile(root, d))) ? d : null)))
+  return withBoard.filter((d): d is string => d !== null).sort()
+}
+
+/** Backfill fields added in later versions so older board files stay valid. */
+function normalizeBoard(raw: Partial<Board> & { id: string; name: string }): Board {
+  return {
+    id: raw.id,
+    name: raw.name,
+    cards: raw.cards ?? [],
+    hiddenRows: raw.hiddenRows ?? [],
+    hiddenCols: raw.hiddenCols ?? [],
+    presets: raw.presets ?? [],
+    rowOrder: raw.rowOrder ?? [],
+    rowGroupOrder: raw.rowGroupOrder ?? [],
+    colOrder: raw.colOrder ?? [],
+    collapsedRowGroups: raw.collapsedRowGroups ?? [],
+    collapsedColGroups: raw.collapsedColGroups ?? [],
+    zoom: raw.zoom ?? 1
+  }
+}
+
+export async function readBoard(root: string, boardId: string): Promise<Loaded<Board>> {
+  const path = boardFile(root, boardId)
+  const { text, mtimeMs } = await readText(path)
+  const value = normalizeBoard(JSON.parse(text) as Partial<Board> & { id: string; name: string })
+  return { value, mtimeMs, path }
+}
+
+export async function listBoards(root: string): Promise<Board[]> {
+  const ids = await listBoardIds(root)
+  return Promise.all(ids.map(async (id) => (await readBoard(root, id)).value))
+}
+
+export async function writeBoard(
+  root: string,
+  board: Board,
+  expectedMtimeMs?: number
+): Promise<number> {
+  await fs.mkdir(boardDir(root, board.id), { recursive: true })
+  return writeTextGuarded(boardFile(root, board.id), JSON.stringify(board, null, 2) + '\n', expectedMtimeMs)
+}
+
+export function deleteBoard(root: string, boardId: string): Promise<void> {
+  return fs.rm(boardDir(root, boardId), { recursive: true, force: true })
+}

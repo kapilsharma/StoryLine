@@ -1,0 +1,101 @@
+/**
+ * The IPC contract shared between the main process and the renderer.
+ * The preload bridge implements `AppApi`; the renderer consumes it via
+ * `window.api`.
+ *
+ * Convention: every mutating call returns a fresh `ProjectSnapshot` so the
+ * renderer can replace its state in one step. The filesystem watcher remains a
+ * backstop for *external* edits.
+ */
+import type { Board, Card, Character, Note, Project, TimelineUnit } from './types'
+import type { AppConfig, AppSettings } from './config'
+import type { ProjectChange } from './changes'
+
+/** Entities whose markdown body the dedicated editor can edit (notes use getNote/saveNote). */
+export type EntityBodyKind = 'character' | 'timeline'
+
+/**
+ * A board and the entities it owns. Since v2 (schemaVersion 2), characters,
+ * timeline units and notes are per-board rather than project-global.
+ */
+export interface BoardData {
+  board: Board
+  characters: Character[]
+  timeline: TimelineUnit[]
+  notes: Note[]
+}
+
+/** A bundle of everything needed to render an open project. */
+export interface ProjectSnapshot {
+  root: string
+  project: Project
+  boards: BoardData[]
+}
+
+/** Fields needed to create a card (and its backing note) from an empty cell. */
+export interface NewCardInput {
+  boardId: string
+  title: string
+  rowId: string
+  colStart: string
+  colEnd: string
+}
+
+export interface AppApi {
+  // ── App config ──
+  getConfig(): Promise<AppConfig>
+  updateSettings(settings: AppSettings): Promise<AppConfig>
+
+  // ── Project lifecycle ──
+  createProject(): Promise<string | null>
+  pickProject(): Promise<string | null>
+  openProject(root: string): Promise<ProjectSnapshot>
+  reloadProject(root: string): Promise<ProjectSnapshot>
+  removeRecent(root: string): Promise<AppConfig>
+  /** Update project-level metadata (name, timeline label). */
+  saveProjectMeta(root: string, name: string, timelineLabel: string): Promise<ProjectSnapshot>
+
+  // ── Characters (per board) ──
+  saveCharacter(root: string, boardId: string, character: Character): Promise<ProjectSnapshot>
+  deleteCharacter(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+
+  // ── Timeline units (per board) ──
+  saveTimelineUnit(root: string, boardId: string, unit: TimelineUnit): Promise<ProjectSnapshot>
+  deleteTimelineUnit(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+  /** Persist a new ordering; `orderedIds` becomes each unit's `order` index. */
+  reorderTimeline(root: string, boardId: string, orderedIds: string[]): Promise<ProjectSnapshot>
+
+  // ── Notes (per board) ──
+  saveNote(root: string, boardId: string, note: Note): Promise<ProjectSnapshot>
+  deleteNote(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+  /** Fetch a note's full content (incl. body) — bodies are lazy-loaded. */
+  getNote(root: string, boardId: string, id: string): Promise<Note>
+  /** Rename a note's markdown file; fixes `related:` links, keeps cards intact. */
+  renameNote(root: string, boardId: string, oldId: string, newName: string): Promise<ProjectSnapshot>
+
+  // ── Entity body (character / timeline markdown body) ──
+  getEntityBody(root: string, boardId: string, kind: EntityBodyKind, id: string): Promise<string>
+  saveEntityBody(
+    root: string,
+    boardId: string,
+    kind: EntityBodyKind,
+    id: string,
+    body: string
+  ): Promise<ProjectSnapshot>
+
+  // ── Boards ──
+  saveBoard(root: string, board: Board): Promise<ProjectSnapshot>
+  createBoard(root: string, name: string): Promise<ProjectSnapshot>
+  renameBoard(root: string, id: string, name: string): Promise<ProjectSnapshot>
+  deleteBoard(root: string, id: string): Promise<ProjectSnapshot>
+  /** Persist a new board display order; `orderedIds` becomes `project.boards`. */
+  reorderBoards(root: string, orderedIds: string[]): Promise<ProjectSnapshot>
+
+  // ── Cards ──
+  createCard(root: string, input: NewCardInput): Promise<ProjectSnapshot>
+  updateCard(root: string, boardId: string, card: Card): Promise<ProjectSnapshot>
+  deleteCard(root: string, boardId: string, cardId: string): Promise<ProjectSnapshot>
+
+  // ── Live reload ──
+  onProjectChange(listener: (change: ProjectChange) => void): () => void
+}
