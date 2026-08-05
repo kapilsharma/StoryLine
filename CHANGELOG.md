@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/kapilsharma/StoryLine/compare/0.3.0...0.3.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* **#4:** publish installers to the GitHub release (releaseType: release) ([245c0d8](https://github.com/kapilsharma/StoryLine/commit/245c0d82e87752ace674888a7ce32412ca892146))
+* **build issue:** Merge pull request [#10](https://github.com/kapilsharma/StoryLine/issues/10) from kapilsharma/fix-installer-publish ([926b1bc](https://github.com/kapilsharma/StoryLine/commit/926b1bc7f8924d083125a8add83ca8be1aec69b9))
+
 ## [0.3.0](https://github.com/kapilsharma/StoryLine/compare/0.2.0...0.3.0) (2026-08-05)
 
 
