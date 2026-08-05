@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.0](https://github.com/kapilsharma/StoryLine/compare/0.3.2...0.4.0) (2026-08-05)
+
+
+### Features
+
+* **#15:** full add form in a modal on the board ([3a2b3a1](https://github.com/kapilsharma/StoryLine/commit/3a2b3a1d40ee491ef5d5fac38330c86291335bce))
+* **#15:** open the full character/timeline form in a modal from the board ([e12d34d](https://github.com/kapilsharma/StoryLine/commit/e12d34da0795c6d18452bc68259c4460321fdd79))
+* **#16:** Merge from kapilsharma/feat-board-add-modal ([3a2b3a1](https://github.com/kapilsharma/StoryLine/commit/3a2b3a1d40ee491ef5d5fac38330c86291335bce))
+
 ## [0.3.2](https://github.com/kapilsharma/StoryLine/compare/0.3.1...0.3.2) (2026-08-05)
 
 
