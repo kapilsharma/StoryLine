@@ -14,5 +14,8 @@ Requirements
 # Test coverage reports
 coverage/
 
+# Packaged installers (electron-builder output)
+release/
+
 # Local agent/editor tooling config (machine-specific paths — not for sharing)
 .claude/
