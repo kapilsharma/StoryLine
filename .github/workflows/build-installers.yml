@@ -1,0 +1,35 @@
+name: build-installers
+
+# Manual only: build & upload installers for a chosen release (see docs/workflow.md).
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to build & attach installers to (e.g. 0.2.0)'
+        required: true
+
+permissions:
+  contents: write # upload assets to the Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }} # build the exact released code
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # electron-builder builds the current runner's OS target by default and
+      # uploads to the GitHub Release matching package.json's version.
+      # (Do NOT skip the Electron binary download here — packaging needs it.)
+      - run: npm run build:app -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

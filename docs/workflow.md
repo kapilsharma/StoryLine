@@ -29,7 +29,7 @@ Because Actions is free on public repos but we don't need a build on every patch
 2. Actions → **build-installers** → *Run workflow* → enter the tag (e.g. `0.1.1`).
 3. Each OS runner builds its installer and uploads it to that Release.
 
-Add this as `.github/workflows/build-installers.yml` when Phase 2 lands:
+Defined in `.github/workflows/build-installers.yml`:
 
 ```yaml
 name: build-installers
