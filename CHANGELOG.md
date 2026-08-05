@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.2](https://github.com/kapilsharma/StoryLine/compare/0.3.1...0.3.2) (2026-08-05)
+
+
+### Bug Fixes
+
+* **#12:** use theme colour for recent project names ([9ace9a3](https://github.com/kapilsharma/StoryLine/commit/9ace9a3356593c9d7217450c0132f2bfe5680039))
+* **#12:** use theme colour for recent project names ([20a3847](https://github.com/kapilsharma/StoryLine/commit/20a384731d6297c75842dc33e2c554ff21e8240b))
+
 ## [0.3.1](https://github.com/kapilsharma/StoryLine/compare/0.3.0...0.3.1) (2026-08-05)
 
 
