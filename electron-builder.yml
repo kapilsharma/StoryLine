@@ -49,7 +49,10 @@ linux:
       arch: [x64]
 
 # Where a build with --publish uploads assets (used by the manual workflow).
+# vPrefixedTagName:false → publish to the bare `X.Y.Z` release/tag that
+# release-please creates (electron-builder otherwise defaults to `vX.Y.Z`).
 publish:
   provider: github
   owner: kapilsharma
   repo: StoryLine
+  vPrefixedTagName: false
