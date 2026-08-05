@@ -1,0 +1,55 @@
+appId: com.zoeynyxx.storyline
+productName: ZN Story Line
+
+directories:
+  buildResources: build
+  output: release
+
+# Keep the default file set (**/*, incl. out/ and production node_modules) but
+# drop source, tests, docs and tooling that don't belong in the packaged app.
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{vitest.config.ts,playwright.config.ts}'
+  - '!{tests,examples,docs,Requirements,coverage,Screenshots,build}/*'
+  - '!{.env,.env.*,.npmrc,package-lock.json,ZNLogo.png}'
+  - '!{README.md,CONTRIBUTING.md,CHANGELOG.md}'
+  - '!{release-please-config.json,.release-please-manifest.json}'
+
+asar: true
+
+# --- macOS: unsigned .dmg (arm64 + Intel). Signing is a later issue. ---
+mac:
+  category: public.app-category.productivity
+  icon: build/icon.icns
+  identity: null # do not attempt code signing
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+
+# --- Windows: NSIS installer (.exe) ---
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-${version}-setup.${ext}
+
+# --- Linux: AppImage ---
+linux:
+  icon: build/icon.png
+  category: Office
+  target:
+    - target: AppImage
+      arch: [x64]
+
+# Where a build with --publish uploads assets (used by the manual workflow).
+publish:
+  provider: github
+  owner: kapilsharma
+  repo: StoryLine
