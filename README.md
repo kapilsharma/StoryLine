@@ -4,15 +4,59 @@ A desktop app for **visual story planning**. The core interface is a structured 
 
 > Built as a personal tool. Not affiliated with any other story-planning software.
 
+## Inspiration
+
+ZN Story Line (short for **Zoey Nyxx Story Line**), named after the lead character of my in-progress novel series. It grew out of a few things:
+
+- **J.K. Rowling's plot-grid method**: the hand-drawn spreadsheet approach to plotting a story.
+- **My own Google Sheet** for planning the Zoey Nyxx series.
+- **Plottr** — I really liked it and wanted to use it for the novel, but it's a paid tool. With a limited persnal budget, I has to be careful about where I invest. Since I'm a developer, learning to build Electron apps, and had Claude to help, I decided to build my own little version instead.
+
+I made this tool for myself, but also publishing as open-source, in case helpful for anyone else.
+
 ## Features
 
 - **Character × timeline boards** — place cards in a grid of characters (rows) and timeline units (columns); a card can span multiple columns.
 - **Multiple independent boards** — each board owns its own characters, timeline and notes. Reorder boards by dragging their tabs.
 - **Drag-and-drop everywhere** — reorder boards, timeline units and character rows; group rows/columns and collapse groups.
-- **Dedicated Markdown editor** with a live, configurable preview — per-theme colours for headings, emphasis, code, highlights and more (separate light/dark palettes).
+- **Dedicated Markdown editor** with a live, configurable preview — per-theme colours for headings, emphasis, code, highlights and more (separate light/dark palettes). This editor is meant to write short notes, don't confuse it with writing tool replacement.
 - **Rename-safe notes** — notes carry a stable id, so renaming a file (in the app or an external editor) never breaks a card.
 - **Live reload** — external edits (e.g. from another Markdown editor) are picked up automatically.
 - **Light / dark themes.**
+
+## Screenshots
+
+**Board**
+
+![Board](Screenshots/Thettana-Board.png)
+
+**Card on board**
+
+![Card on Board](Screenshots/Thettana-Board-Card.png)
+
+**Editor**
+
+![Card on Board](Screenshots/Thettana-Editor.png)
+
+**Characters**
+
+![Card on Board](Screenshots/Thettana-Characters.png)
+
+**Chapters**
+
+![Card on Board](Screenshots/Thettana-Chapters.png)
+
+**Notes**
+
+![Card on Board](Screenshots/Thettana-Notes.png)
+
+**Settings 1**
+
+![Card on Board](Screenshots/Thettana-Settings-1.png)
+
+**Settings 2**
+
+![Card on Board](Screenshots/Thettana-Settings-2.png)
 
 ## Tech stack
 
@@ -38,6 +82,8 @@ npm install      # install dependencies
 npm run dev      # launch the app in development
 ```
 
+Want to see it with real data? Open the sample project in [`examples/thettana`](./examples/thettana) (**Open project** → pick that folder). See [`examples/`](./examples) for details.
+
 ## Scripts
 
 | Command | Description |
@@ -51,4 +97,6 @@ npm run dev      # launch the app in development
 
 ## License
 
-[MIT](./LICENSE) © Kapil Sharma
+The application's source code is licensed under [MIT](./LICENSE) © Zoey Nyxx (Kapil Sharma).
+
+The example story content under [`examples/`](./examples) is **not** MIT-licensed — it is © Kapil Sharma (pen name Zoey Nyxx), all rights reserved, included for demonstration only. See [`examples/README.md`](./examples/README.md).

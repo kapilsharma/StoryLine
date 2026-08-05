@@ -1,0 +1,71 @@
+{
+  "id": "thettana",
+  "name": "Thettana",
+  "cards": [
+    {
+      "id": "card-76782bb6",
+      "noteUid": "n_9c97a654",
+      "rowId": "aeri",
+      "colStart": "calculation",
+      "colEnd": "calculation"
+    },
+    {
+      "id": "card-5138cb87",
+      "noteUid": "n_5c3c9bc4",
+      "rowId": "kenera",
+      "colStart": "calculation",
+      "colEnd": "calculation"
+    },
+    {
+      "id": "card-defd7ff1",
+      "noteUid": "n_a70a4c58",
+      "rowId": "aeri",
+      "colStart": "2-status-report",
+      "colEnd": "2-status-report"
+    },
+    {
+      "id": "card-93100ac4",
+      "noteUid": "n_5fd5e456",
+      "rowId": "aeri",
+      "colStart": "3-summon",
+      "colEnd": "3-summon"
+    },
+    {
+      "id": "card-d1a9fea8",
+      "noteUid": "n_4bc7857b",
+      "rowId": "vaeli",
+      "colStart": "myth",
+      "colEnd": "myth"
+    },
+    {
+      "id": "card-f843f185",
+      "noteUid": "n_47825500",
+      "rowId": "senkor",
+      "colStart": "3-summon",
+      "colEnd": "3-summon"
+    },
+    {
+      "id": "card-765c9eae",
+      "noteUid": "n_2929cb83",
+      "rowId": "senkor",
+      "colStart": "promotion",
+      "colEnd": "promotion"
+    },
+    {
+      "id": "card-5df83b66",
+      "noteUid": "n_de96a621",
+      "rowId": "aeri",
+      "colStart": "promotion",
+      "colEnd": "promotion"
+    }
+  ],
+  "hiddenRows": [],
+  "hiddenCols": [],
+  "presets": [],
+  "rowOrder": [],
+  "rowGroupOrder": [],
+  "colOrder": [],
+  "collapsedRowGroups": [],
+  "collapsedColGroups": [],
+  "zoom": 1
+}
