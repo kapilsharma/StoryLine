@@ -155,6 +155,9 @@ h2 {
   text-align: left;
   border: none;
   background: none;
+  /* Explicit theme colour — otherwise the button text (project name) falls back
+     to the browser default (black) and is invisible on the dark theme. */
+  color: var(--fg);
   padding: 0.7rem 0.9rem;
   cursor: pointer;
   display: flex;
