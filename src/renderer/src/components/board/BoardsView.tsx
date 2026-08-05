@@ -3,9 +3,11 @@ import type { Board } from '@shared/types'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
 import { moveAfter, moveBefore } from '../../lib/reorder'
+import { Modal } from '../Modal'
+import { CharacterForm } from '../CharacterForm'
+import { TimelineForm } from '../TimelineForm'
 import { BoardGrid } from './BoardGrid'
 
-const PALETTE = ['#E24B4A', '#4A90D9', '#3FB984', '#E2A23B', '#9B59B6', '#16A085', '#E67E22']
 const MIME_BOARD = 'application/x-znstoryline-board'
 
 export function BoardsView(): JSX.Element {
@@ -19,9 +21,7 @@ export function BoardsView(): JSX.Element {
     renameBoard,
     deleteBoard,
     reorderBoards,
-    saveBoard,
-    saveTimelineUnit,
-    saveCharacter
+    saveBoard
   } = useStore()
   const ask = usePrompt()
   const characters = activeBoard?.characters ?? []
@@ -30,6 +30,7 @@ export function BoardsView(): JSX.Element {
 
   const [tabMenu, setTabMenu] = useState<{ boardId: string; x: number; y: number } | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
+  const [addModal, setAddModal] = useState<null | 'row' | 'column'>(null)
 
   const onTabDrop = (draggedId: string, targetId: string, e: React.DragEvent): void => {
     setDragId(null)
@@ -63,20 +64,10 @@ export function BoardsView(): JSX.Element {
     }
   }
 
-  const onAddColumn = async (): Promise<void> => {
-    const unit = (snapshot?.project.timelineLabel ?? 'unit').toLowerCase()
-    const label = await ask({ title: `New ${unit}`, placeholder: `${unit} label` })
-    if (label && label.trim()) {
-      saveTimelineUnit({ id: '', label: label.trim(), order: 0 })
-    }
-  }
-  const onAddRow = async (): Promise<void> => {
-    const name = await ask({ title: 'New character', placeholder: 'Character name' })
-    if (name && name.trim()) {
-      const colour = PALETTE[characters.length % PALETTE.length]
-      saveCharacter({ id: '', type: 'character', name: name.trim(), colour })
-    }
-  }
+  // The board's quick-add buttons open the full character/timeline form in a
+  // modal (the same forms the Characters/Timeline tabs use).
+  const onAddColumn = (): void => setAddModal('column')
+  const onAddRow = (): void => setAddModal('row')
 
   const applyPreset = (presetName: string): void => {
     if (!board) return
@@ -219,6 +210,28 @@ export function BoardsView(): JSX.Element {
 
           {activeBoard && <BoardGrid data={activeBoard} />}
         </>
+      )}
+
+      {addModal === 'row' && (
+        <Modal title="New character" onClose={() => setAddModal(null)}>
+          <CharacterForm
+            initial={null}
+            onSaved={() => setAddModal(null)}
+            onCancel={() => setAddModal(null)}
+          />
+        </Modal>
+      )}
+      {addModal === 'column' && (
+        <Modal
+          title={`New ${(snapshot?.project.timelineLabel ?? 'unit').toLowerCase()}`}
+          onClose={() => setAddModal(null)}
+        >
+          <TimelineForm
+            initial={null}
+            onSaved={() => setAddModal(null)}
+            onCancel={() => setAddModal(null)}
+          />
+        </Modal>
       )}
     </div>
   )
