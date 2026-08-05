@@ -29,7 +29,7 @@ Because Actions is free on public repos but we don't need a build on every patch
 2. Actions → **build-installers** → *Run workflow* → enter the tag (e.g. `0.1.1`).
 3. Each OS runner builds its installer and uploads it to that Release.
 
-Add this as `.github/workflows/build-installers.yml` when Phase 2 lands:
+Defined in `.github/workflows/build-installers.yml`:
 
 ```yaml
 name: build-installers
@@ -79,3 +79,28 @@ Until signing is set up:
 - **macOS:** right-click the app → **Open** → confirm (Gatekeeper blocks a double-click on unsigned apps).
 - **Windows:** SmartScreen → **More info** → **Run anyway**.
 - **Linux (AppImage):** `chmod +x` the file, then run it.
+
+## Branch protection
+
+`main` is protected: a pull request is required to merge, direct pushes are blocked (including for admins), and self-merge is allowed (0 required approvals). CI (`test`) runs on PRs but is **not** a required gate — requiring it would deadlock release-please's bot PRs, whose CI doesn't auto-run.
+
+### Emergency escape hatch
+
+If tooling ever wedges you and you must push to `main` directly, lift protection, push, then re-apply:
+
+```bash
+# 1. Temporarily remove protection
+gh api -X DELETE repos/kapilsharma/StoryLine/branches/main/protection
+
+# 2. …do the direct push…
+
+# 3. Re-apply protection
+gh api -X PUT repos/kapilsharma/StoryLine/branches/main/protection --input - <<'JSON'
+{
+  "required_status_checks": null,
+  "enforce_admins": true,
+  "required_pull_request_reviews": { "required_approving_review_count": 0 },
+  "restrictions": null
+}
+JSON
+```
