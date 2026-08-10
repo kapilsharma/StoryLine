@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.1](https://github.com/kapilsharma/StoryLine/compare/0.5.0...0.5.1) (2026-08-10)
+
+
+### Bug Fixes
+
+* **#22:** Fix npm audit issue ([4e60cf8](https://github.com/kapilsharma/StoryLine/commit/4e60cf88feb62d2a1ced64f1ae66189379b81177))
+* **#22:** Fix npm audit issue ([7cf38b7](https://github.com/kapilsharma/StoryLine/commit/7cf38b7b977e51e8e405b484fb693e9bfd2cce7b))
+* **#22:** Merge pull request [#23](https://github.com/kapilsharma/StoryLine/issues/23) from kapilsharma/issue-22-npm-audit-issue ([4e60cf8](https://github.com/kapilsharma/StoryLine/commit/4e60cf88feb62d2a1ced64f1ae66189379b81177))
+
 ## [0.5.0](https://github.com/kapilsharma/StoryLine/compare/0.4.0...0.5.0) (2026-08-10)
 
 
