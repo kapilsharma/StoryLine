@@ -57,13 +57,67 @@
       "rowId": "aeri",
       "colStart": "promotion",
       "colEnd": "promotion"
+    },
+    {
+      "id": "card-ce87a454",
+      "noteUid": "n_fee9b00c",
+      "rowId": "kenera",
+      "colStart": "3-summon",
+      "colEnd": "3-summon"
+    },
+    {
+      "id": "card-7b89561a",
+      "noteUid": "n_69fd2b40",
+      "rowId": "aeri",
+      "colStart": "myth",
+      "colEnd": "myth"
+    },
+    {
+      "id": "card-ccbfee1a",
+      "noteUid": "n_0210332d",
+      "rowId": "aeri",
+      "colStart": "legacy-technology",
+      "colEnd": "legacy-technology"
+    },
+    {
+      "id": "card-ab3490cb",
+      "noteUid": "n_dfd5c601",
+      "rowId": "kenera",
+      "colStart": "legacy-technology",
+      "colEnd": "legacy-technology"
+    },
+    {
+      "id": "card-d0c2b74e",
+      "noteUid": "n_3474a9f6",
+      "rowId": "aeri",
+      "colStart": "warning",
+      "colEnd": "warning"
+    },
+    {
+      "id": "card-0a57b863",
+      "noteUid": "n_df2e4a64",
+      "rowId": "korvaan",
+      "colStart": "warning",
+      "colEnd": "warning"
+    },
+    {
+      "id": "card-d7385332",
+      "noteUid": "n_c6e1e68d",
+      "rowId": "aeri",
+      "colStart": "the-leak",
+      "colEnd": "the-leak"
     }
   ],
   "hiddenRows": [],
   "hiddenCols": [],
   "presets": [],
   "rowOrder": [],
-  "rowGroupOrder": [],
+  "rowGroupOrder": [
+    "aeri",
+    "Family",
+    "Researchers",
+    "Others"
+  ],
   "colOrder": [],
   "collapsedRowGroups": [],
   "collapsedColGroups": [],
