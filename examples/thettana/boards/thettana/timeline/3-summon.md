@@ -1,6 +1,6 @@
 ---
 id: 3-summon
-label: Summon
+label: 3 - Summon
 order: 3
 group: 'Act 1: Findings'
 ---

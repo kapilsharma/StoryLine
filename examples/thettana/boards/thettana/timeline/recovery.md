@@ -1,6 +1,6 @@
 ---
 id: recovery
-label: Recovery
+label: 9 - Recovery
 order: 9
 group: 'Act 1: Findings'
 ---

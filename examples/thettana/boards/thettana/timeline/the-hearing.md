@@ -1,7 +1,7 @@
 ---
-id: myth
-label: 5 - Myth
-order: 5
+id: the-hearing
+label: 14 - The Hearing
+order: 14
 group: 'Act 1: Findings'
 ---
 
