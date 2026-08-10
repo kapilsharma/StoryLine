@@ -23,6 +23,7 @@ I made this tool for myself, but also publishing as open-source, in case helpful
 - **Rename-safe notes** — notes carry a stable id, so renaming a file (in the app or an external editor) never breaks a card.
 - **Live reload** — external edits (e.g. from another Markdown editor) are picked up automatically.
 - **Light / dark themes.**
+- **Publish to the web** — export a project as a self-contained, read-only static site you can upload anywhere (see [`docs/publishing.md`](./docs/publishing.md)).
 
 ## Screenshots
 
@@ -90,6 +91,8 @@ Want to see it with real data? Open the sample project in [`examples/thettana`](
 | --- | --- |
 | `npm run dev` | Run the app in development (hot reload). |
 | `npm run build` | Type-check and build for production. |
+| `npm run build:web` | Build the static web shell (no story data) into `out/web`. |
+| `npm run export:static -- --project <dir> --out <dir>` | Export a project as an uploadable read-only site. See [publishing](./docs/publishing.md). |
 | `npm run typecheck` | Type-check main + renderer. |
 | `npm test` | Run unit + component tests (Vitest). |
 | `npm run test:coverage` | Run tests with a coverage report (`coverage/`). |

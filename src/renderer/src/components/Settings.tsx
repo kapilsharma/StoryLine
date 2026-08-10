@@ -11,7 +11,7 @@ import { CARD_FONT_MIN, CARD_FONT_MAX, DEFAULT_EDITOR_STYLES } from '@shared/con
 import { useStore } from '../store'
 
 export function Settings(): JSX.Element {
-  const { snapshot, config, saveProjectMeta, updateSettings } = useStore()
+  const { snapshot, config, saveProjectMeta, updateSettings, readOnly } = useStore()
 
   // Project-level form
   const [name, setName] = useState('')
@@ -84,14 +84,25 @@ export function Settings(): JSX.Element {
             onChange={(e) => setTimelineLabel(e.target.value)}
           />
         </div>
-        <button
-          className="btn primary"
-          disabled={!projectDirty || !name.trim()}
-          onClick={() => saveProjectMeta(name.trim(), timelineLabel.trim() || 'Chapter')}
-        >
-          Save project settings
-        </button>
-        <p className="muted small folder-path">{snapshot.root}</p>
+        {readOnly ? (
+          // Project metadata lives in project.json, so it can't change here.
+          // Appearance settings below are session-local and do work.
+          <p className="muted small">
+            Project details are read-only in a published board. The appearance settings below still
+            work — they apply to your browser for this visit only.
+          </p>
+        ) : (
+          <>
+            <button
+              className="btn primary"
+              disabled={!projectDirty || !name.trim()}
+              onClick={() => saveProjectMeta(name.trim(), timelineLabel.trim() || 'Chapter')}
+            >
+              Save project settings
+            </button>
+            <p className="muted small folder-path">{snapshot.root}</p>
+          </>
+        )}
       </section>
 
       <section className="settings-group">

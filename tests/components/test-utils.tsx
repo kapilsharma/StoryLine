@@ -45,6 +45,7 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     createBoard: vi.fn(),
     renameBoard: vi.fn(),
     deleteBoard: vi.fn(),
+    reorderBoards: vi.fn(),
     createCard: vi.fn(),
     updateCard: vi.fn(),
     deleteCard: vi.fn(),
@@ -56,9 +57,12 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
 }
 
 /** Render a component inside the app's providers. */
-export function renderWithProviders(ui: ReactElement): ReturnType<typeof render> {
+export function renderWithProviders(
+  ui: ReactElement,
+  { readOnly, bootRoot }: { readOnly?: boolean; bootRoot?: string } = {}
+): ReturnType<typeof render> {
   return render(
-    <StoreProvider>
+    <StoreProvider readOnly={readOnly} bootRoot={bootRoot}>
       <PromptProvider>{ui}</PromptProvider>
     </StoreProvider>
   )

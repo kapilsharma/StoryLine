@@ -1291,3 +1291,66 @@ textarea {
   align-items: center;
   gap: 0.35rem;
 }
+
+/* ── Published (read-only) build ──────────────────────────────────────────── */
+
+/* First child of .project-view, which is a flex column — so it takes its natural
+   height and .project-body keeps flexing to fill the rest. */
+.readonly-banner {
+  padding: 0.5rem 1rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+.readonly-banner strong {
+  color: var(--fg);
+}
+
+/* Fixed, so a failed save is reported without shifting whatever you're looking
+   at — including over the fullscreen editor. */
+.toast {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: min(38rem, calc(100vw - 2rem));
+  padding: 0.6rem 0.75rem 0.6rem 1rem;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--fg);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+}
+.toast-message {
+  font-size: 0.9rem;
+}
+.toast-close {
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.toast-close:hover {
+  color: var(--fg);
+}
+
+/* Shown by src/web/main.tsx when snapshot.js is missing from the upload. */
+.boot-error {
+  max-width: 34rem;
+  margin: 4rem auto;
+  padding: 0 1.5rem;
+  text-align: center;
+  color: var(--fg);
+}
+.boot-error p {
+  color: var(--muted);
+}

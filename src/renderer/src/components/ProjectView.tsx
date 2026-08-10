@@ -20,7 +20,7 @@ const TABS: Array<{ key: Tab; label: string }> = [
 ]
 
 export function ProjectView(): JSX.Element {
-  const { snapshot, closeProject } = useStore()
+  const { snapshot, closeProject, readOnly } = useStore()
   const [tab, setTab] = useState<Tab>('boards')
 
   if (!snapshot) return <></>
@@ -33,10 +33,19 @@ export function ProjectView(): JSX.Element {
   return (
     <BoardUiProvider>
       <div className="project-view">
+        {readOnly && (
+          <div className="readonly-banner" role="note">
+            <strong>Read-only preview.</strong> You can explore, zoom, collapse groups and read every
+            note — but nothing you change here is saved.
+          </div>
+        )}
         <header className="project-head">
-          <button className="link-btn" onClick={closeProject} title="Back to dashboard">
-            ‹ Projects
-          </button>
+          {/* No dashboard to go back to in a published export. */}
+          {!readOnly && (
+            <button className="link-btn" onClick={closeProject} title="Back to dashboard">
+              ‹ Projects
+            </button>
+          )}
           <h1 className="project-title">{snapshot.project.name}</h1>
           <nav className="tabs">
             {TABS.map((t) => (
