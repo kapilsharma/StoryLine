@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.2](https://github.com/kapilsharma/StoryLine/compare/0.5.1...0.5.2) (2026-08-10)
+
+
+### Bug Fixes
+
+* **#26:** Set dark theme as default for static site ([7a60764](https://github.com/kapilsharma/StoryLine/commit/7a60764930ce391f86cd0ce71135f61ba8727bbc))
+* **#26:** Set dark theme as default for static site ([ea86934](https://github.com/kapilsharma/StoryLine/commit/ea8693456dd90a514e5de7b8668b56303105ac35))
+* **#27:** Merge pull request [#27](https://github.com/kapilsharma/StoryLine/issues/27) from kapilsharma/issue-26-static-site-default-theme-dark ([7a60764](https://github.com/kapilsharma/StoryLine/commit/7a60764930ce391f86cd0ce71135f61ba8727bbc))
+
 ## [0.5.1](https://github.com/kapilsharma/StoryLine/compare/0.5.0...0.5.1) (2026-08-10)
 
 
