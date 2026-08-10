@@ -17,5 +17,9 @@ coverage/
 # Packaged installers (electron-builder output)
 release/
 
+# Exported static sites (npm run export:static -- --out dist-site)
+dist-site/
+static/
+
 # Local agent/editor tooling config (machine-specific paths — not for sharing)
 .claude/

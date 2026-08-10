@@ -13,7 +13,8 @@ const parseTags = (s: string): string[] => s.split(',').map((t) => t.trim()).fil
  */
 export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
   const { kind, id } = target
-  const { closeEditor, activeBoard, config, getNote, saveNote, getEntityBody, saveEntityBody } = useStore()
+  const { closeEditor, activeBoard, config, getNote, saveNote, getEntityBody, saveEntityBody, readOnly } =
+    useStore()
   const previewOnLeft = (config?.settings.previewPosition ?? 'left') === 'left'
 
   const [title, setTitle] = useState('')
@@ -49,9 +50,11 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Debounced auto-save.
+  // Debounced auto-save. Skipped entirely when read-only: you can still type and
+  // watch the preview, but firing a doomed save every second would just spam the
+  // error toast.
   useEffect(() => {
-    if (!dirty.current || !loaded) return
+    if (readOnly || !dirty.current || !loaded) return
     const timer = setTimeout(() => {
       if (kind === 'note' && noteRef.current) {
         saveNote({ ...noteRef.current, title: title.trim() || noteRef.current.title, tags: parseTags(tags), body })
@@ -111,7 +114,9 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
         ) : (
           <h1 className="editor-title-static">{displayName}</h1>
         )}
-        <span className="muted small autosave-hint">Auto-saves</span>
+        <span className="muted small autosave-hint">
+          {readOnly ? 'Read-only — changes are not saved' : 'Auto-saves'}
+        </span>
       </header>
 
       {kind === 'note' ? (

@@ -10,6 +10,8 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "build:app": "electron-vite build && electron-builder",
+    "build:web": "vite build --config vite.web.config.ts",
+    "export:static": "tsx --tsconfig tsconfig.node.json scripts/export-static.mts",
     "preview": "electron-vite preview",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
@@ -34,6 +36,7 @@
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "jsdom": "^29.1.1",
+    "tsx": "^4.23.12",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",
     "vitest": "^4.1.10"

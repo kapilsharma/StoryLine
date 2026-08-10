@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Same policy as the desktop shell, plus remote/https images so notes that
+         reference hosted pictures still render on a published site. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:"
+    />
+    <title>ZN Story Line</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- snapshot.js (the story data) is injected into <head> by vite.web.config.ts. -->
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

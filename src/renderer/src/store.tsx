@@ -27,6 +27,14 @@ interface StoreValue {
   snapshot: ProjectSnapshot | null
   loading: boolean
   error: string | null
+  /** Dismiss the current error (the toast's close button). */
+  clearError: () => void
+  /**
+   * True in a published static export: the UI stays interactive, but anything
+   * backed by a file on disk is refused by the api layer. Components use this to
+   * suppress auto-save and hide actions that make no sense off the desktop.
+   */
+  readOnly: boolean
 
   /** All boards (metadata) for the tab strip / picker. */
   boards: Board[]
@@ -74,7 +82,19 @@ interface StoreValue {
 
 const StoreContext = createContext<StoreValue | null>(null)
 
-export function StoreProvider({ children }: { children: ReactNode }): JSX.Element {
+export interface StoreProviderProps {
+  children: ReactNode
+  /** See {@link StoreValue.readOnly}. */
+  readOnly?: boolean
+  /**
+   * Open this project on mount instead of showing the dashboard. Used by the
+   * static build, where the folder holds exactly one project and there is no
+   * picker to show.
+   */
+  bootRoot?: string
+}
+
+export function StoreProvider({ children, readOnly = false, bootRoot }: StoreProviderProps): JSX.Element {
   const [config, setConfig] = useState<AppConfig | null>(null)
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null)
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null)
@@ -168,6 +188,8 @@ export function StoreProvider({ children }: { children: ReactNode }): JSX.Elemen
     [run]
   )
 
+  const clearError = useCallback(() => setError(null), [])
+
   const openByPath = useCallback(
     (root: string) =>
       run(async () => {
@@ -176,6 +198,15 @@ export function StoreProvider({ children }: { children: ReactNode }): JSX.Elemen
       }),
     [run]
   )
+
+  // Static build: open the bundled project immediately. Guarded by a ref because
+  // StrictMode double-invokes effects in development.
+  const booted = useRef(false)
+  useEffect(() => {
+    if (!bootRoot || booted.current) return
+    booted.current = true
+    void openByPath(bootRoot)
+  }, [bootRoot, openByPath])
 
   const newProject = useCallback(
     () =>
@@ -240,6 +271,8 @@ export function StoreProvider({ children }: { children: ReactNode }): JSX.Elemen
       snapshot,
       loading,
       error,
+      clearError,
+      readOnly,
       boards,
       activeBoardId,
       activeBoard,
@@ -274,7 +307,7 @@ export function StoreProvider({ children }: { children: ReactNode }): JSX.Elemen
       openEditor,
       closeEditor
     }),
-    [config, snapshot, loading, error, boards, activeBoardId, activeBoard, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, getEntityBody, editorTarget, openEditor, closeEditor]
+    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, getEntityBody, editorTarget, openEditor, closeEditor]
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
