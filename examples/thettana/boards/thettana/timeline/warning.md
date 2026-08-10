@@ -1,6 +1,6 @@
 ---
 id: warning
-label: Warning
+label: 7 - Warning
 order: 7
 group: 'Act 1: Findings'
 ---

@@ -1,6 +1,6 @@
 ---
 id: 2-status-report
-label: Status Report
+label: 2 - Status Report
 order: 2
 group: 'Act 1: Findings'
 ---

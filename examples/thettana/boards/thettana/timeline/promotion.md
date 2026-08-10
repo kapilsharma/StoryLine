@@ -1,6 +1,6 @@
 ---
 id: promotion
-label: Promotion
+label: 4 - Promotion
 order: 4
 group: 'Act 1: Findings'
 ---

@@ -1,6 +1,6 @@
 ---
 id: the-low
-label: The Low
+label: 10 - Independent Confirmation
 order: 10
 group: 'Act 1: Findings'
 ---
