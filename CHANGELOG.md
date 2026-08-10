@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/kapilsharma/StoryLine/compare/0.4.0...0.5.0) (2026-08-10)
+
+
+### Features
+
+* **18:** Merge pull request [#20](https://github.com/kapilsharma/StoryLine/issues/20) from kapilsharma/Issue-18-static-web-export ([50540ba](https://github.com/kapilsharma/StoryLine/commit/50540ba6d7da0272be25197a04f59e68a3a2f798))
+* **18:** Static web export ([ae8b66e](https://github.com/kapilsharma/StoryLine/commit/ae8b66ece2807ce51760b1a88bc6f6a8cff99825))
+
 ## [0.4.0](https://github.com/kapilsharma/StoryLine/compare/0.3.2...0.4.0) (2026-08-05)
 
 
