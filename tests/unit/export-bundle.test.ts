@@ -5,7 +5,7 @@ import { tmpdir } from 'os'
 import { entityBodyKey, EXPORT_FORMAT_VERSION } from '@shared/export'
 import { DEFAULT_SETTINGS } from '@shared/config'
 import { createProject } from '@main/projectService'
-import { buildExportBundle, UnknownBoardError } from '@main/data/exportBundle'
+import { applyThemeToHtml, buildExportBundle, UnknownBoardError } from '@main/data/exportBundle'
 import {
   ensureBoardDirs,
   readProject,
@@ -135,5 +135,38 @@ describe('buildExportBundle', () => {
     const empty = join(base, 'not-a-project')
     await fs.mkdir(empty)
     await expect(buildExportBundle(empty, options)).rejects.toThrow(/not a ZN Story Line project/i)
+  })
+})
+
+describe('theme', () => {
+  it('bakes the requested theme into the bundle settings', async () => {
+    const dark = await buildExportBundle(root, {
+      ...options,
+      settings: { ...DEFAULT_SETTINGS, theme: 'dark' }
+    })
+    expect(dark.settings.theme).toBe('dark')
+  })
+})
+
+describe('applyThemeToHtml', () => {
+  const html = '<!doctype html>\n<html lang="en">\n  <head>\n    <title>x</title>\n  </head>\n</html>'
+
+  it('stamps data-theme on <html>, keeping existing attributes', () => {
+    const out = applyThemeToHtml(html, 'dark')
+    expect(out).toContain('<html lang="en" data-theme="dark">')
+  })
+
+  it('adds a pre-paint background so a dark board does not flash white', () => {
+    expect(applyThemeToHtml(html, 'dark')).toContain('<style id="zn-theme-bg">html{background:#1b1c1f}</style>')
+    expect(applyThemeToHtml(html, 'light')).toContain('html{background:#ffffff}')
+  })
+
+  it('is idempotent — re-applying replaces rather than duplicating', () => {
+    const once = applyThemeToHtml(html, 'dark')
+    const twice = applyThemeToHtml(once, 'light')
+    expect(twice.match(/data-theme=/g)).toHaveLength(1)
+    expect(twice.match(/id="zn-theme-bg"/g)).toHaveLength(1)
+    expect(twice).toContain('data-theme="light"')
+    expect(twice).toContain('html{background:#ffffff}')
   })
 })

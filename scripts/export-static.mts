@@ -15,7 +15,8 @@ import { promises as fs } from 'fs'
 import { basename, isAbsolute, join, resolve } from 'path'
 import { spawn } from 'child_process'
 import { SNAPSHOT_GLOBAL } from '@shared/export'
-import { buildExportBundle, UnknownBoardError } from '../src/main/data/exportBundle'
+import { DEFAULT_SETTINGS, type Theme } from '@shared/config'
+import { applyThemeToHtml, buildExportBundle, UnknownBoardError } from '../src/main/data/exportBundle'
 
 /** Written into the output folder so a re-export knows it may clean it. */
 const MARKER = '.zn-story-line-export'
@@ -25,6 +26,7 @@ interface Args {
   project: string
   out: string
   boards: string[]
+  theme: Theme
   skipBuild: boolean
   force: boolean
 }
@@ -38,13 +40,16 @@ Options
   --project <path>   Project folder (the one containing project.json). Required.
   --out <path>       Output folder for the site. Required.
   --boards a,b       Board ids to publish, in that order. Default: all boards.
+  --theme dark|light Theme the published site opens in. Default: dark.
   --skip-build       Reuse the existing out/web shell instead of rebuilding it.
   --force            Allow writing into a non-empty folder this tool didn't create.
   --help             Show this message.
 `.trim()
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { project: '', out: '', boards: [], skipBuild: false, force: false }
+  // Dark by default: a published board is read on a website, where dark reads
+  // better than the desktop app's light default.
+  const args: Args = { project: '', out: '', boards: [], theme: 'dark', skipBuild: false, force: false }
 
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i]
@@ -66,6 +71,14 @@ function parseArgs(argv: string[]): Args {
           .map((b) => b.trim())
           .filter(Boolean)
         break
+      case '--theme': {
+        const theme = value()
+        if (theme !== 'dark' && theme !== 'light') {
+          throw new Error(`--theme must be "dark" or "light", got "${theme}"`)
+        }
+        args.theme = theme
+        break
+      }
       case '--skip-build':
         args.skipBuild = true
         break
@@ -159,6 +172,7 @@ async function main(): Promise<void> {
   console.log(`Reading project  ${projectRoot}`)
   const bundle = await buildExportBundle(projectRoot, {
     boards: args.boards,
+    settings: { ...DEFAULT_SETTINGS, theme: args.theme },
     appVersion: pkg.version,
     generatedAt: new Date().toISOString()
   })
@@ -168,6 +182,7 @@ async function main(): Promise<void> {
     `  ${bundle.project.name} — ${bundle.boards.length} board(s), ` +
       `${noteCount} note(s): ${bundle.project.boards.join(', ')}`
   )
+  console.log(`  theme: ${args.theme}`)
 
   if (args.skipBuild) {
     await fs.access(join(SHELL_DIR, 'index.html')).catch(() => {
@@ -181,6 +196,15 @@ async function main(): Promise<void> {
 
   await prepareOutDir(outDir, args.force)
   await fs.cp(SHELL_DIR, outDir, { recursive: true })
+
+  // Stamp the theme into the copied html, not the shell, so the shell stays
+  // data-independent and reusable across exports with different themes.
+  const indexPath = join(outDir, 'index.html')
+  await fs.writeFile(
+    indexPath,
+    applyThemeToHtml(await fs.readFile(indexPath, 'utf8'), args.theme),
+    'utf8'
+  )
 
   // A script assignment rather than JSON, so the folder also opens over file://.
   const snapshot =

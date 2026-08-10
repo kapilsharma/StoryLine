@@ -1,5 +1,5 @@
 import { EXPORT_FORMAT_VERSION, entityBodyKey, type ExportBundle } from '@shared/export'
-import { DEFAULT_SETTINGS, type AppSettings } from '@shared/config'
+import { DEFAULT_SETTINGS, type AppSettings, type Theme } from '@shared/config'
 import type { BoardData } from '@shared/ipc'
 import { loadSnapshot } from '../projectService'
 import { listNotes, readEntityBody } from './repository'
@@ -24,6 +24,34 @@ export interface ExportOptions {
   appVersion: string
   /** ISO timestamp; injected so tests and reproducible builds can pin it. */
   generatedAt: string
+}
+
+/**
+ * Page background per theme, mirroring `--bg` in `src/renderer/src/index.css`.
+ * Duplicated deliberately: see {@link applyThemeToHtml}.
+ */
+const THEME_BG: Record<Theme, string> = { light: '#ffffff', dark: '#1b1c1f' }
+
+/**
+ * Stamp the exported theme into `index.html`.
+ *
+ * The web build inlines its CSS into the (deferred) JS bundle, so nothing is
+ * styled until that whole file has parsed — which means a dark board would flash
+ * white first. Setting `data-theme` up front, plus a one-line inline background,
+ * paints the right colour immediately. It has to be a `<style>` rather than a
+ * script because the page's CSP allows inline styles but not inline scripts.
+ *
+ * Safe to re-apply to already-stamped html.
+ */
+export function applyThemeToHtml(html: string, theme: Theme): string {
+  const stamped = html.replace(/<html([^>]*)>/i, (_match, attrs: string) => {
+    const cleaned = attrs.replace(/\s*data-theme="[^"]*"/gi, '')
+    return `<html${cleaned} data-theme="${theme}">`
+  })
+  const style = `<style id="zn-theme-bg">html{background:${THEME_BG[theme]}}</style>`
+  return /<style id="zn-theme-bg">[^<]*<\/style>/i.test(stamped)
+    ? stamped.replace(/<style id="zn-theme-bg">[^<]*<\/style>/i, style)
+    : stamped.replace('</head>', `  ${style}\n  </head>`)
 }
 
 /** Thrown when `--boards` names something the project doesn't have. */

@@ -25,8 +25,17 @@ Then open `dist-site/index.html` in a browser to check it, and upload the
 | `--project <path>` | Project folder (the one with `project.json`). Required. |
 | `--out <path>` | Output folder for the site. Required. |
 | `--boards a,b` | Board ids to publish, in that order. Default: every board. |
+| `--theme dark\|light` | Theme the published site opens in. **Default: dark.** |
 | `--skip-build` | Reuse the existing `out/web` shell instead of rebuilding it. |
 | `--force` | Allow writing into a non-empty folder this tool didn't create. |
+
+Published boards default to **dark**, independently of the theme your desktop app
+is set to. Visitors can still switch theme themselves under Settings; it applies
+for their visit only. To publish a light board:
+
+```bash
+npm run export:static -- --project ~/novel --out dist-site --theme light
+```
 
 Publish a subset of boards, in a chosen order:
 
@@ -57,9 +66,13 @@ note **with its full body** — plus the character/timeline markdown bodies the
 editor shows.
 
 **Not** included: your recent-projects list. It holds absolute paths from your
-machine (`/Users/you/…`) and is deliberately never exported. Appearance settings
-(theme, card font size, preview colours) *are* baked in, so the site opens
-looking the way your app does.
+machine (`/Users/you/…`) and is deliberately never exported.
+
+Appearance settings (theme, card font size, preview colours) are baked in from the
+app's defaults plus `--theme` — not read from your local app config, so an export
+is reproducible on any machine. The exporter also stamps `data-theme` and a
+one-line background into `index.html`, because the CSS ships inside the deferred
+JS bundle and a dark board would otherwise flash white before styles land.
 
 ## Two things worth knowing
 
