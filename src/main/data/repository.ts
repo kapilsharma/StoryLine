@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs'
 import { basename, join } from 'path'
 import type { Board, Character, Note, Project, TimelineUnit, View } from '@shared/types'
+import { normalizeEntityBody } from '@shared/entityBody'
 import { parseFrontmatter, serializeFrontmatter } from './frontmatter'
 import { exists, readText, writeTextGuarded } from './fsutil'
 import {
@@ -30,7 +31,11 @@ export interface Loaded<T> {
   path: string
 }
 
-/** Default body for a freshly-created character/timeline file. */
+/**
+ * Default body for a freshly-created timeline file. Characters no longer get it
+ * (issue #33): the Characters tab reads "has a body" as "a note was written",
+ * and a seeded skeleton would make every character look written-up.
+ */
 const ENTITY_BODY_TEMPLATE = '\n## Notes\n\n\n## Research\n\n'
 
 // ── Path helpers ─────────────────────────────────────────────────────────────
@@ -142,8 +147,12 @@ export async function writeCharacter(
   expectedMtimeMs?: number
 ): Promise<number> {
   const path = charPath(root, boardId, char.id)
-  let body = ENTITY_BODY_TEMPLATE
-  if (await exists(path)) body = parseFrontmatter((await readText(path)).text).body
+  // New characters start with no body at all, and a file still carrying the old
+  // empty skeleton sheds it here — the one place a character file is rewritten.
+  let body = ''
+  if (await exists(path)) {
+    body = normalizeEntityBody(parseFrontmatter((await readText(path)).text).body)
+  }
   await fs.mkdir(charsDir(root, boardId), { recursive: true })
   return writeTextGuarded(path, serializeFrontmatter(characterToFrontmatter(char), body), expectedMtimeMs)
 }
@@ -234,7 +243,12 @@ export async function writeEntityBody(
 ): Promise<void> {
   const path = entityPath(root, boardId, kind, id)
   const { data } = parseFrontmatter((await readText(path)).text)
-  await writeTextGuarded(path, serializeFrontmatter(data, body))
+  // A character body of nothing but empty `## Notes` / `## Research` headings is
+  // "no note" to the Characters tab, so it is not worth keeping on disk either.
+  await writeTextGuarded(
+    path,
+    serializeFrontmatter(data, kind === 'character' ? normalizeEntityBody(body) : body)
+  )
 }
 
 // ── Notes (per board) ───────────────────────────────────────────────────────────

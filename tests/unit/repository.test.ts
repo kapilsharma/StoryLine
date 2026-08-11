@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { isEmptyEntityBody } from '@shared/entityBody'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -48,7 +49,7 @@ describe('character repository (per board)', () => {
   it('preserves an externally-edited body across a frontmatter-only write', async () => {
     await writeCharacter(root, BID, { id: 'k', type: 'character', name: 'K', colour: '#000' })
     const path = join(root, 'boards', BID, 'characters', 'k.md')
-    const raw = (await fs.readFile(path, 'utf8')).replace('## Notes', '## Notes\n\nExternally authored.')
+    const raw = (await fs.readFile(path, 'utf8')) + '\n## Notes\n\nExternally authored.\n'
     await fs.writeFile(path, raw)
 
     const { value } = await readCharacter(root, BID, 'k')
@@ -56,6 +57,34 @@ describe('character repository (per board)', () => {
     const after = await fs.readFile(path, 'utf8')
     expect(after).toContain('Externally authored.')
     expect(after).toContain('age: 40')
+  })
+
+  // Issue #33: the Characters tab reads "has a body" as "a note was written",
+  // so a new character must not be seeded with one. (gray-matter always ends the
+  // file with a newline, hence `isEmptyEntityBody` rather than `toBe('')`.)
+  it('creates a character with no body at all', async () => {
+    await writeCharacter(root, BID, { id: 'k', type: 'character', name: 'K', colour: '#000' })
+    const body = await readEntityBody(root, BID, 'character', 'k')
+    expect(body.trim()).toBe('')
+    expect(isEmptyEntityBody(body)).toBe(true)
+  })
+
+  it('drops a skeleton-only body when the character is next written', async () => {
+    await writeCharacter(root, BID, { id: 'k', type: 'character', name: 'K', colour: '#000' })
+    const path = join(root, 'boards', BID, 'characters', 'k.md')
+    await fs.writeFile(path, (await fs.readFile(path, 'utf8')) + '\n## Notes\n\n\n## Research\n\n')
+
+    const { value } = await readCharacter(root, BID, 'k')
+    await writeCharacter(root, BID, { ...value, age: 40 })
+    const after = await fs.readFile(path, 'utf8')
+    expect(after).not.toContain('## Notes')
+    expect(after).toContain('age: 40')
+  })
+
+  it('does not persist a skeleton-only body written from an editor', async () => {
+    await writeCharacter(root, BID, { id: 'k', type: 'character', name: 'K', colour: '#000' })
+    await writeEntityBody(root, BID, 'character', 'k', '\n## Notes\n\n\n## Research\n\n')
+    expect((await readEntityBody(root, BID, 'character', 'k')).trim()).toBe('')
   })
 
   it('lists characters for the board', async () => {
