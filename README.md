@@ -101,6 +101,10 @@ Want to see it with real data? Open the sample project in [`examples/thettana`](
 | `npm run test:coverage` | Run tests with a coverage report (`coverage/`). |
 | `npm run test:e2e` | Run end-to-end tests (Playwright). |
 
+## Instructions for AI agents
+
+If you are an AI coding agent (Claude, Copilot, or otherwise) working in this repo, **read [`docs/llmwiki/`](./docs/llmwiki/) before making changes** — start with [`docs/llmwiki/README.md`](./docs/llmwiki/README.md). It's the project's portable knowledge base for AI agents (architecture, data model, versioning/schema policy, issue workflow, and environment gotchas), so context carries across machines and accounts. The most important rule: **never run `git` commit/push — hand off changes for the maintainer to commit.**
+
 ## License
 
 The application's source code is licensed under [MIT](./LICENSE) © Zoey Nyxx (Kapil Sharma).
