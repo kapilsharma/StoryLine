@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/kapilsharma/StoryLine/compare/0.8.0...0.9.0) (2026-08-11)
+
+
+### Features
+
+* **#33:** Character note ([30e054c](https://github.com/kapilsharma/StoryLine/commit/30e054cff61be35f441a21d911dab748378d41ed))
+* **#33:** Character note ([1e86975](https://github.com/kapilsharma/StoryLine/commit/1e86975ac0ddea9d2710b80280f3b7471b35d213))
+
 ## [0.8.0](https://github.com/kapilsharma/StoryLine/compare/0.7.0...0.8.0) (2026-08-11)
 
 
