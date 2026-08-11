@@ -5,6 +5,7 @@ import { boardMembers } from './board/grid-utils'
 import { useStore } from '../store'
 import { BoardPicker } from './BoardPicker'
 import { CharacterForm } from './CharacterForm'
+import { CharacterNotes } from './CharacterNotes'
 
 /**
  * Where a character turns up. Derived live from the board's `members` and each
@@ -100,7 +101,9 @@ export function CharacterEditor(): JSX.Element {
   return (
     <div className="board-scoped-tab">
       <BoardPicker />
-      <div className="editor-layout">
+      {/* Three columns since issue #33: list, properties, and the character's
+          own note. The list is deliberately the narrowest — it is names only. */}
+      <div className="editor-layout character-layout">
         <aside className="entity-list">
           <div className="entity-list-head">
             <h2>Characters</h2>
@@ -172,6 +175,16 @@ export function CharacterEditor(): JSX.Element {
               onDelete={selected ? onDelete : undefined}
               onOpenInEditor={selected ? () => openEditor('character', selected.id) : undefined}
             />
+          )}
+        </section>
+
+        <section className="character-notes">
+          {selected ? (
+            <CharacterNotes key={selected.id} characterId={selected.id} />
+          ) : (
+            <p className="muted">
+              {creating ? 'Create the character to write its note.' : 'No character selected.'}
+            </p>
           )}
         </section>
       </div>

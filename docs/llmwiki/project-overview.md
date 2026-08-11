@@ -20,6 +20,7 @@ boards/<boardId>/
 
 - **Boards are fully independent** (each owns its characters/timeline/notes) since v0.2.0.
 - **Notes carry a stable `uid`** in frontmatter; cards reference `noteUid` (rename-safe, v0.3.0). `related:` links stay filename-based. Note bodies are lazy-loaded.
+- **A character's markdown body is its note** (Characters tab, issue #33). An empty body — or one holding nothing but empty `## Notes` / `## Research` headings, the skeleton files were seeded with before #33 — means "no note yet"; see `src/shared/entityBody.ts`. New characters are created with no body, and a skeleton-only body is dropped the next time the file is written. Timeline units keep the seed template.
 - **Migrations** live in `src/main/data/migrate.ts` (`migrateIfNeeded` runs on open and backs up to `.zn-story-line-backup-vN/` first). See [versioning-and-schema.md](./versioning-and-schema.md).
 - Dates (`birthday`/`died`) are opaque partial-ISO strings (`YYYY[-MM[-DD]]`), never JS `Date` — see `src/shared/dates.ts`.
 

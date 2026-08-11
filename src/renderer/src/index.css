@@ -321,6 +321,63 @@ h2 {
   max-width: 560px;
   overflow: auto;
 }
+
+/* ── Characters tab: list / properties / notes (Issue 33) ── */
+.editor-layout.character-layout {
+  grid-template-columns: 15% 33% 1fr;
+}
+/* The properties column is a third of the window, not the whole rest of it. */
+.character-layout .entity-form {
+  max-width: none;
+  padding: 1.25rem 1.5rem;
+}
+.character-notes {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+  overflow: auto;
+}
+.character-notes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.character-notes-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.character-notes-body {
+  flex: 1;
+  overflow: auto;
+  line-height: 1.6;
+}
+.character-notes-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.character-notes-textarea {
+  flex: 1;
+  min-height: 320px;
+  resize: none;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.character-notes-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
 .form-row {
   display: flex;
   flex-direction: column;
