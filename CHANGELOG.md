@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.0](https://github.com/kapilsharma/StoryLine/compare/0.6.0...0.7.0) (2026-08-11)
+
+
+### Features
+
+* **#30:** Family tree timeline ([c6e7810](https://github.com/kapilsharma/StoryLine/commit/c6e7810eb834940608aa65b57f516da8329f61a3))
+* **#30:** Family tree timeline ([c4cb0d8](https://github.com/kapilsharma/StoryLine/commit/c4cb0d89fe3cf2a89c099d5d8f453621a47ffa61))
+* **#30:** Merge pull request [#34](https://github.com/kapilsharma/StoryLine/issues/34) from kapilsharma/Iss30-family-tree-calendar ([c6e7810](https://github.com/kapilsharma/StoryLine/commit/c6e7810eb834940608aa65b57f516da8329f61a3))
+
 ## [0.6.0](https://github.com/kapilsharma/StoryLine/compare/0.5.2...0.6.0) (2026-08-11)
 
 
