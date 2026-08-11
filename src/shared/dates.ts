@@ -65,6 +65,19 @@ export function isPartialDate(value: string): boolean {
 }
 
 /**
+ * Numeric birth year for the timeline family tree (Issue 30), or null when the
+ * character can't be pinned to a year. Only well-formed partial dates count —
+ * a full date, `YYYY-MM` or a bare `YYYY`; month/day are ignored (people snap to
+ * the year line). Free-text / fictional-calendar birthdays yield null, so those
+ * characters float freely instead of landing on a wrong year.
+ */
+export function birthYear(birthday?: string): number | null {
+  if (!birthday || !isPartialDate(birthday)) return null
+  const year = Number(birthday.trim().slice(0, 4))
+  return Number.isFinite(year) ? year : null
+}
+
+/**
  * Human-readable form for a node label: "1984-06-12" → "12 Jun 1984",
  * "1984-06" → "Jun 1984", "1984" → "1984". String work only — no Date involved.
  */

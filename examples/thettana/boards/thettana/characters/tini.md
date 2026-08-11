@@ -1,12 +1,11 @@
 ---
-id: aeri
+id: tini
 type: character
-name: Aeri
-colour: '#00ff00'
-species: Dragon
+name: Tini
+colour: '#4A90D9'
 family: Seer
 gender: female
-birthday: 8325-05
+birthday: '8313'
 father: ootana
 mother: reni
 ---

@@ -1378,3 +1378,16 @@ textarea {
 .boot-error p {
   color: var(--muted);
 }
+
+/* Radio option rows (e.g. New family tree mode picker, Issue 30) */
+.radio-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.15rem 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.radio-row input {
+  margin-top: 0.2rem;
+}

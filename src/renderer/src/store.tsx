@@ -10,7 +10,7 @@ import {
 } from 'react'
 import type { AppConfig, AppSettings } from '@shared/config'
 import type { BoardData, EntityBodyKind, NewCardInput, ProjectSnapshot } from '@shared/ipc'
-import type { Board, Card, Character, Note, TimelineUnit, View } from '@shared/types'
+import type { Board, Card, Character, Note, TimelineUnit, View, ViewMode } from '@shared/types'
 import { buildGraph, type FamilyGraph } from '@shared/graph'
 import { api } from './api'
 import { editorStyleVars } from './lib/markdown'
@@ -97,7 +97,7 @@ interface StoreValue {
   deleteCard: (boardId: string, cardId: string) => Promise<void>
 
   saveView: (view: View) => Promise<void>
-  createView: (name: string, rootCharacterId?: string | null) => Promise<void>
+  createView: (name: string, rootCharacterId?: string | null, mode?: ViewMode) => Promise<void>
   duplicateView: (id: string, name: string) => Promise<void>
   renameView: (id: string, name: string) => Promise<void>
   deleteView: (id: string) => Promise<void>
@@ -363,8 +363,10 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       updateCard: (boardId, card) => mutate((root) => api.updateCard(root, boardId, card)),
       deleteCard: (boardId, cardId) => mutate((root) => api.deleteCard(root, boardId, cardId)),
       saveView: (v) => mutateBoard((root, b) => api.saveView(root, b, v)),
-      createView: (name, rootCharacterId) =>
-        mutateBoard((root, b) => api.createView(root, b, name, rootCharacterId ?? null)),
+      createView: (name, rootCharacterId, mode) =>
+        mutateBoard((root, b) =>
+          api.createView(root, b, name, rootCharacterId ?? null, mode ?? 'freeflow')
+        ),
       duplicateView: (id, name) => mutateBoard((root, b) => api.duplicateView(root, b, id, name)),
       renameView: (id, name) => mutateBoard((root, b) => api.renameView(root, b, id, name)),
       deleteView: (id) => mutateBoard((root, b) => api.deleteView(root, b, id)),

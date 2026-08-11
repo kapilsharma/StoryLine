@@ -49,8 +49,8 @@ const api: AppApi = {
   reorderBoards: (root, orderedIds) => ipcRenderer.invoke('board:reorder', root, orderedIds),
 
   saveView: (root, boardId, view) => ipcRenderer.invoke('view:save', root, boardId, view),
-  createView: (root, boardId, name, rootCharacterId) =>
-    ipcRenderer.invoke('view:create', root, boardId, name, rootCharacterId ?? null),
+  createView: (root, boardId, name, rootCharacterId, mode) =>
+    ipcRenderer.invoke('view:create', root, boardId, name, rootCharacterId ?? null, mode ?? 'freeflow'),
   duplicateView: (root, boardId, id, name) =>
     ipcRenderer.invoke('view:duplicate', root, boardId, id, name),
   renameView: (root, boardId, id, name) => ipcRenderer.invoke('view:rename', root, boardId, id, name),

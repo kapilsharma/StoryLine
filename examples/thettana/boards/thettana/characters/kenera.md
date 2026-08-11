@@ -7,6 +7,7 @@ species: Dragon
 group: Family
 family: Seer
 gender: male
+birthday: 8325-05
 father: ootana
 mother: reni
 ---
