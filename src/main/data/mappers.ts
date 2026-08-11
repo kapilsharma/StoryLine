@@ -286,6 +286,11 @@ export function normalizeView(raw: Partial<View>, id: string): View {
     ...base,
     schemaVersion: typeof raw.schemaVersion === 'number' ? raw.schemaVersion : SCHEMA_VERSION,
     id,
+    // Pre-Issue-30 views (no mode) are free-flow; only an explicit 'timeline' opts in.
+    mode: raw.mode === 'timeline' ? 'timeline' : 'freeflow',
+    // Kept only when set to a positive number; the layout falls back to the default otherwise.
+    yearsPerRow:
+      typeof raw.yearsPerRow === 'number' && raw.yearsPerRow > 0 ? raw.yearsPerRow : undefined,
     // Absent must stay null — the filters then decide, which is how a view
     // written before membership existed behaves. `[]` means a deliberately
     // empty tree, so the two cannot be collapsed.

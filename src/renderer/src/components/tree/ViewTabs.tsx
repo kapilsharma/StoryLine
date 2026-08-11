@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { usePrompt } from '../PromptModal'
 import { useStore } from '../../store'
+import { NewTreeModal } from './NewTreeModal'
 
 /**
  * The view tab strip — one tab per family tree on this board.
@@ -21,10 +22,11 @@ interface Menu {
 }
 
 export function ViewTabs(): JSX.Element {
-  const { views, activeViewId, setActiveView, createView, duplicateView, renameView, deleteView, readOnly } =
+  const { views, activeViewId, setActiveView, duplicateView, renameView, deleteView, readOnly } =
     useStore()
   const ask = usePrompt()
   const [menu, setMenu] = useState<Menu | null>(null)
+  const [showNew, setShowNew] = useState(false)
 
   useEffect(() => {
     if (!menu) return
@@ -32,15 +34,6 @@ export function ViewTabs(): JSX.Element {
     window.addEventListener('click', close)
     return () => window.removeEventListener('click', close)
   }, [menu])
-
-  const onNew = async (): Promise<void> => {
-    const name = await ask({
-      title: 'New family tree',
-      placeholder: 'Ashvale side',
-      confirmLabel: 'Create'
-    })
-    if (name) await createView(name)
-  }
 
   const onRename = async (id: string, current: string): Promise<void> => {
     const name = await ask({ title: 'Rename tree', defaultValue: current, confirmLabel: 'Rename' })
@@ -83,11 +76,13 @@ export function ViewTabs(): JSX.Element {
           </button>
         ))}
         {!readOnly && (
-          <button className="tab" title="New tree" onClick={() => void onNew()}>
+          <button className="tab" title="New tree" onClick={() => setShowNew(true)}>
             +
           </button>
         )}
       </div>
+
+      {showNew && <NewTreeModal onClose={() => setShowNew(false)} />}
 
       {menu && (
         <div className="context-menu" style={{ left: menu.x, top: menu.y }}>

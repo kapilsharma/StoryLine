@@ -468,3 +468,46 @@
   border-radius: 3px;
   flex: 0 0 auto;
 }
+
+/* ── Timeline family tree: year gridlines + rulers (Issue 30) ── */
+.family-view .year-gridlines {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.family-view .year-gridline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--border);
+}
+.family-view .year-ruler {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 52px;
+  pointer-events: none;
+  z-index: 6;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+}
+.family-view .year-ruler.left {
+  left: 0;
+  border-right: 1px solid var(--border);
+}
+.family-view .year-ruler.right {
+  right: 0;
+  border-left: 1px solid var(--border);
+  text-align: right;
+}
+.family-view .year-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: 0 6px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}

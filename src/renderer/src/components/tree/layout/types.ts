@@ -74,11 +74,27 @@ export interface Bounds {
   maxY: number
 }
 
+/**
+ * The calendar-year axis of a timeline tree (Issue 30). Earliest year sits at
+ * the top (`yForYear(minYear) === 0`); later years descend. Absent on a
+ * free-flow tree, or a timeline tree where nobody has a numeric birth year.
+ */
+export interface TimelineAxis {
+  minYear: number
+  maxYear: number
+  /** World px per calendar year. */
+  pxPerYear: number
+  /** World Y (node centre) for a given year. */
+  yForYear: (year: number) => number
+}
+
 export interface TreeLayout {
   nodes: LayoutNode[]
   unions: LayoutUnion[]
   edges: LayoutEdge[]
   bounds: Bounds
+  /** Present only for a timeline tree with at least one dated member. */
+  timeline?: TimelineAxis
   /** Nodes per generation, each sorted by x — the index culling uses. */
   byGeneration: Map<number, LayoutNode[]>
   /**

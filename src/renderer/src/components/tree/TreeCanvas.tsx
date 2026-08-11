@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { View } from '@shared/types'
-import { lifespan } from '@shared/dates'
+import { birthYear, lifespan } from '@shared/dates'
 import { colourFor, displayName } from '@shared/families'
 import type { FamilyGraph } from '@shared/graph'
 import { useStore } from '../../store'
@@ -77,6 +77,8 @@ interface NodeDrag {
   originX: number
   originY: number
   moved: boolean
+  /** Timeline mode + dated character: Y is pinned to the birth year, X-only drag. */
+  lockY: boolean
 }
 
 export function TreeCanvas({ graph, view, families, opts }: Props): JSX.Element {
@@ -233,7 +235,8 @@ export function TreeCanvas({ graph, view, families, opts }: Props): JSX.Element 
           startY: e.clientY,
           originX: node.x,
           originY: node.y,
-          moved: false
+          moved: false,
+          lockY: view.mode === 'timeline' && birthYear(node.character.birthday) != null
         })
         e.currentTarget.setPointerCapture(e.pointerId)
         return
@@ -273,8 +276,13 @@ export function TreeCanvas({ graph, view, families, opts }: Props): JSX.Element 
       const dy = e.clientY - drag.startY
       if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return
       if (!drag.moved) setDrag({ ...drag, moved: true })
-      // Client pixels → world units.
-      setPreview({ id: drag.id, x: drag.originX + dx / camera.k, y: drag.originY + dy / camera.k })
+      // Client pixels → world units. A dated node in timeline mode keeps its
+      // year row: only X moves.
+      setPreview({
+        id: drag.id,
+        x: drag.originX + dx / camera.k,
+        y: drag.lockY ? drag.originY : drag.originY + dy / camera.k
+      })
       return
     }
 
@@ -450,6 +458,27 @@ export function TreeCanvas({ graph, view, families, opts }: Props): JSX.Element 
     return visibleNodes(layout, rect, opts)
   }, [layout, camera, size, opts])
 
+  // ── Timeline axis: year gridlines + rulers, in screen space (Issue 30) ──
+  const TICK_STEPS = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000]
+  const timelineTicks = useMemo(() => {
+    const axis = layout.timeline
+    if (!axis || !size.height) return null
+    const pxPerYearScreen = axis.pxPerYear * camera.k
+    if (pxPerYearScreen <= 0) return null
+    // Densest step whose label spacing clears ~44px, so labels never collide.
+    const step = TICK_STEPS.find((s) => s * pxPerYearScreen >= 44) ?? TICK_STEPS[TICK_STEPS.length - 1]
+    // Screen Y → year, to find the visible span.
+    const yearAt = (sy: number): number =>
+      axis.minYear + (sy - camera.y) / camera.k / axis.pxPerYear
+    const first = Math.ceil(yearAt(0) / step) * step
+    const last = yearAt(size.height)
+    const ticks: Array<{ year: number; y: number }> = []
+    for (let year = first; year <= last; year += step) {
+      ticks.push({ year, y: camera.y + axis.yForYear(year) * camera.k })
+    }
+    return ticks
+  }, [layout.timeline, camera, size])
+
   /**
    * Remove one corner. Works on an untouched automatic route too: its corners
    * are materialised first, so "delete this bend" means the same thing whether
@@ -521,6 +550,14 @@ export function TreeCanvas({ graph, view, families, opts }: Props): JSX.Element 
         fit()
       }}
     >
+      {timelineTicks && (
+        <div className="year-gridlines" aria-hidden>
+          {timelineTicks.map((t) => (
+            <div key={t.year} className="year-gridline" style={{ top: t.y }} />
+          ))}
+        </div>
+      )}
+
       <div
         className="world"
         style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.k})` }}
@@ -655,6 +692,25 @@ export function TreeCanvas({ graph, view, families, opts }: Props): JSX.Element 
           </button>
         ))}
       </div>
+
+      {timelineTicks && (
+        <>
+          <div className="year-ruler left" aria-hidden>
+            {timelineTicks.map((t) => (
+              <span key={t.year} className="year-label" style={{ top: t.y }}>
+                {t.year}
+              </span>
+            ))}
+          </div>
+          <div className="year-ruler right" aria-hidden>
+            {timelineTicks.map((t) => (
+              <span key={t.year} className="year-label" style={{ top: t.y }}>
+                {t.year}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* A person and a connector can be selected at once, so the bars stack in a
           column rather than each anchoring itself to the bottom centre — where

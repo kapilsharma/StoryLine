@@ -2,9 +2,9 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { familiesIn, familyOf, UNKNOWN_FAMILY_COLOUR } from '@shared/families'
 import { useStore } from '../../store'
 import { BoardPicker } from '../BoardPicker'
-import { usePrompt } from '../PromptModal'
 import { AddToTree } from './AddToTree'
-import { DEFAULT_LAYOUT_OPTIONS, type LayoutOptions } from './layout'
+import { NewTreeModal } from './NewTreeModal'
+import { DEFAULT_LAYOUT_OPTIONS, DEFAULT_YEARS_PER_ROW, type LayoutOptions } from './layout'
 import { TreeCanvas } from './TreeCanvas'
 import { ViewSettings } from './ViewSettings'
 import { ViewTabs } from './ViewTabs'
@@ -32,11 +32,10 @@ function Shell({ children }: { children: ReactNode }): JSX.Element {
  * the CSS scope and the flex container the canvas needs to size itself against.
  */
 export function FamilyView(): JSX.Element {
-  const { graph, views, activeView, activeBoard, snapshot, saveView, createView, config, readOnly } =
-    useStore()
-  const ask = usePrompt()
+  const { graph, views, activeView, activeBoard, snapshot, saveView, config, readOnly } = useStore()
   const [showSettings, setShowSettings] = useState(false)
   const [showProblems, setShowProblems] = useState(false)
+  const [showNew, setShowNew] = useState(false)
 
   const opts: LayoutOptions = useMemo(
     () => ({
@@ -62,16 +61,6 @@ export function FamilyView(): JSX.Element {
     return familiesIn(graph.characters).filter((f) => present.has(f))
   }, [graph])
 
-  const onFirstTree = async (): Promise<void> => {
-    const name = await ask({
-      title: 'New family tree',
-      defaultValue: 'Everyone',
-      placeholder: 'Everyone',
-      confirmLabel: 'Create'
-    })
-    if (name) await createView(name)
-  }
-
   if (!graph || !activeBoard) {
     return (
       <Shell>
@@ -94,11 +83,12 @@ export function FamilyView(): JSX.Element {
             on, and how many generations up and down to follow.
           </p>
           {!readOnly && (
-            <button className="btn primary" onClick={() => void onFirstTree()}>
+            <button className="btn primary" onClick={() => setShowNew(true)}>
               Create the first tree
             </button>
           )}
         </div>
+        {showNew && <NewTreeModal defaultName="Everyone" onClose={() => setShowNew(false)} />}
       </Shell>
     )
   }
@@ -131,6 +121,38 @@ export function FamilyView(): JSX.Element {
         </label>
 
         <AddToTree graph={graph} view={activeView} opts={opts} />
+
+        {!readOnly && activeView.mode === 'freeflow' && (
+          <button
+            onClick={() => {
+              if (
+                confirm(
+                  'Convert this tree to a timeline (vertical axis becomes birth year)? This cannot be undone.'
+                )
+              )
+                void saveView({ ...activeView, mode: 'timeline' })
+            }}
+            title="Switch to a birth-year axis. One-way — a timeline tree cannot go back to free-flowing."
+          >
+            Convert to timeline
+          </button>
+        )}
+
+        {!readOnly && activeView.mode === 'timeline' && (
+          <label className="check" title="Vertical density — how many years fit in one row height">
+            Years per row
+            <select
+              value={activeView.yearsPerRow ?? DEFAULT_YEARS_PER_ROW}
+              onChange={(e) => void saveView({ ...activeView, yearsPerRow: Number(e.target.value) })}
+            >
+              {[5, 10, 20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {activeView.arranged && (
           <button

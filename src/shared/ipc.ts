@@ -7,7 +7,7 @@
  * renderer can replace its state in one step. The filesystem watcher remains a
  * backstop for *external* edits.
  */
-import type { Board, Card, Character, Note, Problem, Project, TimelineUnit, View } from './types'
+import type { Board, Card, Character, Note, Problem, Project, TimelineUnit, View, ViewMode } from './types'
 import type { AppConfig, AppSettings } from './config'
 import type { ProjectChange } from './changes'
 
@@ -144,7 +144,8 @@ export interface AppApi {
     root: string,
     boardId: string,
     name: string,
-    rootCharacterId?: string | null
+    rootCharacterId?: string | null,
+    mode?: ViewMode
   ): Promise<ProjectSnapshot>
   /** Copies the source view's filters; the copy gets a fresh camera. */
   duplicateView(root: string, boardId: string, id: string, name: string): Promise<ProjectSnapshot>

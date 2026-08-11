@@ -1,6 +1,9 @@
 import type { View } from '@shared/types'
+import { birthYear } from '@shared/dates'
 import type { FamilyGraph } from '@shared/graph'
 import { assignCoordinates } from './coordinates'
+import { timelineAxis } from './timeline'
+import type { TimelineAxis } from './types'
 import { buildUnionsAndEdges } from './edges'
 import { assignGenerations, detectCycles } from './generations'
 import { orderGenerations } from './ordering'
@@ -25,6 +28,7 @@ export { elbowPath, buildUnionsAndEdges } from './edges'
 export { routeThrough, virtualBends, elbowPolyline, type Point } from './routing'
 export { assignLanes, laneY } from './lanes'
 export { arrangedMembers, freeze, suggestPosition } from './placement'
+export { timelineAxis, rowPx, DEFAULT_YEARS_PER_ROW } from './timeline'
 
 /**
  * The whole pipeline: a graph and a view in, coordinates out.
@@ -96,6 +100,24 @@ export function layoutTree(
     hasOverrides = true
   }
 
+  /**
+   * Timeline mode (Issue 30): the vertical axis is calendar years. A dated node's
+   * Y is *derived* from its birth year (its stored override.x still positions it
+   * horizontally); undated nodes keep whatever x/y the layout or an override gave
+   * them and stay free to move. Applied before edges so connectors follow.
+   */
+  let timeline: TimelineAxis | undefined
+  if (view.mode === 'timeline') {
+    const axis = timelineAxis(sub.characters, opts, view.yearsPerRow)
+    if (axis) {
+      timeline = axis
+      for (const c of sub.characters) {
+        const yr = birthYear(c.birthday)
+        if (yr != null && x.has(c.id)) y.set(c.id, axis.yForYear(yr))
+      }
+    }
+  }
+
   const { unions, edges } = buildUnionsAndEdges({
     graph: sub,
     x,
@@ -140,7 +162,9 @@ export function layoutTree(
     edges,
     bounds,
     byGeneration,
-    hasOverrides,
+    // Timeline rows share no common y, so force culling's slow scan path too.
+    hasOverrides: hasOverrides || Boolean(timeline),
+    timeline,
     warnings: [...cycleWarnings, ...genWarnings]
   }
 }

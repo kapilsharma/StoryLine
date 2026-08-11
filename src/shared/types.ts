@@ -197,10 +197,28 @@ export interface Board {
  * hand-made arrangement. Deleting one deletes a camera and a filter, never a
  * character.
  */
+/**
+ * A tree's layout mode (Issue 30):
+ *  - `freeflow` — generation-based auto-layout (the original behaviour).
+ *  - `timeline` — the vertical axis is calendar years; a character with a birth
+ *    year is pinned to its year (draggable only on X), undated ones float freely.
+ * Set at creation; a free-flow tree can be converted to timeline **one way** —
+ * never back.
+ */
+export type ViewMode = 'freeflow' | 'timeline'
+
 export interface View {
   schemaVersion: number
   id: string
   name: string
+  /** Layout mode; defaults to `freeflow` for views written before Issue 30. */
+  mode: ViewMode
+  /**
+   * Timeline mode only: how many calendar years occupy one row-height of
+   * vertical space. Higher = more compact (a 30-year gap needn't be a huge drop).
+   * Defaults to 20 when unset (Issue 30).
+   */
+  yearsPerRow?: number
 
   /**
    * The characters this tree draws — its membership, opt-in like a board's.
@@ -289,6 +307,7 @@ export function defaultView(id: string, name: string): View {
     schemaVersion: SCHEMA_VERSION,
     id,
     name,
+    mode: 'freeflow',
     // Explicit and empty. `view:create` seeds it from the filters so a new tab
     // opens with something on it, but as a *stamped* list — so a character added
     // later does not appear on this tree without being put there.

@@ -454,10 +454,21 @@ export function registerIpc(window: BrowserWindow): void {
 
   ipcMain.handle(
     'view:create',
-    async (_e, root: string, boardId: string, name: string, rootCharacterId: string | null) => {
+    async (
+      _e,
+      root: string,
+      boardId: string,
+      name: string,
+      rootCharacterId: string | null,
+      mode?: 'freeflow' | 'timeline'
+    ) => {
       const { value: board } = await readBoard(root, boardId)
       const id = uniqueSlug(name || 'view', board.views)
-      const view: View = { ...defaultView(id, name), root: rootCharacterId ?? null }
+      const view: View = {
+        ...defaultView(id, name),
+        root: rootCharacterId ?? null,
+        mode: mode === 'timeline' ? 'timeline' : 'freeflow'
+      }
       // Seed membership from the filters, so a new tab opens with something on it
       // — but as a *stamped* list, so a character added later doesn't appear on
       // this tree uninvited. `defaultView` can't do this: it has no graph.
