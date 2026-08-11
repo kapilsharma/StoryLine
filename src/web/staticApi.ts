@@ -16,6 +16,10 @@ import type { Note } from '@shared/types'
  *  - **Board view state** (`saveBoard`) — zoom, collapsed groups, hidden
  *    rows/columns, presets, row order. Card *placement* goes through
  *    `createCard`/`updateCard`/`deleteCard`, which stay refused.
+ *  - **Family-tree view state** (`saveView`) — camera, arrangement, connector
+ *    routes, and the view's own filters. Same reasoning: a published tree is
+ *    something you pan, fit and re-centre to read it. Creating, renaming,
+ *    duplicating or deleting a tree changes the project, so those stay refused.
  */
 
 /** Root path reported by a static snapshot. Nothing resolves it as a real path. */
@@ -57,7 +61,10 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
   let boards: BoardData[] = bundle.boards.map((bd) => ({
     ...bd,
     board: { ...bd.board },
-    notes: bd.notes.map((n) => ({ ...n, body: '' }))
+    notes: bd.notes.map((n) => ({ ...n, body: '' })),
+    // Bundles written before v0.6.0 carry no trees; default rather than crash.
+    views: bd.views ?? [],
+    problems: bd.problems ?? []
   }))
   let settings: AppSettings = bundle.settings
 
@@ -90,10 +97,13 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     // Recents are never exported, so there is nothing to remove — succeed quietly.
     removeRecent: async () => config(),
     saveProjectMeta: () => denied<ProjectSnapshot>(),
+    saveFamilyColours: () => denied<ProjectSnapshot>(),
 
     // ── Refused: anything backed by a file ──
     saveCharacter: () => denied<ProjectSnapshot>(),
     deleteCharacter: () => denied<ProjectSnapshot>(),
+    renameCharacter: () => denied<ProjectSnapshot>(),
+    setChildren: () => denied<ProjectSnapshot>(),
     saveTimelineUnit: () => denied<ProjectSnapshot>(),
     deleteTimelineUnit: () => denied<ProjectSnapshot>(),
     reorderTimeline: () => denied<ProjectSnapshot>(),
@@ -105,6 +115,11 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     renameBoard: () => denied<ProjectSnapshot>(),
     deleteBoard: () => denied<ProjectSnapshot>(),
     reorderBoards: () => denied<ProjectSnapshot>(),
+    createView: () => denied<ProjectSnapshot>(),
+    duplicateView: () => denied<ProjectSnapshot>(),
+    renameView: () => denied<ProjectSnapshot>(),
+    deleteView: () => denied<ProjectSnapshot>(),
+    reorderViews: () => denied<ProjectSnapshot>(),
     createCard: () => denied<ProjectSnapshot>(),
     updateCard: () => denied<ProjectSnapshot>(),
     deleteCard: () => denied<ProjectSnapshot>(),
@@ -114,9 +129,18 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     getEntityBody: async (_root, boardId, kind: EntityBodyKind, id) =>
       bundle.entityBodies[entityBodyKey(boardId, kind, id)] ?? '',
 
-    // ── Allowed: board view state (in-session only) ──
+    // ── Allowed: board / tree view state (in-session only) ──
     saveBoard: async (_root, board) => {
       boards = boards.map((bd) => (bd.board.id === board.id ? { ...bd, board } : bd))
+      return snapshot()
+    },
+
+    saveView: async (_root, boardId, view) => {
+      boards = boards.map((bd) =>
+        bd.board.id === boardId
+          ? { ...bd, views: bd.views.map((v) => (v.id === view.id ? view : v)) }
+          : bd
+      )
       return snapshot()
     },
 

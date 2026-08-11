@@ -1,10 +1,14 @@
 {
   "schemaVersion": 3,
   "name": "Thettana — Example",
-  "timelineLabel": "Short Stories",
+  "timelineLabel": "Short Story",
   "boards": [
     "thettana"
   ],
   "created": "2026-08-04",
-  "lastOpened": "2026-08-10"
+  "lastOpened": "2026-08-11",
+  "families": {
+    "Drask": "#3B6FD4",
+    "Seer": "#C2413B"
+  }
 }

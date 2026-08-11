@@ -10,6 +10,7 @@ import {
   markerKey,
   noteForCard,
   orderedColumnIds,
+  removeBoardMember,
   reorderRowBlocks,
   reorderRowMember
 } from './grid-utils'
@@ -32,6 +33,14 @@ interface ContextMenu {
   y: number
 }
 
+/** Right-click on a row header. Hiding and removing are different things. */
+interface RowMenu {
+  charId: string
+  name: string
+  x: number
+  y: number
+}
+
 interface Preview {
   cardId: string
   colStart: string
@@ -48,6 +57,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
 
   const [openNoteId, setOpenNoteId] = useState<string | null>(null)
   const [menu, setMenu] = useState<ContextMenu | null>(null)
+  const [rowMenu, setRowMenu] = useState<RowMenu | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
   const { isExpanded, toggle: toggleExpand, registerCards } = useBoardUi()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -98,6 +108,13 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     return () => window.removeEventListener('click', close)
   }, [menu])
 
+  useEffect(() => {
+    if (!rowMenu) return
+    const close = (): void => setRowMenu(null)
+    window.addEventListener('click', close)
+    return () => window.removeEventListener('click', close)
+  }, [rowMenu])
+
   const openNote = useMemo(() => notes.find((n) => n.id === openNoteId) ?? null, [notes, openNoteId])
 
   const headerRows = cols.hasGroups ? 2 : 1
@@ -140,6 +157,14 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   }
   const hideRow = (id: string): void => {
     void saveBoard({ ...board, hiddenRows: [...board.hiddenRows, id] })
+  }
+  /**
+   * Take a character off this board without deleting them. Their file — and any
+   * family-tree relations — survive; only their row, cards and place in the order
+   * go. On a pre-v0.6.0 board this is also the action that stamps `members`.
+   */
+  const removeRow = (id: string): void => {
+    void saveBoard(removeBoardMember(board, characters, id))
   }
   const hideCol = (id: string): void => {
     void saveBoard({ ...board, hiddenCols: [...board.hiddenCols, id] })
@@ -362,9 +387,9 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault()
-                    hideRow(char.id)
+                    setRowMenu({ charId: char.id, name: char.name, x: e.clientX, y: e.clientY })
                   }}
-                  title="Drag to reorder · right-click to hide"
+                  title="Drag to reorder · right-click for row options"
                 >
                   <span className="swatch" style={{ background: char.colour }} />
                   <span className="row-name">{char.name}</span>
@@ -486,6 +511,30 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
             }}
           >
             Delete card
+          </button>
+        </div>
+      )}
+
+      {rowMenu && (
+        <div className="context-menu" style={{ left: rowMenu.x, top: rowMenu.y }}>
+          <button onClick={() => hideRow(rowMenu.charId)}>Hide row</button>
+          <button
+            className="danger"
+            onClick={() => {
+              // Not a delete, so no scary confirmation — but the cards do go, and
+              // that is worth saying out loud before it happens.
+              const hasCards = board.cards.some((c) => c.rowId === rowMenu.charId)
+              if (
+                !hasCards ||
+                confirm(
+                  `Take ${rowMenu.name} off this board? They stay in the project and on the family tree, but their cards on this board are removed.`
+                )
+              ) {
+                removeRow(rowMenu.charId)
+              }
+            }}
+          >
+            Remove from this board
           </button>
         </div>
       )}

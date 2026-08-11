@@ -10,6 +10,18 @@ A small project from the **Zoey Nyxx** universe — the *Thettana* board (4 char
 
 > Tip: if you plan to edit it, copy the folder somewhere outside the repo first — otherwise your changes will show up as modifications to the repository.
 
+## Trying the Family tab
+
+There is no example project for the **Family** tab, because a meaningful one is
+somebody's actual family. Add a few characters to any project, fill in `father`,
+`mother` and `spouse` on the Characters tab, then open **Family** and create a tree.
+
+If you want a ready-made one to poke at, the test fixture at
+[`tests/fixtures/ashvale-family/`](../tests/fixtures/ashvale-family) is an ordinary
+project folder — 21 invented people across three generations and three families, with
+four saved trees. Copy it somewhere outside the repo first: the test suite reads it,
+so edits in place will show up as failures.
+
 ## Content license
 
 **The story content in these example projects is not covered by the repository's MIT license.**

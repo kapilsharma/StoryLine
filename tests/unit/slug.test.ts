@@ -18,12 +18,12 @@ describe('slugify', () => {
 
 describe('uniqueSlug', () => {
   it('returns the base slug when free', () => {
-    expect(uniqueSlug('Wolf', ['kapil'])).toBe('wolf')
+    expect(uniqueSlug('Wolf', ['rowan'])).toBe('wolf')
   })
   it('appends an incrementing suffix on collision', () => {
-    expect(uniqueSlug('Kapil', ['kapil', 'kapil-2'])).toBe('kapil-3')
+    expect(uniqueSlug('Rowan', ['rowan', 'rowan-2'])).toBe('rowan-3')
   })
   it('matches case-insensitively', () => {
-    expect(uniqueSlug('Kapil', ['KAPIL'])).toBe('kapil-2')
+    expect(uniqueSlug('Rowan', ['ROWAN'])).toBe('rowan-2')
   })
 })

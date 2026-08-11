@@ -1,6 +1,7 @@
 import { basename } from 'path'
 import { SCHEMA_VERSION, type Board, type Project } from '@shared/types'
 import type { BoardData, ProjectSnapshot } from '@shared/ipc'
+import { buildGraph } from '@shared/graph'
 import {
   ensureBoardDirs,
   isProject,
@@ -8,6 +9,7 @@ import {
   listCharacters,
   listNoteMetas,
   listTimeline,
+  listViews,
   readBoard,
   readProject,
   writeBoard,
@@ -20,7 +22,11 @@ function today(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-/** A fresh, empty board. */
+/**
+ * A fresh, empty board. `members` is `[]` rather than `null`: a board created
+ * in-app is curated from the start, so a character entered for the family tree
+ * never lands on its grid uninvited. Only pre-v0.6.0 boards carry `null`.
+ */
 export function defaultBoard(id = 'main', name = 'Main Board'): Board {
   return {
     id,
@@ -29,12 +35,14 @@ export function defaultBoard(id = 'main', name = 'Main Board'): Board {
     hiddenRows: [],
     hiddenCols: [],
     presets: [],
+    members: [],
     rowOrder: [],
     rowGroupOrder: [],
     colOrder: [],
     collapsedRowGroups: [],
     collapsedColGroups: [],
-    zoom: 1
+    zoom: 1,
+    views: []
   }
 }
 
@@ -56,7 +64,8 @@ export async function createProject(dir: string): Promise<ProjectSnapshot> {
     timelineLabel: 'Chapter',
     boards: ['main'],
     created: today(),
-    lastOpened: today()
+    lastOpened: today(),
+    families: {}
   }
   await writeProject(dir, project)
 
@@ -71,7 +80,12 @@ async function loadBoardData(root: string, boardId: string): Promise<BoardData> 
     listTimeline(root, boardId),
     listNoteMetas(root, boardId)
   ])
-  return { board, characters, timeline, notes }
+  const views = await listViews(root, boardId, board.views)
+  // Family-graph problems (dangling parents, cycles, one-sided spouses) are
+  // computed here rather than in the renderer so the same list is available to a
+  // static export, which never runs the loader.
+  const { problems } = buildGraph(characters)
+  return { board, characters, timeline, notes, views, problems }
 }
 
 /**

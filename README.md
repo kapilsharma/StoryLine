@@ -17,6 +17,8 @@ I made this tool for myself, but also publishing as open-source, in case helpful
 ## Features
 
 - **Character × timeline boards** — place cards in a grid of characters (rows) and timeline units (columns); a card can span multiple columns.
+- **Family tree** — draw a board's characters as a family tree on an infinite canvas, coloured by family. Save several trees over the same cast (his side, her side, the joined tree), arrange any of them by hand, and bend the connectors where they read badly.
+- **Cast and plot are separate** — a character you add for context (a grandparent on the family tree, say) does not become a row on your board. Each board and each tree has its own list of who is on it, and the Characters tab filters by where each one appears.
 - **Multiple independent boards** — each board owns its own characters, timeline and notes. Reorder boards by dragging their tabs.
 - **Drag-and-drop everywhere** — reorder boards, timeline units and character rows; group rows/columns and collapse groups.
 - **Dedicated Markdown editor** with a live, configurable preview — per-theme colours for headings, emphasis, code, highlights and more (separate light/dark palettes). This editor is meant to write short notes, don't confuse it with writing tool replacement.
@@ -72,6 +74,7 @@ I made this tool for myself, but also publishing as open-source, in case helpful
       characters/<id>.md             # one Markdown file per character
       timeline/<id>.md               # one Markdown file per timeline unit
       notes/<id>.md                  # note bodies (Markdown + frontmatter)
+      views/<id>.json                # one saved family tree per file
   ```
 
 - Frontmatter is round-tripped with `gray-matter`; the on-disk schema is versioned and migrates automatically (with a backup) when you open an older project.
@@ -83,7 +86,7 @@ npm install      # install dependencies
 npm run dev      # launch the app in development
 ```
 
-Want to see it with real data? Open the sample project in [`examples/thettana`](./examples/thettana) (**Open project** → pick that folder). See [`examples/`](./examples) for details.
+Want to see it with real data? Open the sample project in [`examples/thettana`](./examples/thettana) (**Open project** → pick that folder). See [`examples/`](./examples) for details, including how to try the Family tab.
 
 ## Scripts
 

@@ -30,16 +30,16 @@ afterEach(async () => {
 describe('character repository (per board)', () => {
   it('round-trips fields and custom data', async () => {
     await writeCharacter(root, BID, {
-      id: 'kapil',
+      id: 'rowan',
       type: 'character',
-      name: 'Kapil',
+      name: 'Rowan',
       colour: '#E24B4A',
       age: 34,
       group: 'Humans',
       custom: { homeland: 'North' }
     })
-    const { value } = await readCharacter(root, BID, 'kapil')
-    expect(value.name).toBe('Kapil')
+    const { value } = await readCharacter(root, BID, 'rowan')
+    expect(value.name).toBe('Rowan')
     expect(value.age).toBe(34)
     expect(value.group).toBe('Humans')
     expect(value.custom?.homeland).toBe('North')
@@ -65,12 +65,12 @@ describe('character repository (per board)', () => {
   })
 
   it('edits the body via writeEntityBody while preserving frontmatter', async () => {
-    await writeCharacter(root, BID, { id: 'k', type: 'character', name: 'Kapil', colour: '#E24B4A', age: 34 })
+    await writeCharacter(root, BID, { id: 'k', type: 'character', name: 'Rowan', colour: '#E24B4A', age: 34 })
     await writeEntityBody(root, BID, 'character', 'k', '\n## Notes\n\nEdited in the dedicated editor.\n')
     expect(await readEntityBody(root, BID, 'character', 'k')).toContain('Edited in the dedicated editor.')
     // Frontmatter (form fields) untouched.
     const { value } = await readCharacter(root, BID, 'k')
-    expect(value.name).toBe('Kapil')
+    expect(value.name).toBe('Rowan')
     expect(value.age).toBe(34)
   })
 })

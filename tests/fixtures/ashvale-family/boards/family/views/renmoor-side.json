@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 3,
+  "id": "renmoor-side",
+  "name": "Renmoor side",
+  "members": [
+    "dev-renmoor",
+    "garrick-renmoor",
+    "hollis-renmoor",
+    "juno-ashvale",
+    "lorna-renmoor",
+    "mira-renmoor",
+    "nadia-renmoor",
+    "pike-ashvale",
+    "rowan-ashvale",
+    "sabine-renmoor",
+    "wren-ashvale"
+  ],
+  "root": "hollis-renmoor",
+  "parentDepth": null,
+  "childDepth": null,
+  "includeSpouseFamilies": false,
+  "hidden": [],
+  "arranged": false,
+  "showGhosts": true,
+  "collapsed": [],
+  "zoom": 1,
+  "panX": 0,
+  "panY": 0,
+  "overrides": {},
+  "edgeRoutes": {}
+}

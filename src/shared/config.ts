@@ -28,6 +28,20 @@ export interface AppSettings {
   previewPosition: PreviewPosition
   /** Colours/sizes for the markdown preview. */
   editorStyles: EditorStyles
+
+  // ── Family tree geometry (v0.6.0) ──
+  /** Node box width in world units at zoom 1. */
+  nodeWidth: number
+  /** Node box height in world units at zoom 1. */
+  nodeHeight: number
+  /** Vertical gap between generations. */
+  generationGap: number
+  /** Horizontal gap between sibling subtrees. */
+  siblingGap: number
+  /** Gap between the two partners of a couple. */
+  partnerGap: number
+  /** Base font size on a family-tree node label. */
+  nodeFontSize: number
 }
 
 /** Clamp range for the card font size, shared by UI and rendering. */
@@ -177,5 +191,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
   cardFontSize: 13,
   previewPosition: 'left',
-  editorStyles: DEFAULT_EDITOR_STYLES
+  editorStyles: DEFAULT_EDITOR_STYLES,
+  nodeWidth: 180,
+  nodeHeight: 64,
+  generationGap: 90,
+  siblingGap: 28,
+  partnerGap: 36,
+  nodeFontSize: 13
 }

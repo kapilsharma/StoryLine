@@ -33,6 +33,11 @@ export interface ExportBundle {
   /**
    * The exported boards. Unlike a live `ProjectSnapshot`, notes here carry their
    * full markdown body — a static export has no lazy loader to fetch them from.
+   *
+   * Each board also carries its family trees (`views`) and family-graph
+   * `problems`. Both were added in v0.6.0 without bumping
+   * {@link EXPORT_FORMAT_VERSION}: the addition is purely additive, and
+   * `createStaticApi` defaults them, so an older bundle still loads.
    */
   boards: BoardData[]
   /** Character/timeline markdown bodies, keyed by {@link entityBodyKey}. */

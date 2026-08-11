@@ -3,21 +3,11 @@ import type { ReactElement } from 'react'
 import { vi } from 'vitest'
 import type { AppApi } from '@shared/ipc'
 import type { AppConfig } from '@shared/config'
-import { DEFAULT_EDITOR_STYLES } from '@shared/config'
+import { DEFAULT_SETTINGS } from '@shared/config'
 import { StoreProvider } from '@renderer/store'
 import { PromptProvider } from '@renderer/components/PromptModal'
 
-export const baseConfig: AppConfig = {
-  recents: [],
-  settings: {
-    editor: 'vscode',
-    obsidianVault: null,
-    theme: 'light',
-    cardFontSize: 13,
-    previewPosition: 'left',
-    editorStyles: DEFAULT_EDITOR_STYLES
-  }
-}
+export const baseConfig: AppConfig = { recents: [], settings: { ...DEFAULT_SETTINGS } }
 
 /** Build a fully-stubbed AppApi; override individual methods per test. */
 export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
@@ -30,8 +20,11 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     reloadProject: vi.fn(),
     removeRecent: vi.fn().mockResolvedValue(baseConfig),
     saveProjectMeta: vi.fn(),
+    saveFamilyColours: vi.fn(),
     saveCharacter: vi.fn(),
     deleteCharacter: vi.fn(),
+    renameCharacter: vi.fn(),
+    setChildren: vi.fn(),
     saveTimelineUnit: vi.fn(),
     deleteTimelineUnit: vi.fn(),
     reorderTimeline: vi.fn(),
@@ -46,6 +39,12 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     renameBoard: vi.fn(),
     deleteBoard: vi.fn(),
     reorderBoards: vi.fn(),
+    saveView: vi.fn(),
+    createView: vi.fn(),
+    duplicateView: vi.fn(),
+    renameView: vi.fn(),
+    deleteView: vi.fn(),
+    reorderViews: vi.fn(),
     createCard: vi.fn(),
     updateCard: vi.fn(),
     deleteCard: vi.fn(),

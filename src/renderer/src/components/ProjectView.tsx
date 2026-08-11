@@ -7,13 +7,15 @@ import { Settings } from './Settings'
 import { BoardsView } from './board/BoardsView'
 import { BoardUiProvider } from './board/BoardUiContext'
 import { BoardToolbar } from './board/BoardToolbar'
+import { FamilyView } from './tree/FamilyView'
 import { pluralize } from '../lib/text'
 
-type Tab = 'boards' | 'characters' | 'timeline' | 'notes' | 'settings'
+type Tab = 'boards' | 'characters' | 'family' | 'timeline' | 'notes' | 'settings'
 
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'boards', label: 'Boards' },
   { key: 'characters', label: 'Characters' },
+  { key: 'family', label: 'Family' },
   { key: 'timeline', label: 'Timeline' },
   { key: 'notes', label: 'Notes' },
   { key: 'settings', label: 'Settings' }
@@ -64,6 +66,7 @@ export function ProjectView(): JSX.Element {
         <main className="project-body">
           {tab === 'boards' && <BoardsView />}
           {tab === 'characters' && <CharacterEditor />}
+          {tab === 'family' && <FamilyView />}
           {tab === 'timeline' && <TimelineEditor />}
           {tab === 'notes' && <NotesBrowser />}
           {tab === 'settings' && <Settings />}

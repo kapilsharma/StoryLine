@@ -202,6 +202,14 @@
   "hiddenRows": [],
   "hiddenCols": [],
   "presets": [],
+  "members": [
+    "aeri",
+    "kenera",
+    "korvaan",
+    "olwen-drask",
+    "senkor",
+    "vaeli"
+  ],
   "rowOrder": [],
   "rowGroupOrder": [
     "aeri",
@@ -212,5 +220,8 @@
   "colOrder": [],
   "collapsedRowGroups": [],
   "collapsedColGroups": [],
-  "zoom": 1
+  "zoom": 1,
+  "views": [
+    "everyone"
+  ]
 }

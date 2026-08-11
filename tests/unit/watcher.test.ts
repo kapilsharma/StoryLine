@@ -37,6 +37,16 @@ describe('watcher classify (per-board layout since v0.2.0)', () => {
     })
   })
 
+  it('classifies a family-tree view file (v0.6.0)', () => {
+    expect(classify(p('boards', 'main', 'views', 'ashvale-side.json'), 'change')).toEqual({
+      kind: 'view',
+      id: 'ashvale-side',
+      type: 'change'
+    })
+    // Views are JSON, not markdown — the wrong extension is not a view.
+    expect(classify(p('boards', 'main', 'views', 'notes.md'), 'change')).toBeNull()
+  })
+
   it('ignores backup folders and unrelated paths', () => {
     expect(classify(p('.zn-story-line-backup-v2', 'boards', 'main', 'notes', 'x.md'), 'add')).toBeNull()
     expect(classify(p('boards', '.hidden', 'board.json'), 'add')).toBeNull()
