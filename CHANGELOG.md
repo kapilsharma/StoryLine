@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.0](https://github.com/kapilsharma/StoryLine/compare/0.9.0...0.10.0) (2026-08-11)
+
+
+### Features
+
+* **#41:** Character note on board ([1be7c05](https://github.com/kapilsharma/StoryLine/commit/1be7c059ddd312d416b2208ed0b5ab91994a1d30))
+* **#41:** Character note on board ([7c6bf58](https://github.com/kapilsharma/StoryLine/commit/7c6bf5831ca3893720a8ef425bd000bbbbddf654))
+* **#41:** Merge pull request [#42](https://github.com/kapilsharma/StoryLine/issues/42) from kapilsharma/issue-41-character-note-on-board ([1be7c05](https://github.com/kapilsharma/StoryLine/commit/1be7c059ddd312d416b2208ed0b5ab91994a1d30))
+
 ## [0.9.0](https://github.com/kapilsharma/StoryLine/compare/0.8.0...0.9.0) (2026-08-11)
 
 
