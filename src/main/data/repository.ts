@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs'
 import { basename, join } from 'path'
 import type { Board, Character, Note, Project, TimelineUnit, View } from '@shared/types'
-import { normalizeEntityBody } from '@shared/entityBody'
+import { isEmptyEntityBody, normalizeEntityBody } from '@shared/entityBody'
 import { parseFrontmatter, serializeFrontmatter } from './frontmatter'
 import { exists, readText, writeTextGuarded } from './fsutil'
 import {
@@ -131,8 +131,12 @@ export function listCharacterIds(root: string, boardId: string): Promise<string[
 export async function readCharacter(root: string, boardId: string, id: string): Promise<Loaded<Character>> {
   const path = charPath(root, boardId, id)
   const { text, mtimeMs } = await readText(path)
-  const { data } = parseFrontmatter(text)
-  return { value: frontmatterToCharacter(data, id), mtimeMs, path }
+  const { data, body } = parseFrontmatter(text)
+  const value = frontmatterToCharacter(data, id)
+  // The file is read whole anyway, so "does this character have a note?" is free
+  // here — and the board (issue #41) needs it for every row at once.
+  if (!isEmptyEntityBody(body)) value.hasNote = true
+  return { value, mtimeMs, path }
 }
 
 export async function listCharacters(root: string, boardId: string): Promise<Character[]> {

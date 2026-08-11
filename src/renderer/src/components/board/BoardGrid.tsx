@@ -4,6 +4,7 @@ import type { BoardData } from '@shared/ipc'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
 import { NotePopup } from '../NotePopup'
+import { CharacterNotePopup } from '../CharacterNotePopup'
 import { useBoardUi } from './BoardUiContext'
 import {
   buildBoardLayout,
@@ -56,6 +57,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const notes = data.notes
 
   const [openNoteId, setOpenNoteId] = useState<string | null>(null)
+  const [openCharId, setOpenCharId] = useState<string | null>(null)
   const [menu, setMenu] = useState<ContextMenu | null>(null)
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -116,6 +118,10 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   }, [rowMenu])
 
   const openNote = useMemo(() => notes.find((n) => n.id === openNoteId) ?? null, [notes, openNoteId])
+  const openChar = useMemo(
+    () => characters.find((c) => c.id === openCharId) ?? null,
+    [characters, openCharId]
+  )
 
   const headerRows = cols.hasGroups ? 2 : 1
   const colHeadRow = headerRows // 1-based grid row for the column-header line
@@ -392,7 +398,23 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                   title="Drag to reorder · right-click for row options"
                 >
                   <span className="swatch" style={{ background: char.colour }} />
-                  <span className="row-name">{char.name}</span>
+                  {/* Only a character who has a note is clickable (issue #41),
+                      and the 📝 marks which those are — so the board never
+                      offers a click that opens nothing. */}
+                  {char.hasNote ? (
+                    <button
+                      className="row-name row-note"
+                      title={`Read ${char.name}’s note`}
+                      onClick={() => setOpenCharId(char.id)}
+                    >
+                      <span className="row-note-name">{char.name}</span>
+                      <span className="row-note-icon" aria-hidden="true">
+                        📝
+                      </span>
+                    </button>
+                  ) : (
+                    <span className="row-name">{char.name}</span>
+                  )}
                 </div>
 
                 <div
@@ -541,6 +563,10 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
 
       {openNote && (
         <NotePopup note={openNote} onClose={() => setOpenNoteId(null)} onOpenNote={setOpenNoteId} />
+      )}
+
+      {openChar && (
+        <CharacterNotePopup character={openChar} onClose={() => setOpenCharId(null)} />
       )}
     </div>
   )

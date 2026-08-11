@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Character } from '@shared/types'
 import { viewMembers } from '@shared/selection'
 import { boardMembers } from './board/grid-utils'
@@ -26,13 +26,24 @@ const FILTERS: Array<{ key: Where; label: string; hint: string }> = [
 ]
 
 export function CharacterEditor(): JSX.Element {
-  const { activeBoard, graph, views, deleteCharacter, openEditor } = useStore()
+  const { activeBoard, graph, views, deleteCharacter, openEditor, revealTarget } = useStore()
   const characters = activeBoard?.characters ?? []
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [where, setWhere] = useState<Where>('all')
   const [query, setQuery] = useState('')
+
+  // Arriving from the board's character-note popup (issue #41). The filter and
+  // search box are reset too, or the character asked for could be filtered out
+  // of the list it is meant to be selected in.
+  useEffect(() => {
+    if (revealTarget?.kind !== 'character') return
+    setCreating(false)
+    setSelectedId(revealTarget.id)
+    setWhere('all')
+    setQuery('')
+  }, [revealTarget])
 
   /** Ids on the board grid, and ids drawn by at least one tree. */
   const placement = useMemo(() => {

@@ -852,6 +852,38 @@ textarea {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A character with a note (issue #41): the name opens a read-only preview, and
+   the 📝 is what says so before the click. */
+.row-name.row-note {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.row-note-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row-note-icon {
+  font-size: 0.75em;
+  opacity: 0.65;
+  flex: none;
+}
+.row-name.row-note:hover .row-note-name {
+  text-decoration: underline;
+}
+.row-name.row-note:hover .row-note-icon {
+  opacity: 1;
+}
 .cell {
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
