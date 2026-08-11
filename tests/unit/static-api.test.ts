@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { SNAPSHOT_GLOBAL, entityBodyKey, EXPORT_FORMAT_VERSION, type ExportBundle } from '@shared/export'
 import { DEFAULT_SETTINGS } from '@shared/config'
-import { SCHEMA_VERSION, type Board } from '@shared/types'
+import { SCHEMA_VERSION, defaultView, type Board, type View } from '@shared/types'
 import {
   createStaticApi,
   MissingSnapshotError,
@@ -22,8 +22,11 @@ const board: Board = {
   colOrder: ['ch1'],
   collapsedRowGroups: [],
   collapsedColGroups: [],
-  zoom: 1
+  zoom: 1,
+  views: ['everyone']
 }
+
+const view: View = { ...defaultView('everyone', 'Everyone'), root: 'aeri' }
 
 const bundle: ExportBundle = {
   formatVersion: EXPORT_FORMAT_VERSION,
@@ -35,7 +38,8 @@ const bundle: ExportBundle = {
     timelineLabel: 'Chapter',
     boards: ['main'],
     created: '2026-08-01',
-    lastOpened: '2026-08-10'
+    lastOpened: '2026-08-10',
+    families: { Aeri: '#22c55e' }
   },
   boards: [
     {
@@ -49,7 +53,9 @@ const bundle: ExportBundle = {
           title: 'The discovery',
           body: 'Aeri finds the fault in the numbers.'
         }
-      ]
+      ],
+      views: [view],
+      problems: []
     }
   ],
   entityBodies: { [entityBodyKey('main', 'character', 'aeri')]: '## Notes\n\nQuiet, precise.' },
@@ -126,11 +132,38 @@ describe('static api — allowed in-session changes', () => {
     expect((await api.reloadProject(STATIC_ROOT)).boards[0].board.hiddenCols).toEqual(['ch1'])
   })
 
+  it('keeps family-tree view state — camera, arrangement, routes — via saveView', async () => {
+    const api = createStaticApi(bundle)
+    const snap = await api.saveView(STATIC_ROOT, 'main', {
+      ...view,
+      zoom: 0.5,
+      panX: 40,
+      arranged: true,
+      overrides: { aeri: { x: 10, y: 20 } }
+    })
+    expect(snap.boards[0].views[0].zoom).toBe(0.5)
+    expect(snap.boards[0].views[0].overrides).toEqual({ aeri: { x: 10, y: 20 } })
+    // And it persists for the rest of the session.
+    expect((await api.reloadProject(STATIC_ROOT)).boards[0].views[0].panX).toBe(40)
+  })
+
   it('does not mutate the bundle it was given', async () => {
     const api = createStaticApi(bundle)
     await api.saveBoard(STATIC_ROOT, { ...board, zoom: 0.25 })
+    await api.saveView(STATIC_ROOT, 'main', { ...view, zoom: 0.25 })
     expect(bundle.boards[0].board.zoom).toBe(1)
+    expect(bundle.boards[0].views[0].zoom).toBe(1)
     expect(bundle.boards[0].notes[0].body).toBe('Aeri finds the fault in the numbers.')
+  })
+})
+
+describe('static api — bundles from before v0.6.0', () => {
+  it('loads a board with no views or problems rather than crashing', async () => {
+    const { views: _views, problems: _problems, ...legacyBoard } = bundle.boards[0]
+    const legacy = { ...bundle, boards: [legacyBoard] } as ExportBundle
+    const snap = await createStaticApi(legacy).openProject(STATIC_ROOT)
+    expect(snap.boards[0].views).toEqual([])
+    expect(snap.boards[0].problems).toEqual([])
   })
 })
 
@@ -144,8 +177,11 @@ describe('static api — refused writes', () => {
     ['createProject', () => api.createProject()],
     ['pickProject', () => api.pickProject()],
     ['saveProjectMeta', () => api.saveProjectMeta(STATIC_ROOT, 'Nope', 'Chapter')],
+    ['saveFamilyColours', () => api.saveFamilyColours(STATIC_ROOT, { Aeri: '#000000' })],
     ['saveCharacter', () => api.saveCharacter(STATIC_ROOT, 'main', bundle.boards[0].characters[0])],
     ['deleteCharacter', () => api.deleteCharacter(STATIC_ROOT, 'main', 'aeri')],
+    ['renameCharacter', () => api.renameCharacter(STATIC_ROOT, 'main', 'aeri', 'Nope')],
+    ['setChildren', () => api.setChildren(STATIC_ROOT, 'main', 'aeri', [])],
     ['saveTimelineUnit', () => api.saveTimelineUnit(STATIC_ROOT, 'main', bundle.boards[0].timeline[0])],
     ['deleteTimelineUnit', () => api.deleteTimelineUnit(STATIC_ROOT, 'main', 'ch1')],
     ['reorderTimeline', () => api.reorderTimeline(STATIC_ROOT, 'main', ['ch1'])],
@@ -157,6 +193,11 @@ describe('static api — refused writes', () => {
     ['renameBoard', () => api.renameBoard(STATIC_ROOT, 'main', 'New')],
     ['deleteBoard', () => api.deleteBoard(STATIC_ROOT, 'main')],
     ['reorderBoards', () => api.reorderBoards(STATIC_ROOT, ['main'])],
+    ['createView', () => api.createView(STATIC_ROOT, 'main', 'New', null)],
+    ['duplicateView', () => api.duplicateView(STATIC_ROOT, 'main', 'everyone', 'Copy')],
+    ['renameView', () => api.renameView(STATIC_ROOT, 'main', 'everyone', 'New')],
+    ['deleteView', () => api.deleteView(STATIC_ROOT, 'main', 'everyone')],
+    ['reorderViews', () => api.reorderViews(STATIC_ROOT, 'main', ['everyone'])],
     ['createCard', () => api.createCard(STATIC_ROOT, { boardId: 'main', title: 'x', rowId: 'aeri', colStart: 'ch1', colEnd: 'ch1' })],
     ['updateCard', () => api.updateCard(STATIC_ROOT, 'main', board.cards[0])],
     ['deleteCard', () => api.deleteCard(STATIC_ROOT, 'main', 'card-1')]

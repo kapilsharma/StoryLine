@@ -17,9 +17,15 @@ const api: AppApi = {
   removeRecent: (root) => ipcRenderer.invoke('project:removeRecent', root),
   saveProjectMeta: (root, name, timelineLabel) =>
     ipcRenderer.invoke('project:saveMeta', root, name, timelineLabel),
+  saveFamilyColours: (root, families) => ipcRenderer.invoke('project:saveFamilies', root, families),
 
-  saveCharacter: (root, boardId, character) => ipcRenderer.invoke('character:save', root, boardId, character),
+  saveCharacter: (root, boardId, character, addToBoard) =>
+    ipcRenderer.invoke('character:save', root, boardId, character, addToBoard ?? false),
   deleteCharacter: (root, boardId, id) => ipcRenderer.invoke('character:delete', root, boardId, id),
+  renameCharacter: (root, boardId, oldId, newName) =>
+    ipcRenderer.invoke('character:rename', root, boardId, oldId, newName),
+  setChildren: (root, boardId, parentId, childIds) =>
+    ipcRenderer.invoke('character:setChildren', root, boardId, parentId, childIds),
 
   saveTimelineUnit: (root, boardId, unit) => ipcRenderer.invoke('timeline:save', root, boardId, unit),
   deleteTimelineUnit: (root, boardId, id) => ipcRenderer.invoke('timeline:delete', root, boardId, id),
@@ -41,6 +47,16 @@ const api: AppApi = {
   renameBoard: (root, id, name) => ipcRenderer.invoke('board:rename', root, id, name),
   deleteBoard: (root, id) => ipcRenderer.invoke('board:delete', root, id),
   reorderBoards: (root, orderedIds) => ipcRenderer.invoke('board:reorder', root, orderedIds),
+
+  saveView: (root, boardId, view) => ipcRenderer.invoke('view:save', root, boardId, view),
+  createView: (root, boardId, name, rootCharacterId) =>
+    ipcRenderer.invoke('view:create', root, boardId, name, rootCharacterId ?? null),
+  duplicateView: (root, boardId, id, name) =>
+    ipcRenderer.invoke('view:duplicate', root, boardId, id, name),
+  renameView: (root, boardId, id, name) => ipcRenderer.invoke('view:rename', root, boardId, id, name),
+  deleteView: (root, boardId, id) => ipcRenderer.invoke('view:delete', root, boardId, id),
+  reorderViews: (root, boardId, orderedIds) =>
+    ipcRenderer.invoke('view:reorder', root, boardId, orderedIds),
 
   createCard: (root, input) => ipcRenderer.invoke('card:create', root, input),
   updateCard: (root, boardId, card) => ipcRenderer.invoke('card:update', root, boardId, card),

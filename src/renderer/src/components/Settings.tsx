@@ -144,6 +144,38 @@ export function Settings(): JSX.Element {
       </section>
 
       <section className="settings-group">
+        <h2>Family tree</h2>
+        <p className="muted small">
+          Node size and spacing on the Family tab, in world units at 100% zoom. Wider nodes fit
+          longer names; larger gaps make a dense tree readable at the cost of more panning.
+        </p>
+        {(
+          [
+            ['nodeWidth', 'Node width', 100, 400],
+            ['nodeHeight', 'Node height', 40, 160],
+            ['generationGap', 'Generation gap', 40, 260],
+            ['siblingGap', 'Sibling gap', 8, 120],
+            ['partnerGap', 'Partner gap', 8, 120],
+            ['nodeFontSize', 'Node font size', 9, 24]
+          ] as const
+        ).map(([key, label, min, max]) => (
+          <div className="form-row" key={key}>
+            <label>
+              {label} ({settings[key]}
+              {key === 'nodeFontSize' ? 'px' : ''})
+            </label>
+            <input
+              type="range"
+              min={min}
+              max={max}
+              value={settings[key]}
+              onChange={(e) => updateSettings({ ...settings, [key]: Number(e.target.value) })}
+            />
+          </div>
+        ))}
+      </section>
+
+      <section className="settings-group">
         <h2>Editor settings</h2>
         <p className="muted small">
           Colours &amp; sizes for the markdown preview (editor and note popup). Each colour has a

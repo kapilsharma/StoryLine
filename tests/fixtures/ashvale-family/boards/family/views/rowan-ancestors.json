@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 3,
+  "id": "rowan-ancestors",
+  "name": "Rowan’s ancestors",
+  "members": [
+    "edmund-ashvale",
+    "garrick-renmoor",
+    "hester-ashvale",
+    "lorna-renmoor",
+    "mira-renmoor",
+    "rowan-ashvale"
+  ],
+  "root": "rowan-ashvale",
+  "parentDepth": null,
+  "childDepth": 0,
+  "includeSpouseFamilies": true,
+  "hidden": [],
+  "arranged": false,
+  "showGhosts": true,
+  "collapsed": [],
+  "zoom": 1,
+  "panX": 0,
+  "panY": 0,
+  "overrides": {},
+  "edgeRoutes": {}
+}

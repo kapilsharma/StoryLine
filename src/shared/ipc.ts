@@ -7,7 +7,7 @@
  * renderer can replace its state in one step. The filesystem watcher remains a
  * backstop for *external* edits.
  */
-import type { Board, Card, Character, Note, Project, TimelineUnit } from './types'
+import type { Board, Card, Character, Note, Problem, Project, TimelineUnit, View } from './types'
 import type { AppConfig, AppSettings } from './config'
 import type { ProjectChange } from './changes'
 
@@ -23,6 +23,17 @@ export interface BoardData {
   characters: Character[]
   timeline: TimelineUnit[]
   notes: Note[]
+  /**
+   * Saved family trees over this board's cast (v0.6.0). A board with no
+   * `views/` folder simply has none — the Family tab offers to create the first.
+   */
+  views: View[]
+  /**
+   * Dangling parent/spouse refs, cycles and asymmetric spouses found while
+   * building this board's family graph. Reported, never thrown — a cast is
+   * always partially entered.
+   */
+  problems: Problem[]
 }
 
 /** A bundle of everything needed to render an open project. */
@@ -54,10 +65,46 @@ export interface AppApi {
   removeRecent(root: string): Promise<AppConfig>
   /** Update project-level metadata (name, timeline label). */
   saveProjectMeta(root: string, name: string, timelineLabel: string): Promise<ProjectSnapshot>
+  /** Persist the family → colour map used by the family tree. */
+  saveFamilyColours(root: string, families: Record<string, string>): Promise<ProjectSnapshot>
 
   // ── Characters (per board) ──
-  saveCharacter(root: string, boardId: string, character: Character): Promise<ProjectSnapshot>
+  /**
+   * Saves the character and keeps spouse links symmetric on the other side.
+   *
+   * Creating a character does **not** put them on the board grid — membership is
+   * opt-in, so a relative entered for the family tree stays off the plot. Pass
+   * `addToBoard` for a character created *from* the board ("+ Row"), where being
+   * a row is the reason it exists. Ignored when updating an existing character.
+   */
+  saveCharacter(
+    root: string,
+    boardId: string,
+    character: Character,
+    addToBoard?: boolean
+  ): Promise<ProjectSnapshot>
+  /** Removes the file, its cards, and every inbound father/mother/spouse ref. */
   deleteCharacter(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+  /**
+   * Renames the character's *file* and retargets every relation pointing at the
+   * old id in one batch. Ids are otherwise frozen at creation.
+   */
+  renameCharacter(
+    root: string,
+    boardId: string,
+    oldId: string,
+    newName: string
+  ): Promise<ProjectSnapshot>
+  /**
+   * Applies a Children edit by rewriting the children's `father`/`mother` —
+   * children are derived, never stored on the parent.
+   */
+  setChildren(
+    root: string,
+    boardId: string,
+    parentId: string,
+    childIds: string[]
+  ): Promise<ProjectSnapshot>
 
   // ── Timeline units (per board) ──
   saveTimelineUnit(root: string, boardId: string, unit: TimelineUnit): Promise<ProjectSnapshot>
@@ -90,6 +137,20 @@ export interface AppApi {
   deleteBoard(root: string, id: string): Promise<ProjectSnapshot>
   /** Persist a new board display order; `orderedIds` becomes `project.boards`. */
   reorderBoards(root: string, orderedIds: string[]): Promise<ProjectSnapshot>
+
+  // ── Family-tree views (per board) ──
+  saveView(root: string, boardId: string, view: View): Promise<ProjectSnapshot>
+  createView(
+    root: string,
+    boardId: string,
+    name: string,
+    rootCharacterId?: string | null
+  ): Promise<ProjectSnapshot>
+  /** Copies the source view's filters; the copy gets a fresh camera. */
+  duplicateView(root: string, boardId: string, id: string, name: string): Promise<ProjectSnapshot>
+  renameView(root: string, boardId: string, id: string, name: string): Promise<ProjectSnapshot>
+  deleteView(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+  reorderViews(root: string, boardId: string, orderedIds: string[]): Promise<ProjectSnapshot>
 
   // ── Cards ──
   createCard(root: string, input: NewCardInput): Promise<ProjectSnapshot>

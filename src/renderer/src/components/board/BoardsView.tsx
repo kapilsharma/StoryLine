@@ -7,6 +7,7 @@ import { Modal } from '../Modal'
 import { CharacterForm } from '../CharacterForm'
 import { TimelineForm } from '../TimelineForm'
 import { BoardGrid } from './BoardGrid'
+import { addBoardMember, nonMembers } from './grid-utils'
 
 const MIME_BOARD = 'application/x-znstoryline-board'
 
@@ -81,6 +82,16 @@ export function BoardsView(): JSX.Element {
     const presets = board.presets.filter((p) => p.name !== name.trim())
     presets.push({ name: name.trim(), hiddenRows: [...board.hiddenRows], hiddenCols: [...board.hiddenCols] })
     saveBoard({ ...board, presets })
+  }
+
+  /**
+   * Characters in this board's folder that are not on its grid — someone entered
+   * for the family tree, or taken off the board earlier. Empty on a pre-v0.6.0
+   * board, where every character is already a row.
+   */
+  const offBoard = board ? nonMembers(board, characters) : []
+  const addCharacterToBoard = (id: string): void => {
+    if (board) void saveBoard(addBoardMember(board, characters, id))
   }
 
   const unhideRow = (id: string): void => {
@@ -190,6 +201,21 @@ export function BoardsView(): JSX.Element {
             <button className="btn small" onClick={onAddRow}>
               + Row
             </button>
+            {offBoard.length > 0 && (
+              <select
+                className="preset-select"
+                value=""
+                title="Put a character who is already in this project onto this board"
+                onChange={(e) => e.target.value && addCharacterToBoard(e.target.value)}
+              >
+                <option value="">Add character… ({offBoard.length})</option>
+                {offBoard.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
 
             {(hiddenRowNames.length > 0 || hiddenColNames.length > 0) && (
               <div className="hidden-chips">
@@ -214,8 +240,11 @@ export function BoardsView(): JSX.Element {
 
       {addModal === 'row' && (
         <Modal title="New character" onClose={() => setAddModal(null)}>
+          {/* Created *from* the board, so being a row is the reason it exists —
+              unlike the Characters tab, where a new character stays off the grid. */}
           <CharacterForm
             initial={null}
+            addToBoard
             onSaved={() => setAddModal(null)}
             onCancel={() => setAddModal(null)}
           />

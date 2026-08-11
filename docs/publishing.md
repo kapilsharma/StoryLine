@@ -63,7 +63,12 @@ dist-site/
 
 Included: the selected boards, their characters, timeline units, cards, and every
 note **with its full body** — plus the character/timeline markdown bodies the
-editor shows.
+editor shows, and each board's **family trees** with the family colour palette.
+
+Visitors can pan, zoom, fit and re-filter a published tree, and even re-arrange it
+— that is how you read one, and it resets on reload. What they cannot do is create,
+rename, duplicate or delete a tree, or change a character; those are refused with a
+"published read-only" notice.
 
 **Not** included: your recent-projects list. It holds absolute paths from your
 machine (`/Users/you/…`) and is deliberately never exported.

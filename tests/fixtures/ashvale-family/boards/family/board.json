@@ -1,0 +1,29 @@
+{
+  "id": "family",
+  "name": "Family",
+  "cards": [],
+  "hiddenRows": [],
+  "hiddenCols": [],
+  "presets": [],
+  "members": [
+    "juno-ashvale",
+    "pike-ashvale",
+    "tessa-ashvale"
+  ],
+  "rowOrder": [
+    "juno-ashvale",
+    "pike-ashvale",
+    "tessa-ashvale"
+  ],
+  "rowGroupOrder": [],
+  "colOrder": [],
+  "collapsedRowGroups": [],
+  "collapsedColGroups": [],
+  "zoom": 1,
+  "views": [
+    "everyone",
+    "ashvale-side",
+    "renmoor-side",
+    "rowan-ancestors"
+  ]
+}

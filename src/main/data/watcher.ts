@@ -13,6 +13,7 @@ import type { ChangeType, ProjectChange } from '@shared/changes'
  *   project.json
  *   boards/<id>/board.json
  *   boards/<id>/{characters,timeline,notes}/<file>.md
+ *   boards/<id>/views/<file>.json          ← family trees (v0.6.0)
  */
 export function classify(rel: string, type: ChangeType): ProjectChange | null {
   if (rel === 'project.json') return { kind: 'project', id: 'project', type }
@@ -28,13 +29,14 @@ export function classify(rel: string, type: ChangeType): ProjectChange | null {
     return { kind: 'board', id: boardId, type }
   }
 
-  // boards/<id>/<sub>/<file>.md
+  // boards/<id>/<sub>/<file>.{md,json}
   if (parts.length === 4) {
     const sub = parts[2]
     const file = parts[3]
     if (sub === 'characters' && file.endsWith('.md')) return { kind: 'character', id: basename(file, '.md'), type }
     if (sub === 'timeline' && file.endsWith('.md')) return { kind: 'timeline', id: basename(file, '.md'), type }
     if (sub === 'notes' && file.endsWith('.md')) return { kind: 'note', id: basename(file, '.md'), type }
+    if (sub === 'views' && file.endsWith('.json')) return { kind: 'view', id: basename(file, '.json'), type }
   }
   return null
 }

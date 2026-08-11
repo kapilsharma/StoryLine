@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs'
 import { basename, join } from 'path'
-import type { Board, Character, Note, Project, TimelineUnit } from '@shared/types'
+import type { Board, Character, Note, Project, TimelineUnit, View } from '@shared/types'
 import { parseFrontmatter, serializeFrontmatter } from './frontmatter'
 import { exists, readText, writeTextGuarded } from './fsutil'
 import {
@@ -9,6 +9,7 @@ import {
   frontmatterToNote,
   frontmatterToTimelineUnit,
   noteToFrontmatter,
+  normalizeView,
   timelineUnitToFrontmatter
 } from './mappers'
 
@@ -41,9 +42,17 @@ const boardFile = (root: string, boardId: string): string => join(boardDir(root,
 const charsDir = (root: string, boardId: string): string => join(boardDir(root, boardId), 'characters')
 const timelineDir = (root: string, boardId: string): string => join(boardDir(root, boardId), 'timeline')
 const notesDir = (root: string, boardId: string): string => join(boardDir(root, boardId), 'notes')
+/**
+ * Family-tree views live *under the board*, because a tree is drawn over one
+ * board's cast — boards have been fully independent since v0.2.0 and a tree
+ * spanning two of them would have no shared characters to draw.
+ */
+const viewsDir = (root: string, boardId: string): string => join(boardDir(root, boardId), 'views')
 
 const charPath = (root: string, boardId: string, id: string): string =>
   join(charsDir(root, boardId), `${id}.md`)
+const viewPath = (root: string, boardId: string, id: string): string =>
+  join(viewsDir(root, boardId), `${id}.json`)
 const timelinePath = (root: string, boardId: string, id: string): string =>
   join(timelineDir(root, boardId), `${id}.md`)
 const notePath = (root: string, boardId: string, id: string): string =>
@@ -58,7 +67,10 @@ async function listStems(dir: string, ext: string): Promise<string[]> {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return []
     throw err
   }
-  return entries.filter((f) => f.endsWith(ext)).map((f) => basename(f, ext)).sort()
+  return entries
+    .filter((f) => f.endsWith(ext) && !f.startsWith('.'))
+    .map((f) => basename(f, ext))
+    .sort()
 }
 
 /** Create the folder structure for a board (idempotent). */
@@ -66,7 +78,8 @@ export async function ensureBoardDirs(root: string, boardId: string): Promise<vo
   await Promise.all([
     fs.mkdir(charsDir(root, boardId), { recursive: true }),
     fs.mkdir(timelineDir(root, boardId), { recursive: true }),
-    fs.mkdir(notesDir(root, boardId), { recursive: true })
+    fs.mkdir(notesDir(root, boardId), { recursive: true }),
+    fs.mkdir(viewsDir(root, boardId), { recursive: true })
   ])
 }
 
@@ -80,7 +93,8 @@ function normalizeProject(raw: Partial<Project>): Project {
     timelineLabel: raw.timelineLabel ?? 'Chapter',
     boards: raw.boards ?? [],
     created: raw.created ?? '',
-    lastOpened: raw.lastOpened ?? ''
+    lastOpened: raw.lastOpened ?? '',
+    families: raw.families && typeof raw.families === 'object' ? raw.families : {}
   }
 }
 
@@ -136,6 +150,20 @@ export async function writeCharacter(
 
 export function deleteCharacter(root: string, boardId: string, id: string): Promise<void> {
   return fs.rm(charPath(root, boardId, id), { force: true })
+}
+
+/**
+ * Move a character's file to a new id. Only the explicit "rename file" action
+ * does this — ids are otherwise frozen at creation, because every relation
+ * (`father`, `mother`, `spouse`, and the board's `rowOrder`/cards) points at one.
+ */
+export async function renameCharacterFile(
+  root: string,
+  boardId: string,
+  oldId: string,
+  newId: string
+): Promise<void> {
+  await fs.rename(charPath(root, boardId, oldId), charPath(root, boardId, newId))
 }
 
 // ── Timeline units (per board) ──────────────────────────────────────────────────
@@ -292,12 +320,19 @@ function normalizeBoard(raw: Partial<Board> & { id: string; name: string }): Boa
     hiddenRows: raw.hiddenRows ?? [],
     hiddenCols: raw.hiddenCols ?? [],
     presets: raw.presets ?? [],
+    // Absent (pre-v0.6.0) must stay null, not become []: null means "every
+    // character is a row", [] means "no character is". Collapsing them would
+    // empty every existing board on upgrade.
+    members: Array.isArray(raw.members)
+      ? raw.members.filter((m): m is string => typeof m === 'string')
+      : null,
     rowOrder: raw.rowOrder ?? [],
     rowGroupOrder: raw.rowGroupOrder ?? [],
     colOrder: raw.colOrder ?? [],
     collapsedRowGroups: raw.collapsedRowGroups ?? [],
     collapsedColGroups: raw.collapsedColGroups ?? [],
-    zoom: raw.zoom ?? 1
+    zoom: raw.zoom ?? 1,
+    views: raw.views ?? []
   }
 }
 
@@ -324,4 +359,46 @@ export async function writeBoard(
 
 export function deleteBoard(root: string, boardId: string): Promise<void> {
   return fs.rm(boardDir(root, boardId), { recursive: true, force: true })
+}
+
+// ── Family-tree views (per board) ────────────────────────────────────────────
+
+export function listViewIds(root: string, boardId: string): Promise<string[]> {
+  return listStems(viewsDir(root, boardId), '.json')
+}
+
+export async function readView(root: string, boardId: string, id: string): Promise<Loaded<View>> {
+  const path = viewPath(root, boardId, id)
+  const { text, mtimeMs } = await readText(path)
+  return { value: normalizeView(JSON.parse(text) as Partial<View>, id), mtimeMs, path }
+}
+
+/**
+ * Every view on a board, in `board.views` order. A view file not listed there
+ * (added externally) is appended rather than hidden, mirroring how `loadSnapshot`
+ * treats board folders missing from `project.boards`.
+ */
+export async function listViews(root: string, boardId: string, order: string[] = []): Promise<View[]> {
+  const onDisk = await listViewIds(root, boardId)
+  const ordered = order.filter((id) => onDisk.includes(id))
+  const extra = onDisk.filter((id) => !ordered.includes(id))
+  return Promise.all([...ordered, ...extra].map(async (id) => (await readView(root, boardId, id)).value))
+}
+
+export async function writeView(
+  root: string,
+  boardId: string,
+  view: View,
+  expectedMtimeMs?: number
+): Promise<number> {
+  await fs.mkdir(viewsDir(root, boardId), { recursive: true })
+  return writeTextGuarded(
+    viewPath(root, boardId, view.id),
+    JSON.stringify(view, null, 2) + '\n',
+    expectedMtimeMs
+  )
+}
+
+export function deleteView(root: string, boardId: string, id: string): Promise<void> {
+  return fs.rm(viewPath(root, boardId, id), { force: true })
 }

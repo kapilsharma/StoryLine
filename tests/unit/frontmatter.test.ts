@@ -18,11 +18,11 @@ describe('frontmatter round-trip', () => {
   })
 
   it('preserves the body verbatim when only frontmatter changes', () => {
-    const raw = '---\nid: kapil\nname: Kapil\n---\n\n## Notes\n\nHand-written.\n'
+    const raw = '---\nid: rowan\nname: Rowan\n---\n\n## Notes\n\nHand-written.\n'
     const { body } = parseFrontmatter(raw)
-    const out = serializeFrontmatter({ id: 'kapil', name: 'Kapil Sharma' }, body)
+    const out = serializeFrontmatter({ id: 'rowan', name: 'Rowan Ashvale' }, body)
     expect(out).toContain('Hand-written.')
-    expect(out).toContain('name: Kapil Sharma')
+    expect(out).toContain('name: Rowan Ashvale')
   })
 
   it('drops undefined keys instead of emitting null', () => {

@@ -18,11 +18,18 @@ export function orderedColumnIds(timeline: TimelineUnit[]): string[] {
 }
 
 /**
- * Rows visible on a board: characters in `rowOrder` first (in that order),
- * then any remaining characters by name, minus hidden rows.
+ * The board's cast, in display order — `rowOrder` first, then the rest by name.
+ *
+ * Membership is `board.members` when set. `null` means a board written before
+ * v0.6.0, where having a character file *was* being on the board, so it keeps
+ * that meaning: everyone. Hidden rows are still members — hiding is temporary,
+ * not-a-member is "this character isn't in this story".
  */
-export function visibleRows(board: Board, characters: Character[]): Character[] {
-  const byId = new Map(characters.map((c) => [c.id, c]))
+export function boardMembers(board: Board, characters: Character[]): Character[] {
+  const allowed = board.members
+  const pool = allowed ? characters.filter((c) => allowed.includes(c.id)) : characters
+
+  const byId = new Map(pool.map((c) => [c.id, c]))
   const seen = new Set<string>()
   const ordered: Character[] = []
   for (const id of board.rowOrder) {
@@ -32,8 +39,58 @@ export function visibleRows(board: Board, characters: Character[]): Character[] 
       seen.add(id)
     }
   }
-  const rest = characters.filter((c) => !seen.has(c.id)).sort((a, b) => a.name.localeCompare(b.name))
-  return [...ordered, ...rest].filter((c) => !board.hiddenRows.includes(c.id))
+  const rest = pool.filter((c) => !seen.has(c.id)).sort((a, b) => a.name.localeCompare(b.name))
+  return [...ordered, ...rest]
+}
+
+/**
+ * Characters in the board's folder that are *not* on its grid — the pool the
+ * "+ Character" picker offers. Empty for a legacy (`members: null`) board,
+ * because everyone is already a row there.
+ */
+export function nonMembers(board: Board, characters: Character[]): Character[] {
+  if (!board.members) return []
+  const on = new Set(board.members)
+  return characters.filter((c) => !on.has(c.id)).sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/** Rows drawn on a board: its cast, minus the ones hidden for now. */
+export function visibleRows(board: Board, characters: Character[]): Character[] {
+  return boardMembers(board, characters).filter((c) => !board.hiddenRows.includes(c.id))
+}
+
+/**
+ * The board with `members` turned into a concrete list, so the first curating
+ * action on a legacy board converts it rather than silently doing nothing.
+ * Returns the board unchanged when it already has a list.
+ */
+export function withMaterializedMembers(board: Board, characters: Character[]): Board {
+  if (board.members) return board
+  return { ...board, members: boardMembers(board, characters).map((c) => c.id) }
+}
+
+/** The board with `id` added to its cast (materializing a legacy board first). */
+export function addBoardMember(board: Board, characters: Character[], id: string): Board {
+  const next = withMaterializedMembers(board, characters)
+  if (next.members!.includes(id)) return next
+  return { ...next, members: [...next.members!, id] }
+}
+
+/**
+ * The board with `id` taken off its grid. The character file is untouched — this
+ * is "not in this story", not a delete — so its cards go, along with its place in
+ * the order and any stale hidden/row entries.
+ */
+export function removeBoardMember(board: Board, characters: Character[], id: string): Board {
+  const next = withMaterializedMembers(board, characters)
+  return {
+    ...next,
+    members: next.members!.filter((m) => m !== id),
+    cards: next.cards.filter((c) => c.rowId !== id),
+    rowOrder: next.rowOrder.filter((r) => r !== id),
+    rowGroupOrder: next.rowGroupOrder.filter((k) => k !== id),
+    hiddenRows: next.hiddenRows.filter((r) => r !== id)
+  }
 }
 
 /** Resolve a card's backing note by its stable uid (rename-safe). */

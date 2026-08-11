@@ -6,15 +6,18 @@ import { entityBodyKey, EXPORT_FORMAT_VERSION } from '@shared/export'
 import { DEFAULT_SETTINGS } from '@shared/config'
 import { createProject } from '@main/projectService'
 import { applyThemeToHtml, buildExportBundle, UnknownBoardError } from '@main/data/exportBundle'
+import { defaultView, type View } from '@shared/types'
 import {
   ensureBoardDirs,
+  readBoard,
   readProject,
   writeBoard,
   writeCharacter,
   writeEntityBody,
   writeNote,
   writeProject,
-  writeTimelineUnit
+  writeTimelineUnit,
+  writeView
 } from '@main/data/repository'
 
 let base: string
@@ -66,10 +69,18 @@ async function addBoard(id: string, name: string): Promise<void> {
     colOrder: [],
     collapsedRowGroups: [],
     collapsedColGroups: [],
-    zoom: 1
+    zoom: 1,
+    views: []
   })
   const { value: project, mtimeMs } = await readProject(root)
   await writeProject(root, { ...project, boards: [...project.boards, id] }, mtimeMs)
+}
+
+/** Give a board a family tree, listed in its view order. */
+async function addView(boardId: string, id: string, patch: Partial<View> = {}): Promise<void> {
+  await writeView(root, boardId, { ...defaultView(id, id), ...patch })
+  const { value: board, mtimeMs } = await readBoard(root, boardId)
+  await writeBoard(root, { ...board, views: [...board.views, id] }, mtimeMs)
 }
 
 describe('buildExportBundle', () => {
@@ -95,6 +106,44 @@ describe('buildExportBundle', () => {
     expect(bundle.entityBodies[entityBodyKey('main', 'timeline', 'ch1')]).toContain(
       'Opens on the observatory.'
     )
+  })
+
+  it('carries each board’s family trees, in the board’s own view order', async () => {
+    await seedMain()
+    await addView('main', 'ashvale-side', { root: 'aeri', parentDepth: 2 })
+    await addView('main', 'everyone')
+
+    const bundle = await buildExportBundle(root, options)
+    expect(bundle.boards[0].views.map((v) => v.id)).toEqual(['ashvale-side', 'everyone'])
+    expect(bundle.boards[0].views[0].root).toBe('aeri')
+    expect(bundle.boards[0].views[0].parentDepth).toBe(2)
+  })
+
+  it('carries the family palette and the graph’s problems', async () => {
+    await seedMain()
+    // A parent with no file behind it — the tree draws a ghost and reports it.
+    await writeCharacter(root, 'main', {
+      id: 'orphan',
+      type: 'character',
+      name: 'Orphan',
+      colour: '#888888',
+      father: 'missing-dad'
+    })
+    const { value: project, mtimeMs } = await readProject(root)
+    await writeProject(root, { ...project, families: { Aeri: '#22c55e' } }, mtimeMs)
+
+    const bundle = await buildExportBundle(root, options)
+    expect(bundle.project.families).toEqual({ Aeri: '#22c55e' })
+    expect(bundle.boards[0].problems.map((p) => p.kind)).toContain('dangling')
+  })
+
+  it('exports only the selected boards’ trees', async () => {
+    await addBoard('arcs', 'Character Arcs')
+    await addView('main', 'main-tree')
+    await addView('arcs', 'arcs-tree')
+
+    const bundle = await buildExportBundle(root, { ...options, boards: ['arcs'] })
+    expect(bundle.boards.map((bd) => bd.views.map((v) => v.id))).toEqual([['arcs-tree']])
   })
 
   it('exports every board when no selection is given', async () => {

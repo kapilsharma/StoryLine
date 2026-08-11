@@ -1,3 +1,6 @@
+
+/* Family tab (Issue 29) — scoped under .family-view; see tree.css. */
+@import './tree.css';
 :root {
   --bg: #ffffff;
   --panel: #f7f7f8;
@@ -257,6 +260,17 @@ h2 {
   margin: 0;
   font-size: 1rem;
 }
+/* Search + placement filters, stacked above the list (Issue 29): adding a
+   character no longer puts them on a board or a tree, so the list outgrows what
+   either one shows and needs narrowing. */
+.entity-list .search {
+  width: 100%;
+  max-width: none;
+  margin-bottom: 0.5rem;
+}
+.entity-list .tag-filter {
+  margin-bottom: 0.6rem;
+}
 .entity-list ul {
   list-style: none;
   padding: 0;
@@ -264,6 +278,11 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+/* The "ref" marker on a character that is on neither the board nor a tree. */
+.entity-row .small {
+  margin-left: auto;
+  opacity: 0.7;
 }
 .entity-row {
   display: flex;
@@ -286,6 +305,11 @@ h2 {
   color: #fff;
 }
 .swatch {
+  /* Explicit, because a swatch is not always a flex child: the character form's
+     family preview sits inline in a paragraph, where a bare span would ignore
+     width and height and render as nothing at all. */
+  display: inline-block;
+  vertical-align: middle;
   width: 14px;
   height: 14px;
   border-radius: 50%;

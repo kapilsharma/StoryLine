@@ -10,7 +10,8 @@ import {
 } from 'react'
 import type { AppConfig, AppSettings } from '@shared/config'
 import type { BoardData, EntityBodyKind, NewCardInput, ProjectSnapshot } from '@shared/ipc'
-import type { Board, Card, Character, Note, TimelineUnit } from '@shared/types'
+import type { Board, Card, Character, Note, TimelineUnit, View } from '@shared/types'
+import { buildGraph, type FamilyGraph } from '@shared/graph'
 import { api } from './api'
 import { editorStyleVars } from './lib/markdown'
 
@@ -42,17 +43,38 @@ interface StoreValue {
   activeBoard: BoardData | null
   setActiveBoard: (id: string) => void
 
+  /**
+   * The active board's cast as people-and-unions, for the Family tab. Derived
+   * from the snapshot and memoised — never rebuilt per frame. Null with no board.
+   */
+  graph: FamilyGraph | null
+  /** The active board's saved family trees, in tab order. */
+  views: View[]
+  activeViewId: string | null
+  activeView: View | null
+  setActiveView: (id: string) => void
+
   newProject: () => Promise<void>
   openPicker: () => Promise<void>
   openByPath: (root: string) => Promise<void>
   removeRecent: (root: string) => Promise<void>
   closeProject: () => void
   saveProjectMeta: (name: string, timelineLabel: string) => Promise<void>
+  saveFamilyColours: (families: Record<string, string>) => Promise<void>
   updateSettings: (settings: AppSettings) => Promise<void>
 
   // Per-board mutations operate on the active board.
-  saveCharacter: (character: Character) => Promise<void>
+  /**
+   * Create or update a character. A *new* character is not added to the board
+   * grid unless `addToBoard` is set — membership is opt-in, so someone entered
+   * for the family tree stays off the plot.
+   */
+  saveCharacter: (character: Character, addToBoard?: boolean) => Promise<void>
   deleteCharacter: (id: string) => Promise<void>
+  /** Renames the character's file and retargets every reference to its old id. */
+  renameCharacter: (id: string, newName: string) => Promise<void>
+  /** Rewrites the children's `father`/`mother` — children are never stored. */
+  setChildren: (parentId: string, childIds: string[]) => Promise<void>
   saveTimelineUnit: (unit: TimelineUnit) => Promise<void>
   deleteTimelineUnit: (id: string) => Promise<void>
   reorderTimeline: (orderedIds: string[]) => Promise<void>
@@ -73,6 +95,13 @@ interface StoreValue {
   createCard: (input: NewCardInput) => Promise<void>
   updateCard: (boardId: string, card: Card) => Promise<void>
   deleteCard: (boardId: string, cardId: string) => Promise<void>
+
+  saveView: (view: View) => Promise<void>
+  createView: (name: string, rootCharacterId?: string | null) => Promise<void>
+  duplicateView: (id: string, name: string) => Promise<void>
+  renameView: (id: string, name: string) => Promise<void>
+  deleteView: (id: string) => Promise<void>
+  reorderViews: (orderedIds: string[]) => Promise<void>
 
   // Dedicated fullscreen editor
   editorTarget: EditorTarget | null
@@ -98,6 +127,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
   const [config, setConfig] = useState<AppConfig | null>(null)
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null)
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null)
+  const [activeViewId, setActiveViewId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -120,6 +150,26 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       setActiveBoardId(snapshot.boards[0].board.id)
     }
   }, [snapshot, activeBoardId])
+
+  const views = useMemo(() => activeBoard?.views ?? [], [activeBoard])
+  const activeView = useMemo(() => views.find((v) => v.id === activeViewId) ?? null, [views, activeViewId])
+
+  // Keep the active view valid as views (and boards) come and go.
+  useEffect(() => {
+    if (!views.length) setActiveViewId(null)
+    else if (!views.some((v) => v.id === activeViewId)) setActiveViewId(views[0].id)
+  }, [views, activeViewId])
+
+  /**
+   * The family graph is derived, not stored — rebuilt only when the active
+   * board's characters change. Depending on the array identity rather than the
+   * whole snapshot keeps a note or card edit from re-laying-out the tree.
+   */
+  const characters = activeBoard?.characters
+  const graph = useMemo<FamilyGraph | null>(
+    () => (characters ? buildGraph(characters) : null),
+    [characters]
+  )
 
   useEffect(() => {
     api.getConfig().then(setConfig).catch((e) => setError(String(e)))
@@ -277,6 +327,11 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       activeBoardId,
       activeBoard,
       setActiveBoard: setActiveBoardId,
+      graph,
+      views,
+      activeViewId,
+      activeView,
+      setActiveView: setActiveViewId,
       newProject,
       openPicker,
       openByPath,
@@ -284,8 +339,12 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       closeProject,
       updateSettings,
       saveProjectMeta: (name, label) => mutate((root) => api.saveProjectMeta(root, name, label)),
-      saveCharacter: (c) => mutateBoard((root, b) => api.saveCharacter(root, b, c)),
+      saveFamilyColours: (families) => mutate((root) => api.saveFamilyColours(root, families)),
+      saveCharacter: (c, addToBoard) => mutateBoard((root, b) => api.saveCharacter(root, b, c, addToBoard)),
       deleteCharacter: (id) => mutateBoard((root, b) => api.deleteCharacter(root, b, id)),
+      renameCharacter: (id, newName) => mutateBoard((root, b) => api.renameCharacter(root, b, id, newName)),
+      setChildren: (parentId, childIds) =>
+        mutateBoard((root, b) => api.setChildren(root, b, parentId, childIds)),
       saveTimelineUnit: (u) => mutateBoard((root, b) => api.saveTimelineUnit(root, b, u)),
       deleteTimelineUnit: (id) => mutateBoard((root, b) => api.deleteTimelineUnit(root, b, id)),
       reorderTimeline: (ids) => mutateBoard((root, b) => api.reorderTimeline(root, b, ids)),
@@ -303,11 +362,18 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       createCard: (input) => mutate((root) => api.createCard(root, input)),
       updateCard: (boardId, card) => mutate((root) => api.updateCard(root, boardId, card)),
       deleteCard: (boardId, cardId) => mutate((root) => api.deleteCard(root, boardId, cardId)),
+      saveView: (v) => mutateBoard((root, b) => api.saveView(root, b, v)),
+      createView: (name, rootCharacterId) =>
+        mutateBoard((root, b) => api.createView(root, b, name, rootCharacterId ?? null)),
+      duplicateView: (id, name) => mutateBoard((root, b) => api.duplicateView(root, b, id, name)),
+      renameView: (id, name) => mutateBoard((root, b) => api.renameView(root, b, id, name)),
+      deleteView: (id) => mutateBoard((root, b) => api.deleteView(root, b, id)),
+      reorderViews: (ids) => mutateBoard((root, b) => api.reorderViews(root, b, ids)),
       editorTarget,
       openEditor,
       closeEditor
     }),
-    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, getEntityBody, editorTarget, openEditor, closeEditor]
+    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, getEntityBody, editorTarget, openEditor, closeEditor]
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

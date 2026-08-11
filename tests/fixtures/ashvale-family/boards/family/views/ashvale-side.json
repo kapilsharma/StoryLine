@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 3,
+  "id": "ashvale-side",
+  "name": "Ashvale side",
+  "members": [
+    "callum-ashvale",
+    "delia-ashvale",
+    "edmund-ashvale",
+    "hester-ashvale",
+    "ines-calder",
+    "juno-ashvale",
+    "mira-renmoor",
+    "ossian-ashvale",
+    "pike-ashvale",
+    "rowan-ashvale",
+    "tessa-ashvale",
+    "wren-ashvale"
+  ],
+  "root": "rowan-ashvale",
+  "parentDepth": null,
+  "childDepth": null,
+  "includeSpouseFamilies": false,
+  "hidden": [],
+  "arranged": false,
+  "showGhosts": true,
+  "collapsed": [],
+  "zoom": 1,
+  "panX": 0,
+  "panY": 0,
+  "overrides": {},
+  "edgeRoutes": {}
+}

@@ -140,12 +140,16 @@ async function migrateV1toV2(root: string, project: Record<string, unknown>): Pr
       hiddenRows: [],
       hiddenCols: [],
       presets: [],
+      // Deliberately null, not []: this board is about to receive every
+      // character from the old flat layout, and they must all stay rows.
+      members: null,
       rowOrder: [],
       rowGroupOrder: [],
       colOrder: [],
       collapsedRowGroups: [],
       collapsedColGroups: [],
-      zoom: 1
+      zoom: 1,
+      views: []
     }
     await fs.writeFile(join(bDir, 'board.json'), JSON.stringify(board, null, 2) + '\n')
   }
