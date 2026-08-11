@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/kapilsharma/StoryLine/compare/0.5.2...0.6.0) (2026-08-11)
+
+
+### Features
+
+* **#29:** Integrate family tree ([cb6f75d](https://github.com/kapilsharma/StoryLine/commit/cb6f75db6b74c50d87d3a79eeb4be3a1b1ef355c))
+* **#29:** Integrate family tree ([269ad2b](https://github.com/kapilsharma/StoryLine/commit/269ad2b5373bb566141fb2efade15f89b5da5b71))
+* **#29:** Merge pull request [#31](https://github.com/kapilsharma/StoryLine/issues/31) from kapilsharma/Iss29-Integrate-Family-Tree ([cb6f75d](https://github.com/kapilsharma/StoryLine/commit/cb6f75db6b74c50d87d3a79eeb4be3a1b1ef355c))
+
 ## [0.5.2](https://github.com/kapilsharma/StoryLine/compare/0.5.1...0.5.2) (2026-08-10)
 
 
