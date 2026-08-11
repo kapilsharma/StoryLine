@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/kapilsharma/StoryLine/compare/0.7.0...0.8.0) (2026-08-11)
+
+
+### Features
+
+* **#36:** LLM Wiki ([0b0cb1c](https://github.com/kapilsharma/StoryLine/commit/0b0cb1c6ebd5af30416b4f29071f3c00d48c99c4))
+* **#36:** LLM Wiki ([05273f9](https://github.com/kapilsharma/StoryLine/commit/05273f97359d100a154e15e267b689c10bddd140))
+
 ## [0.7.0](https://github.com/kapilsharma/StoryLine/compare/0.6.0...0.7.0) (2026-08-11)
 
 
