@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import { CharacterEditor } from './CharacterEditor'
 import { TimelineEditor } from './TimelineEditor'
@@ -22,8 +22,15 @@ const TABS: Array<{ key: Tab; label: string }> = [
 ]
 
 export function ProjectView(): JSX.Element {
-  const { snapshot, closeProject, readOnly } = useStore()
+  const { snapshot, closeProject, readOnly, revealTarget } = useStore()
   const [tab, setTab] = useState<Tab>('boards')
+
+  // "Edit" on the board's character-note popup (issue #41) asks for a character;
+  // the tab it lives on is this component's business. CharacterEditor picks the
+  // same request up to select the character.
+  useEffect(() => {
+    if (revealTarget?.kind === 'character') setTab('characters')
+  }, [revealTarget])
 
   if (!snapshot) return <></>
 

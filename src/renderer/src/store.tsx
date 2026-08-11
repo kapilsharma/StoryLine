@@ -23,6 +23,18 @@ export interface EditorTarget {
   id: string
 }
 
+/**
+ * A request to show a character on the Characters tab, from somewhere else in
+ * the app (issue #41: the board's character-note popup). The `nonce` makes each
+ * request distinct, so asking for the same character twice still navigates after
+ * the user has wandered off to another tab.
+ */
+export interface RevealTarget {
+  kind: 'character'
+  id: string
+  nonce: number
+}
+
 interface StoreValue {
   config: AppConfig | null
   snapshot: ProjectSnapshot | null
@@ -107,6 +119,11 @@ interface StoreValue {
   editorTarget: EditorTarget | null
   openEditor: (kind: EditorKind, id: string) => void
   closeEditor: () => void
+
+  // Cross-tab navigation
+  revealTarget: RevealTarget | null
+  /** Switch to the Characters tab with `id` selected. */
+  revealCharacter: (id: string) => void
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
@@ -301,6 +318,11 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
   }, [])
   const closeEditor = useCallback(() => setEditorTarget(null), [])
 
+  const [revealTarget, setRevealTarget] = useState<RevealTarget | null>(null)
+  const revealCharacter = useCallback((id: string) => {
+    setRevealTarget((prev) => ({ kind: 'character', id, nonce: (prev?.nonce ?? 0) + 1 }))
+  }, [])
+
   const getNote = useCallback(async (id: string): Promise<Note> => {
     const root = rootRef.current
     const boardId = activeBoardRef.current
@@ -373,9 +395,11 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       reorderViews: (ids) => mutateBoard((root, b) => api.reorderViews(root, b, ids)),
       editorTarget,
       openEditor,
-      closeEditor
+      closeEditor,
+      revealTarget,
+      revealCharacter
     }),
-    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, getEntityBody, editorTarget, openEditor, closeEditor]
+    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, getEntityBody, editorTarget, openEditor, closeEditor, revealTarget, revealCharacter]
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

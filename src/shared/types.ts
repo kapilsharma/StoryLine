@@ -58,6 +58,14 @@ export interface Character {
    * character. Built by `buildGraph`; never written to disk.
    */
   ghost?: boolean
+
+  /**
+   * True when the file's markdown body holds a note (issue #41). Derived on
+   * read from the body the Characters tab edits — see `src/shared/entityBody.ts`
+   * — so the board can mark which rows have something to show without loading
+   * every body. Never written to disk.
+   */
+  hasNote?: boolean
 }
 
 /**

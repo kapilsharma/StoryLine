@@ -87,6 +87,30 @@ describe('character repository (per board)', () => {
     expect((await readEntityBody(root, BID, 'character', 'k')).trim()).toBe('')
   })
 
+  // Issue #41: the board marks the rows worth clicking, so every character read
+  // carries whether its file holds a note.
+  it('flags whether a character has a note', async () => {
+    await writeCharacter(root, BID, { id: 'k', type: 'character', name: 'K', colour: '#000' })
+    expect((await readCharacter(root, BID, 'k')).value.hasNote).toBeUndefined()
+
+    // The old skeleton is not a note, so it must not light the row up.
+    await writeEntityBody(root, BID, 'character', 'k', '\n## Notes\n\n\n## Research\n\n')
+    expect((await readCharacter(root, BID, 'k')).value.hasNote).toBeUndefined()
+
+    await writeEntityBody(root, BID, 'character', 'k', '\n## Notes\n\nQuiet, precise.\n')
+    expect((await readCharacter(root, BID, 'k')).value.hasNote).toBe(true)
+  })
+
+  it('keeps the derived hasNote flag out of the file', async () => {
+    await writeCharacter(root, BID, { id: 'k', type: 'character', name: 'K', colour: '#000' })
+    await writeEntityBody(root, BID, 'character', 'k', 'Quiet, precise.\n')
+    const { value } = await readCharacter(root, BID, 'k')
+    await writeCharacter(root, BID, value)
+    const raw = await fs.readFile(join(root, 'boards', BID, 'characters', 'k.md'), 'utf8')
+    expect(raw).not.toContain('hasNote')
+    expect(raw).toContain('Quiet, precise.')
+  })
+
   it('lists characters for the board', async () => {
     await writeCharacter(root, BID, { id: 'a', type: 'character', name: 'A', colour: '#1' })
     await writeCharacter(root, BID, { id: 'b', type: 'character', name: 'B', colour: '#2' })
