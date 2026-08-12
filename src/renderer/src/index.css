@@ -884,6 +884,16 @@ textarea {
 .row-name.row-note:hover .row-note-icon {
   opacity: 1;
 }
+/* Same marker as .row-note-icon, reused in the character tab's list (issue #55). */
+.entity-note-icon {
+  font-size: 0.75em;
+  opacity: 0.65;
+  flex: none;
+}
+.entity-row:hover .entity-note-icon,
+.entity-row.active .entity-note-icon {
+  opacity: 1;
+}
 .cell {
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
