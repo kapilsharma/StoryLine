@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.0](https://github.com/kapilsharma/StoryLine/compare/0.12.0...0.13.0) (2026-08-12)
+
+
+### Features
+
+* **#55:** show note icon on characters in the Characters tab ([f92575a](https://github.com/kapilsharma/StoryLine/commit/f92575abf5b6d660e0be95659b02061729862f6f))
+* **#55:** show note icon on characters in the Characters tab ([9106dc0](https://github.com/kapilsharma/StoryLine/commit/9106dc05c6a0f1003557021377b51404776dcec4)), closes [#55](https://github.com/kapilsharma/StoryLine/issues/55)
+
 ## [0.12.0](https://github.com/kapilsharma/StoryLine/compare/0.11.0...0.12.0) (2026-08-12)
 
 
