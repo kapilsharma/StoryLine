@@ -1,6 +1,6 @@
 ---
 uid: n_2929cb83
-title: '* Promoted Aeri'
+title: Promoted Aeri
 boards:
   - thettana
 created: '2026-08-04'

@@ -294,7 +294,12 @@ export async function listNoteMetas(root: string, boardId: string): Promise<Note
   return Promise.all(
     ids.map(async (id) => {
       const { value } = await readNote(root, boardId, id)
-      return { ...value, body: '' }
+      // The file was read whole anyway, so record whether the body held
+      // anything before dropping it — that flag is what marks a card as
+      // having more inside (issue #46).
+      const meta: Note = { ...value, body: '' }
+      if (value.body.trim() !== '') meta.hasBody = true
+      return meta
     })
   )
 }

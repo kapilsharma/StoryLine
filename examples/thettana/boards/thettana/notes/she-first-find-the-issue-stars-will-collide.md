@@ -1,6 +1,6 @@
 ---
 uid: n_9c97a654
-title: '* She first find the issue, stars will collide'
+title: 'She first find the issue, stars will collide'
 boards:
   - thettana
 created: '2026-07-13'

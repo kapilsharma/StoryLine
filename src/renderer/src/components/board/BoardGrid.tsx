@@ -484,6 +484,13 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                         />
                         <div className="card-content">
                           <div className="card-title">
+                            {/* A card whose note has a body opens onto more than
+                                its title, so it says so up front (issue #46). */}
+                            {note?.hasBody && (
+                              <span className="card-note-icon" title="Has note details">
+                                📝{' '}
+                              </span>
+                            )}
                             {note?.title ?? '(missing note)'}
                             {note?.related && note.related.length > 0 && (
                               <span className="link-icon"> 🔗</span>
