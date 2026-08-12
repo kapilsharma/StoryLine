@@ -157,6 +157,16 @@ export function CharacterEditor(): JSX.Element {
                   >
                     <span className="swatch" style={{ background: c.colour }} />
                     <span>{c.name}</span>
+                    {/* Mirrors the board grid's 📝 marker (issue #55). */}
+                    {c.hasNote && (
+                      <span
+                        className="entity-note-icon"
+                        title={`${c.name} has a note`}
+                        aria-label="has a note"
+                      >
+                        📝
+                      </span>
+                    )}
                     {/* Only worth marking the ones that are nowhere yet. */}
                     {!placement.onBoard.has(c.id) && !placement.onTree.has(c.id) && (
                       <span className="muted small" title="Not on the board or any tree">
