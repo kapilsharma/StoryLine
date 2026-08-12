@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.0](https://github.com/kapilsharma/StoryLine/compare/0.11.0...0.12.0) (2026-08-12)
+
+
+### Features
+
+* **#52:** read real settings colours in static-site export ([0481717](https://github.com/kapilsharma/StoryLine/commit/04817173773b299f494ed337dd6b25292080b2dc))
+* **#52:** read real settings colours in static-site export ([21e5413](https://github.com/kapilsharma/StoryLine/commit/21e5413db941f9be65f0efa1750cea7e3d0cdf68)), closes [#52](https://github.com/kapilsharma/StoryLine/issues/52)
+
 ## [0.11.0](https://github.com/kapilsharma/StoryLine/compare/0.10.0...0.11.0) (2026-08-12)
 
 
