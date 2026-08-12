@@ -133,6 +133,14 @@ export interface Note {
   created?: string
   /** Raw markdown body, preserved verbatim on write. May be omitted in list views (lazy). */
   body: string
+
+  /**
+   * True when the note's markdown body holds something (issue #46). Set on the
+   * list-view metas, where the body is dropped — it is what lets a board card
+   * say "there is more inside" without loading every note. Never written to
+   * disk; on a note read whole, `body` already answers the question.
+   */
+  hasBody?: boolean
 }
 
 /** A card placed on a board grid. */

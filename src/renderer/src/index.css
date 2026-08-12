@@ -961,6 +961,15 @@ textarea {
 .link-icon {
   font-size: 0.8em;
 }
+/* Marks a card whose note has a body (issue #46) — same 📝 the board uses for a
+   character with a note, so the two read as one convention. */
+.card-note-icon {
+  font-size: 0.8em;
+  opacity: 0.65;
+}
+.board-card:hover .card-note-icon {
+  opacity: 1;
+}
 .resize-handle {
   position: absolute;
   top: 0;

@@ -10,6 +10,7 @@ import {
   listCharacters,
   writeNote,
   readNote,
+  listNoteMetas,
   writeBoard,
   readBoard,
   listBoardIds,
@@ -143,6 +144,29 @@ describe('note repository (per board)', () => {
     expect(value.title).toBe('The Hunt')
     expect(value.related?.[0]).toEqual({ file: 'x.md', comment: 'see also' })
     expect(value.body).toContain('Wolf tracks the pigs.')
+  })
+
+  // Issue #46: metas drop the body, so they have to carry whether there was one
+  // — that is what puts the 📝 on a card.
+  it('flags on the metas whether a note has a body', async () => {
+    await writeNote(root, BID, { id: 'hunt', uid: 'n_1', title: 'The Hunt', body: 'Wolf tracks.\n' })
+    // A card created in-app starts with a whitespace-only body: not a note yet.
+    await writeNote(root, BID, { id: 'quiet', uid: 'n_2', title: 'Quiet', body: '\n' })
+
+    const metas = await listNoteMetas(root, BID)
+    const byId = Object.fromEntries(metas.map((n) => [n.id, n]))
+    expect(byId.hunt.hasBody).toBe(true)
+    expect(byId.hunt.body).toBe('')
+    expect(byId.quiet.hasBody).toBeUndefined()
+  })
+
+  it('keeps the derived hasBody flag out of the file', async () => {
+    await writeNote(root, BID, { id: 'hunt', uid: 'n_1', title: 'The Hunt', body: 'Wolf tracks.\n' })
+    const [meta] = await listNoteMetas(root, BID)
+    await writeNote(root, BID, { ...meta, body: 'Wolf tracks.\n' })
+    const raw = await fs.readFile(join(root, 'boards', BID, 'notes', 'hunt.md'), 'utf8')
+    expect(raw).not.toContain('hasBody')
+    expect(raw).toContain('Wolf tracks.')
   })
 })
 
