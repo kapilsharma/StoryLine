@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.0](https://github.com/kapilsharma/StoryLine/compare/0.10.0...0.11.0) (2026-08-12)
+
+
+### Features
+
+* **#46:** Card note indicator ([2e80908](https://github.com/kapilsharma/StoryLine/commit/2e8090853ee5b56117d7e3cf62d70245c21dba1a))
+* **#46:** Card note indicator ([bb6c7ea](https://github.com/kapilsharma/StoryLine/commit/bb6c7ead9f717ea6d4119cf4bb811237602b2b2a))
+* **#46:** Merge pull request [#50](https://github.com/kapilsharma/StoryLine/issues/50) from kapilsharma/issue-46-card-note-indicator ([2e80908](https://github.com/kapilsharma/StoryLine/commit/2e8090853ee5b56117d7e3cf62d70245c21dba1a))
+
 ## [0.10.0](https://github.com/kapilsharma/StoryLine/compare/0.9.0...0.10.0) (2026-08-11)
 
 
