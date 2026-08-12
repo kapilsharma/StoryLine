@@ -7,6 +7,10 @@
  * Produces an uploadable folder: the prebuilt web shell plus a `snapshot.js`
  * holding the story data. Read-only by construction — see `src/web/staticApi.ts`.
  *
+ * Colours/styles are read from this machine's own ZN Story Line settings (see
+ * `appSettingsPath.mts`), so the published site matches what you see in the
+ * desktop app — override with `--settings <path>` (e.g. in CI).
+ *
  * Run via tsx so it can import the app's own data layer (and therefore its
  * schema migrations) rather than reimplementing any of it:
  *   tsx --tsconfig tsconfig.node.json scripts/export-static.mts
@@ -15,8 +19,9 @@ import { promises as fs } from 'fs'
 import { basename, isAbsolute, join, resolve } from 'path'
 import { spawn } from 'child_process'
 import { SNAPSHOT_GLOBAL } from '@shared/export'
-import { DEFAULT_SETTINGS, type Theme } from '@shared/config'
+import type { Theme } from '@shared/config'
 import { applyThemeToHtml, buildExportBundle, UnknownBoardError } from '../src/main/data/exportBundle'
+import { readLocalSettings } from './appSettingsPath'
 
 /** Written into the output folder so a re-export knows it may clean it. */
 const MARKER = '.zn-story-line-export'
@@ -27,6 +32,7 @@ interface Args {
   out: string
   boards: string[]
   theme: Theme
+  settingsPath?: string
   skipBuild: boolean
   force: boolean
 }
@@ -41,6 +47,9 @@ Options
   --out <path>       Output folder for the site. Required.
   --boards a,b       Board ids to publish, in that order. Default: all boards.
   --theme dark|light Theme the published site opens in. Default: dark.
+  --settings <path>  Config JSON to read colours/styles from (same shape as the
+                      desktop app's own config file). Default: read this
+                      machine's local ZN Story Line settings automatically.
   --skip-build       Reuse the existing out/web shell instead of rebuilding it.
   --force            Allow writing into a non-empty folder this tool didn't create.
   --help             Show this message.
@@ -79,6 +88,9 @@ function parseArgs(argv: string[]): Args {
         args.theme = theme
         break
       }
+      case '--settings':
+        args.settingsPath = value()
+        break
       case '--skip-build':
         args.skipBuild = true
         break
@@ -170,9 +182,10 @@ async function main(): Promise<void> {
   // Read the project first: a bad path or board id should fail before spending a
   // minute on a Vite build.
   console.log(`Reading project  ${projectRoot}`)
+  const localSettings = await readLocalSettings(args.settingsPath)
   const bundle = await buildExportBundle(projectRoot, {
     boards: args.boards,
-    settings: { ...DEFAULT_SETTINGS, theme: args.theme },
+    settings: { ...localSettings, theme: args.theme },
     appVersion: pkg.version,
     generatedAt: new Date().toISOString()
   })
