@@ -1,9 +1,9 @@
 {
   "name": "zn-story-line",
   "productName": "ZN Story Line",
-  "version": "0.13.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "Visual story planning \u2014 a structured 2D grid (characters \u00d7 timeline). Filesystem-first.",
+  "description": "Visual story planning — a structured 2D grid (characters × timeline). Filesystem-first.",
   "author": "Kapil Sharma",
   "main": "./out/main/index.js",
   "scripts": {

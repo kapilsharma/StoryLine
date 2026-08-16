@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/kapilsharma/StoryLine/compare/0.13.0...1.0.0) (2026-08-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **#68:** search, assets, and study-notes support
+
+### Features
+
+* **#68:** search, assets, and study-notes support ([8c87b78](https://github.com/kapilsharma/StoryLine/commit/8c87b78e867c1c1e5be9ac033ce932e1ebd34196))
+
 ## [0.13.0](https://github.com/kapilsharma/StoryLine/compare/0.12.0...0.13.0) (2026-08-12)
 
 
