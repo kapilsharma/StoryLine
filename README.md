@@ -21,7 +21,8 @@ I made this tool for myself, but also publishing as open-source, in case helpful
 - **Cast and plot are separate** — a character you add for context (a grandparent on the family tree, say) does not become a row on your board. Each board and each tree has its own list of who is on it, and the Characters tab filters by where each one appears.
 - **Multiple independent boards** — each board owns its own characters, timeline and notes. Reorder boards by dragging their tabs.
 - **Drag-and-drop everywhere** — reorder boards, timeline units and character rows; group rows/columns and collapse groups.
-- **Dedicated Markdown editor** with a live, configurable preview — per-theme colours for headings, emphasis, code, highlights and more (separate light/dark palettes). This editor is meant to write short notes, don't confuse it with writing tool replacement.
+- **Dedicated Markdown editor** with a live, configurable preview — per-theme colours for headings, emphasis, code, highlights and more (separate light/dark palettes). A small toolbar covers headings, bold, italic, strikethrough and highlight, so you don't have to know the syntax. This editor is meant to write short notes, don't confuse it with writing tool replacement.
+- **Images and attachments** — add a picture or PDF with the toolbar button, or just paste or drag one onto the editor. It's copied into the project folder and published with the static site.
 - **Rename-safe notes** — notes carry a stable id, so renaming a file (in the app or an external editor) never breaks a card.
 - **Live reload** — external edits (e.g. from another Markdown editor) are picked up automatically.
 - **Light / dark themes.**
