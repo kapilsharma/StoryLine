@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { TimelineUnit } from '@shared/types'
 import { useStore } from '../store'
 
@@ -42,6 +42,9 @@ export function TimelineForm({
 }): JSX.Element {
   const { saveTimelineUnit } = useStore()
   const [form, setForm] = useState<FormState>(() => (initial ? toForm(initial) : BLANK))
+  // The form renders in two places (the Timeline tab and the board's "+ Column"
+  // modal), so the label/field ids have to be unique per instance.
+  const uid = useId()
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]): void =>
     setForm((f) => ({ ...f, [key]: value }))
@@ -67,24 +70,36 @@ export function TimelineForm({
   return (
     <>
       <div className="form-row">
-        <label>Label</label>
-        <input value={form.label} onChange={(e) => set('label', e.target.value)} autoFocus />
-      </div>
-      <div className="form-row">
-        <label>Summary</label>
-        <textarea rows={3} value={form.summary} onChange={(e) => set('summary', e.target.value)} />
-      </div>
-      <div className="form-row">
-        <label>Group</label>
+        <label htmlFor={`${uid}-label`}>Label</label>
         <input
+          id={`${uid}-label`}
+          value={form.label}
+          onChange={(e) => set('label', e.target.value)}
+          autoFocus
+        />
+      </div>
+      <div className="form-row">
+        <label htmlFor={`${uid}-summary`}>Summary</label>
+        <textarea
+          id={`${uid}-summary`}
+          rows={3}
+          value={form.summary}
+          onChange={(e) => set('summary', e.target.value)}
+        />
+      </div>
+      <div className="form-row">
+        <label htmlFor={`${uid}-group`}>Group</label>
+        <input
+          id={`${uid}-group`}
           value={form.group}
           placeholder="e.g. Chapter 1, Act 1 (groups columns on the board)"
           onChange={(e) => set('group', e.target.value)}
         />
       </div>
       <div className="form-row">
-        <label>Tags</label>
+        <label htmlFor={`${uid}-tags`}>Tags</label>
         <input
+          id={`${uid}-tags`}
           value={form.tags}
           placeholder="comma, separated"
           onChange={(e) => set('tags', e.target.value)}

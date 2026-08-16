@@ -17,7 +17,10 @@ async function scaffold(boardIds: string[], projectOrder: string[]): Promise<voi
     schemaVersion: SCHEMA_VERSION,
     name: 'T',
     timelineLabel: 'Chapter',
-    boards: projectOrder
+    boards: projectOrder,
+    created: '',
+    lastOpened: '',
+    families: {}
   })
 }
 

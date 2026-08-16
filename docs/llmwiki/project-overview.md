@@ -35,9 +35,38 @@ boards/<boardId>/
 
 Run after any change, before handing off:
 
-1. `npm run typecheck`
+1. `npm run typecheck` — three projects: `node`, `web` **and `test`**. The test
+   project covers `tests/**`, so a fixture that drifts from `Project`/`Board`, or
+   a stub that misses a new `AppApi` method, fails here rather than at runtime.
 2. `npm test` — Vitest. Unit tests in `tests/unit` (node env); component tests in `tests/components` need `// @vitest-environment jsdom` as the first line.
 3. `npm run build`
 4. Boot the app for a runtime smoke test: `env -u ELECTRON_RUN_AS_NODE npx electron .` (see [electron-gotchas.md](./electron-gotchas.md) for why the env unset matters).
 
-E2E: `npm run test:e2e` (Playwright). To exercise data-layer TS headlessly, bundle with esbuild (`--packages=external`, alias `@shared`/`@main`) and run with `env -u ELECTRON_RUN_AS_NODE node` — output the bundle inside the repo so `node_modules` resolves.
+E2E: `npm run test:e2e` (Playwright) — run `npm run build` first, the specs launch `out/main/index.js`. To exercise data-layer TS headlessly, bundle with esbuild (`--packages=external`, alias `@shared`/`@main`) and run with `env -u ELECTRON_RUN_AS_NODE node` — output the bundle inside the repo so `node_modules` resolves.
+
+## Test coverage
+
+`npm run test:coverage`. Thresholds in `vitest.config.ts` are a **ratchet** set
+just under what the suite reaches — adding untested code fails the run rather
+than quietly lowering the bar. Raise them when coverage rises; don't lower them
+without saying why. The pure layers (`src/shared`, `src/main/data`,
+`src/renderer/src/lib`) are held far higher than the UI.
+
+Where to put a test:
+
+- **`tests/unit`** — anything pure, plus the data layer against a real temp
+  project (`fs.mkdtemp`). Prefer this: it is the fastest and least brittle layer.
+- **`tests/components`** — React behaviour, via `renderWithProviders` and the
+  `makeApi` / `makeSnapshot` / `makeBoardData` helpers in
+  `tests/components/test-utils.tsx`. Build fixtures with those helpers rather
+  than by hand, so a change to `Board`/`Project` is fixed in one place.
+- **`tests/e2e`** — only what crosses a boundary jsdom fakes: real geometry, the
+  filesystem watcher, custom protocols (`zn-asset://`), Electron dialogs.
+
+Two gotchas worth knowing:
+
+- A component whose effect reads the store's refs (e.g. `EditorPage` calling
+  `getNote`) must be mounted **a render after** the project opens. Child effects
+  run before the provider's, so mounting in the same commit sees null refs.
+- jsdom implements neither `DataTransfer` nor `File.arrayBuffer`; fake the shape
+  the handler reads and dispatch with `fireEvent`.

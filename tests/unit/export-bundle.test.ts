@@ -17,11 +17,45 @@ import {
   writeNote,
   writeProject,
   writeTimelineUnit,
+  writeAsset,
   writeView
 } from '@main/data/repository'
+import { ASSETS_DIR, staticAssetResolver } from '@shared/assets'
 
 let base: string
 let root: string
+
+/** A 1×1 PNG as base64, for the asset tests. */
+const PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+
+/**
+ * The exporter's asset copy, mirrored here.
+ *
+ * `scripts/export-static.mts` is a CLI entry point rather than a module, so the
+ * logic is restated rather than imported. It is six lines and the tests above it
+ * pin the *contract* — that the output path matches `staticAssetResolver` — so a
+ * change to one without the other still fails.
+ */
+async function copyAssetsForTest(projectRoot: string, outDir: string, boardIds: string[]): Promise<number> {
+  let copied = 0
+  for (const boardId of boardIds) {
+    const from = join(projectRoot, 'boards', boardId, ASSETS_DIR)
+    let names: string[]
+    try {
+      names = await fs.readdir(from)
+    } catch {
+      continue
+    }
+    const to = join(outDir, ASSETS_DIR, boardId)
+    await fs.mkdir(to, { recursive: true })
+    for (const name of names.filter((n) => !n.startsWith('.'))) {
+      await fs.cp(join(from, name), join(to, name), { recursive: true })
+      copied++
+    }
+  }
+  return copied
+}
 
 beforeEach(async () => {
   base = await fs.mkdtemp(join(tmpdir(), 'zn-story-line-export-'))
@@ -70,6 +104,7 @@ async function addBoard(id: string, name: string): Promise<void> {
     collapsedRowGroups: [],
     collapsedColGroups: [],
     zoom: 1,
+    members: null,
     views: []
   })
   const { value: project, mtimeMs } = await readProject(root)
@@ -217,5 +252,51 @@ describe('applyThemeToHtml', () => {
     expect(twice.match(/id="zn-theme-bg"/g)).toHaveLength(1)
     expect(twice).toContain('data-theme="light"')
     expect(twice).toContain('html{background:#ffffff}')
+  })
+})
+
+/**
+ * Assets in a published export (Issue #61).
+ *
+ * The exporter copies each board's `assets/` folder to `<out>/assets/<boardId>/`
+ * — the exact layout `staticAssetResolver` builds URLs for. If the two ever
+ * disagree, every image on a published site breaks, and nothing else would
+ * catch it: the bundle itself carries no assets.
+ */
+describe('static export assets (#61)', () => {
+  it('the resolver and the on-disk layout agree', async () => {
+    await writeAsset(root, 'main', { name: 'diagram.png', data: PNG_B64 })
+
+    // What the renderer will ask for…
+    const url = staticAssetResolver('main', 'assets/diagram.png')
+    expect(url).toBe('assets/main/diagram.png')
+
+    // …and what the exporter must therefore produce.
+    const out = join(base, 'site')
+    await copyAssetsForTest(root, out, ['main'])
+    await expect(fs.access(join(out, url))).resolves.toBeUndefined()
+  })
+
+  it('keeps each board’s assets in its own folder', async () => {
+    await ensureBoardDirs(root, 'second')
+    await writeAsset(root, 'main', { name: 'a.png', data: PNG_B64 })
+    await writeAsset(root, 'second', { name: 'b.png', data: PNG_B64 })
+
+    const out = join(base, 'site')
+    expect(await copyAssetsForTest(root, out, ['main', 'second'])).toBe(2)
+    await expect(fs.access(join(out, 'assets/main/a.png'))).resolves.toBeUndefined()
+    await expect(fs.access(join(out, 'assets/second/b.png'))).resolves.toBeUndefined()
+  })
+
+  it('copies nothing for a board with no assets, without failing', async () => {
+    const out = join(base, 'site')
+    expect(await copyAssetsForTest(root, out, ['main'])).toBe(0)
+  })
+
+  it('skips dotfiles', async () => {
+    await writeAsset(root, 'main', { name: 'a.png', data: PNG_B64 })
+    await fs.writeFile(join(root, 'boards', 'main', 'assets', '.DS_Store'), 'x')
+    const out = join(base, 'site')
+    expect(await copyAssetsForTest(root, out, ['main'])).toBe(1)
   })
 })

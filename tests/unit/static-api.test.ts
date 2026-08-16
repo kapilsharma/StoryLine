@@ -5,6 +5,7 @@ import { SCHEMA_VERSION, defaultView, type Board, type View } from '@shared/type
 import {
   createStaticApi,
   MissingSnapshotError,
+  READ_ONLY_MESSAGE,
   ReadOnlyError,
   readBundle,
   STATIC_ROOT
@@ -23,6 +24,7 @@ const board: Board = {
   collapsedRowGroups: [],
   collapsedColGroups: [],
   zoom: 1,
+  members: null,
   views: ['everyone']
 }
 
@@ -176,7 +178,7 @@ describe('static api — refused writes', () => {
   const writes: Array<[string, () => Promise<unknown>]> = [
     ['createProject', () => api.createProject()],
     ['pickProject', () => api.pickProject()],
-    ['saveProjectMeta', () => api.saveProjectMeta(STATIC_ROOT, 'Nope', 'Chapter')],
+    ['saveProjectMeta', () => api.saveProjectMeta(STATIC_ROOT, { name: 'Nope', timelineLabel: 'Chapter', rowLabel: 'Character', kind: 'story' })],
     ['saveFamilyColours', () => api.saveFamilyColours(STATIC_ROOT, { Aeri: '#000000' })],
     ['saveCharacter', () => api.saveCharacter(STATIC_ROOT, 'main', bundle.boards[0].characters[0])],
     ['deleteCharacter', () => api.deleteCharacter(STATIC_ROOT, 'main', 'aeri')],
@@ -215,5 +217,72 @@ describe('static api — refused writes', () => {
   it('leaves the data untouched after a refused write', async () => {
     await api.deleteCard(STATIC_ROOT, 'main', 'card-1').catch(() => {})
     expect((await api.reloadProject(STATIC_ROOT)).boards[0].board.cards).toHaveLength(1)
+  })
+})
+
+/**
+ * Search in a published export (Issues #59, #60).
+ *
+ * A static site has no main process, so `searchNotes` runs over the bundle —
+ * which, unlike a live snapshot, carries every note body. These tests exist to
+ * keep the two hosts behaving the same.
+ */
+describe('static api — search', () => {
+  const api = createStaticApi(bundle)
+
+  it('finds text that exists only in a note body', async () => {
+    // Quoted, so it stays one term — unquoted, "the" would also hit the title
+    // and the hit would be classified as a title match.
+    const hits = await api.searchNotes(STATIC_ROOT, '"fault in the numbers"', {})
+    expect(hits).toHaveLength(1)
+    expect(hits[0].id).toBe('the-discovery')
+    expect(hits[0].where).toBe('body')
+    expect(hits[0].snippet).toContain('fault in the numbers')
+  })
+
+  it('finds a note by title', async () => {
+    const hits = await api.searchNotes(STATIC_ROOT, 'discovery', {})
+    expect(hits[0].where).toBe('title')
+  })
+
+  it('searches character bodies from entityBodies', async () => {
+    const hits = await api.searchNotes(STATIC_ROOT, 'Quiet, precise', {})
+    expect(hits).toHaveLength(1)
+    expect(hits[0].kind).toBe('character')
+    expect(hits[0].id).toBe('aeri')
+  })
+
+  it('includes timeline units', async () => {
+    const hits = await api.searchNotes(STATIC_ROOT, 'Chapter 1', {})
+    expect(hits.some((h) => h.kind === 'timeline' && h.id === 'ch1')).toBe(true)
+  })
+
+  it('honours a board scope', async () => {
+    expect(await api.searchNotes(STATIC_ROOT, 'discovery', { boardIds: ['nope'] })).toEqual([])
+    expect(await api.searchNotes(STATIC_ROOT, 'discovery', { boardIds: ['main'] })).toHaveLength(1)
+  })
+
+  it('honours a kind filter', async () => {
+    const hits = await api.searchNotes(STATIC_ROOT, 'aeri', { kinds: ['character'] })
+    expect(hits.every((h) => h.kind === 'character')).toBe(true)
+  })
+
+  it('returns nothing for a term that appears nowhere', async () => {
+    expect(await api.searchNotes(STATIC_ROOT, 'zzznotpresent', {})).toEqual([])
+  })
+})
+
+describe('static api — assets are not importable in a published export', () => {
+  const api = createStaticApi(bundle)
+
+  it('refuses importAsset', async () => {
+    await expect(api.importAsset(STATIC_ROOT, 'main', { name: 'x.png', data: '' })).rejects.toThrow(
+      READ_ONLY_MESSAGE
+    )
+  })
+
+  it('returns null from pickAsset rather than throwing', async () => {
+    // There is no OS picker on a web page; a quiet null is the honest answer.
+    await expect(api.pickAsset(STATIC_ROOT, 'main')).resolves.toBeNull()
   })
 })

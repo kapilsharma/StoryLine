@@ -2,6 +2,8 @@ import type { AppConfig, AppSettings } from '@shared/config'
 import { SNAPSHOT_GLOBAL, entityBodyKey, type ExportBundle } from '@shared/export'
 import type { AppApi, BoardData, EntityBodyKind, ProjectSnapshot } from '@shared/ipc'
 import type { Note } from '@shared/types'
+import type { AssetRef } from '@shared/assets'
+import { searchEntries } from '@shared/search'
 
 /**
  * The `AppApi` implementation for a static export — the browser-side counterpart
@@ -125,6 +127,45 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     deleteCard: () => denied<ProjectSnapshot>(),
 
     // ── Allowed: reads ──
+    // Search runs over the bundle, which (unlike a live snapshot) carries every
+    // note body — so a published site searches its own content with the same
+    // matcher the desktop app uses (Issues #59, #60).
+    searchNotes: async (_root, query, scope) =>
+      searchEntries(
+        bundle.boards.flatMap((bd) => [
+          ...bd.notes.map((n) => ({
+            boardId: bd.board.id,
+            kind: 'note' as const,
+            id: n.id,
+            title: n.title,
+            tags: n.tags ?? [],
+            body: n.body ?? ''
+          })),
+          ...bd.characters.map((c) => ({
+            boardId: bd.board.id,
+            kind: 'character' as const,
+            id: c.id,
+            title: c.name,
+            tags: c.tags ?? [],
+            body: bundle.entityBodies[entityBodyKey(bd.board.id, 'character', c.id)] ?? ''
+          })),
+          ...bd.timeline.map((t) => ({
+            boardId: bd.board.id,
+            kind: 'timeline' as const,
+            id: t.id,
+            title: t.label,
+            tags: t.tags ?? [],
+            body: bundle.entityBodies[entityBodyKey(bd.board.id, 'timeline', t.id)] ?? ''
+          }))
+        ]),
+        query,
+        scope
+      ),
+
+    // Assets are copied into the exported folder, so there is nothing to import.
+    importAsset: () => denied<AssetRef>(),
+    pickAsset: async () => null,
+
     getNote: async (_root, boardId, id) => fullNote(boardId, id),
     getEntityBody: async (_root, boardId, kind: EntityBodyKind, id) =>
       bundle.entityBodies[entityBodyKey(boardId, kind, id)] ?? '',

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Note } from '@shared/types'
 import { useStore } from '../store'
 import { usePrompt } from './PromptModal'
-import { renderMarkdown } from '../lib/markdown'
+import { MarkdownPreview } from './MarkdownPreview'
 
 interface Props {
   note: Note
@@ -34,7 +34,6 @@ export function NotePopup({ note, onClose, onOpenNote }: Props): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note.id])
 
-  const html = useMemo(() => renderMarkdown(body), [body])
 
   const related = useMemo(
     () =>
@@ -86,7 +85,7 @@ export function NotePopup({ note, onClose, onOpenNote }: Props): JSX.Element {
           </div>
         )}
 
-        <div className="note-body markdown" dangerouslySetInnerHTML={{ __html: html }} />
+        <MarkdownPreview markdown={body} className="note-body" onOpenNote={onOpenNote} />
 
         {related.length > 0 && (
           <div className="related-list">

@@ -9,6 +9,9 @@ import {
   type ReactNode
 } from 'react'
 import type { AppConfig, AppSettings } from '@shared/config'
+import type { ProjectMeta } from '@shared/project'
+import type { SearchHit, SearchScope } from '@shared/search'
+import type { AssetImport, AssetRef } from '@shared/assets'
 import type { BoardData, EntityBodyKind, NewCardInput, ProjectSnapshot } from '@shared/ipc'
 import type { Board, Card, Character, Note, TimelineUnit, View, ViewMode } from '@shared/types'
 import { buildGraph, type FamilyGraph } from '@shared/graph'
@@ -71,7 +74,7 @@ interface StoreValue {
   openByPath: (root: string) => Promise<void>
   removeRecent: (root: string) => Promise<void>
   closeProject: () => void
-  saveProjectMeta: (name: string, timelineLabel: string) => Promise<void>
+  saveProjectMeta: (meta: ProjectMeta) => Promise<void>
   saveFamilyColours: (families: Record<string, string>) => Promise<void>
   updateSettings: (settings: AppSettings) => Promise<void>
 
@@ -94,6 +97,15 @@ interface StoreValue {
   deleteNote: (id: string) => Promise<void>
   /** Fetch a note's full content (body is lazy-loaded) from the active board. */
   getNote: (id: string) => Promise<Note>
+  /**
+   * Full-text search over note/character/timeline bodies (Issues #59, #60).
+   * Runs in the main process because bodies are not in the snapshot.
+   */
+  searchNotes: (query: string, scope?: SearchScope) => Promise<SearchHit[]>
+  /** Copy a file into the active board's assets folder (Issue #61). */
+  importAsset: (file: AssetImport) => Promise<AssetRef>
+  /** Open the OS picker and import the chosen file into the active board. */
+  pickAsset: () => Promise<AssetRef | null>
   renameNote: (oldId: string, newName: string) => Promise<void>
   getEntityBody: (kind: EntityBodyKind, id: string) => Promise<string>
   saveEntityBody: (kind: EntityBodyKind, id: string, body: string) => Promise<void>
@@ -330,6 +342,34 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
     return api.getNote(root, boardId, id)
   }, [])
 
+  /**
+   * Search is called from an effect in the Notes tab, so its identity has to be
+   * stable — the same reason `getNote` reads its root from a ref rather than
+   * closing over the snapshot.
+   */
+  const searchNotes = useCallback(
+    async (query: string, scope?: SearchScope): Promise<SearchHit[]> => {
+      const root = rootRef.current
+      if (!root) return []
+      return api.searchNotes(root, query, scope ?? {})
+    },
+    []
+  )
+
+  const importAsset = useCallback(async (file: AssetImport): Promise<AssetRef> => {
+    const root = rootRef.current
+    const boardId = activeBoardRef.current
+    if (!root || !boardId) throw new Error('No active board')
+    return api.importAsset(root, boardId, file)
+  }, [])
+
+  const pickAsset = useCallback(async (): Promise<AssetRef | null> => {
+    const root = rootRef.current
+    const boardId = activeBoardRef.current
+    if (!root || !boardId) return null
+    return api.pickAsset(root, boardId)
+  }, [])
+
   const getEntityBody = useCallback(async (kind: EntityBodyKind, id: string): Promise<string> => {
     const root = rootRef.current
     const boardId = activeBoardRef.current
@@ -360,7 +400,10 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       removeRecent,
       closeProject,
       updateSettings,
-      saveProjectMeta: (name, label) => mutate((root) => api.saveProjectMeta(root, name, label)),
+      saveProjectMeta: (meta) => mutate((root) => api.saveProjectMeta(root, meta)),
+      searchNotes,
+      importAsset,
+      pickAsset,
       saveFamilyColours: (families) => mutate((root) => api.saveFamilyColours(root, families)),
       saveCharacter: (c, addToBoard) => mutateBoard((root, b) => api.saveCharacter(root, b, c, addToBoard)),
       deleteCharacter: (id) => mutateBoard((root, b) => api.deleteCharacter(root, b, id)),
@@ -399,7 +442,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       revealTarget,
       revealCharacter
     }),
-    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, getEntityBody, editorTarget, openEditor, closeEditor, revealTarget, revealCharacter]
+    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, searchNotes, importAsset, pickAsset, getEntityBody, editorTarget, openEditor, closeEditor, revealTarget, revealCharacter]
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

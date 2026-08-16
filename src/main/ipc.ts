@@ -1,11 +1,16 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { randomUUID } from 'crypto'
+import { promises as fsp } from 'fs'
 import { basename } from 'path'
 import type { Card, Character, Note, TimelineUnit, View } from '@shared/types'
 import { defaultView } from '@shared/types'
 import type { AppSettings } from '@shared/config'
 import type { EntityBodyKind, NewCardInput, ProjectSnapshot } from '@shared/ipc'
 import type { ProjectChange } from '@shared/changes'
+import type { ProjectMeta } from '@shared/project'
+import { applyMeta } from '@shared/project'
+import type { SearchScope } from '@shared/search'
+import type { AssetImport } from '@shared/assets'
 import { assignFamilyColours, familiesIn } from '@shared/families'
 import { buildGraph } from '@shared/graph'
 import { filterSelection } from '@shared/selection'
@@ -37,10 +42,12 @@ import {
   writeEntityBody,
   writeNote,
   writeProject,
+  writeAsset,
   writeTimelineUnit,
   writeView
 } from './data/repository'
 import { uniqueNoteUid } from './data/uid'
+import { invalidateSearchIndex, searchProject } from './data/searchIndex'
 import { ProjectWatcher } from './data/watcher'
 
 /** The single active project watcher; replaced when a new project is opened. */
@@ -49,6 +56,9 @@ let activeWatcher: ProjectWatcher | null = null
 const today = (): string => new Date().toISOString().slice(0, 10)
 
 function pushChange(window: BrowserWindow, change: ProjectChange): void {
+  // An external edit is the other way project content changes, so the search
+  // index has to drop here too (Issue #59).
+  invalidateSearchIndex()
   if (!window.isDestroyed()) window.webContents.send('project:change', change)
 }
 
@@ -200,7 +210,12 @@ async function writeViewOrder(root: string, boardId: string, views: string[]): P
 }
 
 export function registerIpc(window: BrowserWindow): void {
-  const snap = (root: string): Promise<ProjectSnapshot> => loadSnapshot(root, false)
+  // Every mutating handler funnels through here, which makes it the one place
+  // the search index (Issue #59) has to be invalidated after an in-app write.
+  const snap = (root: string): Promise<ProjectSnapshot> => {
+    invalidateSearchIndex(root)
+    return loadSnapshot(root, false)
+  }
 
   // ── App config ──
   ipcMain.handle('config:get', () => readConfig())
@@ -241,9 +256,9 @@ export function registerIpc(window: BrowserWindow): void {
   ipcMain.handle('project:reload', (_e, root: string) => snap(root))
   ipcMain.handle('project:removeRecent', (_e, root: string) => removeRecent(root))
 
-  ipcMain.handle('project:saveMeta', async (_e, root: string, name: string, timelineLabel: string) => {
+  ipcMain.handle('project:saveMeta', async (_e, root: string, meta: ProjectMeta) => {
     const { value: project, mtimeMs } = await readProject(root)
-    await writeProject(root, { ...project, name, timelineLabel }, mtimeMs)
+    await writeProject(root, applyMeta(project, meta), mtimeMs)
     return snap(root)
   })
 
@@ -589,6 +604,34 @@ export function registerIpc(window: BrowserWindow): void {
       return snap(root)
     }
   )
+
+  // ── Search (Issues #59, #60) ──
+  ipcMain.handle('search:notes', (_e, root: string, query: string, scope: SearchScope) => {
+    return searchProject(root, query, scope)
+  })
+
+  // ── Assets (Issue #61) ──
+  ipcMain.handle('asset:import', async (_e, root: string, boardId: string, file: AssetImport) => {
+    const ref = await writeAsset(root, boardId, file)
+    // Assets are not part of the snapshot, but a note that now references one
+    // will re-render — and the watcher ignores the assets folder.
+    return ref
+  })
+
+  ipcMain.handle('asset:pick', async (_e, root: string, boardId: string) => {
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Choose an image to add',
+      properties: ['openFile'],
+      filters: [
+        { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif'] },
+        { name: 'PDF', extensions: ['pdf'] }
+      ]
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    const source = result.filePaths[0]
+    const data = await fsp.readFile(source)
+    return writeAsset(root, boardId, { name: basename(source), data: data.toString('base64') })
+  })
 }
 
 /** Stop watching on shutdown. */

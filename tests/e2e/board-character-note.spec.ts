@@ -28,7 +28,7 @@ test.beforeAll(async () => {
     '---\nid: ch1\nlabel: Chapter 1\norder: 1\n---\n\n'
   )
 
-  const env = { ...process.env }
+  const env: Record<string, string> = { ...process.env } as Record<string, string>
   // Clear or Electron starts as plain Node (a quirk of some dev shells).
   delete env.ELECTRON_RUN_AS_NODE
   app = await electron.launch({ args: [join(__dirname, '../../out/main/index.js')], env })

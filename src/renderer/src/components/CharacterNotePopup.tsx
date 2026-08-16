@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Character } from '@shared/types'
 import { useStore } from '../store'
-import { renderMarkdown } from '../lib/markdown'
+import { MarkdownPreview } from './MarkdownPreview'
 
 interface Props {
   character: Character
@@ -37,7 +37,6 @@ export function CharacterNotePopup({ character, onClose }: Props): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character.id])
 
-  const html = useMemo(() => renderMarkdown(body), [body])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -74,7 +73,7 @@ export function CharacterNotePopup({ character, onClose }: Props): JSX.Element {
         {!loaded ? (
           <p className="muted small">Loading…</p>
         ) : (
-          <div className="note-body markdown" dangerouslySetInnerHTML={{ __html: html }} />
+          <MarkdownPreview markdown={body} className="note-body" />
         )}
 
         <footer className="note-popup-foot">

@@ -8,27 +8,42 @@ import type {
   ThemeColor
 } from '@shared/config'
 import { CARD_FONT_MIN, CARD_FONT_MAX, DEFAULT_EDITOR_STYLES } from '@shared/config'
+import type { ProjectKind } from '@shared/types'
+import { DEFAULT_ROW_LABEL, readMeta, type ProjectMeta } from '@shared/project'
 import { useStore } from '../store'
 
 export function Settings(): JSX.Element {
   const { snapshot, config, saveProjectMeta, updateSettings, readOnly } = useStore()
 
-  // Project-level form
-  const [name, setName] = useState('')
-  const [timelineLabel, setTimelineLabel] = useState('')
+  // Project-level form. One piece of state for the whole editable metadata set —
+  // name, both axis labels (#62) and the project kind (#63).
+  const [meta, setMeta] = useState<ProjectMeta>({
+    name: '',
+    timelineLabel: '',
+    rowLabel: '',
+    kind: 'story'
+  })
 
   useEffect(() => {
-    if (snapshot) {
-      setName(snapshot.project.name)
-      setTimelineLabel(snapshot.project.timelineLabel)
-    }
-  }, [snapshot?.project.name, snapshot?.project.timelineLabel])
+    if (snapshot) setMeta(readMeta(snapshot.project))
+  }, [
+    snapshot?.project.name,
+    snapshot?.project.timelineLabel,
+    snapshot?.project.rowLabel,
+    snapshot?.project.kind
+  ])
 
   const settings = config?.settings
   if (!snapshot || !settings) return <></>
 
+  const saved = readMeta(snapshot.project)
   const projectDirty =
-    name !== snapshot.project.name || timelineLabel !== snapshot.project.timelineLabel
+    meta.name !== saved.name ||
+    meta.timelineLabel !== saved.timelineLabel ||
+    meta.rowLabel !== saved.rowLabel ||
+    meta.kind !== saved.kind
+  const setField = <K extends keyof ProjectMeta>(key: K, value: ProjectMeta[K]): void =>
+    setMeta((m) => ({ ...m, [key]: value }))
 
   const es: EditorStyles = settings.editorStyles ?? DEFAULT_EDITOR_STYLES
   const updateStyles = (partial: Partial<EditorStyles>): void => {
@@ -73,16 +88,49 @@ export function Settings(): JSX.Element {
       <section className="settings-group">
         <h2>Project</h2>
         <div className="form-row">
-          <label>Project name</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} />
+          <label htmlFor="project-name">Project name</label>
+          <input
+            id="project-name"
+            value={meta.name}
+            onChange={(e) => setField('name', e.target.value)}
+          />
         </div>
         <div className="form-row">
-          <label>Timeline unit label</label>
+          <label htmlFor="project-column-label">Column label</label>
           <input
-            value={timelineLabel}
+            id="project-column-label"
+            value={meta.timelineLabel}
             placeholder="Chapter"
-            onChange={(e) => setTimelineLabel(e.target.value)}
+            onChange={(e) => setField('timelineLabel', e.target.value)}
           />
+          <span className="muted small">Names the Timeline tab — "Chapters", "Scenes", "Sections".</span>
+        </div>
+        <div className="form-row">
+          <label htmlFor="project-row-label">Row label</label>
+          <input
+            id="project-row-label"
+            value={meta.rowLabel}
+            placeholder={DEFAULT_ROW_LABEL}
+            onChange={(e) => setField('rowLabel', e.target.value)}
+          />
+          <span className="muted small">
+            Names the Characters tab — "Characters", "Topics", "Phases".
+          </span>
+        </div>
+        <div className="form-row">
+          <label htmlFor="project-kind">Project kind</label>
+          <select
+            id="project-kind"
+            value={meta.kind}
+            onChange={(e) => setField('kind', e.target.value as ProjectKind)}
+          >
+            <option value="story">Story — rows are people</option>
+            <option value="general">General — rows are anything else</option>
+          </select>
+          <span className="muted small">
+            A general project hides the Family tab and the family fields on a row, which have no
+            meaning when rows are topics or phases.
+          </span>
         </div>
         {readOnly ? (
           // Project metadata lives in project.json, so it can't change here.
@@ -95,8 +143,8 @@ export function Settings(): JSX.Element {
           <>
             <button
               className="btn primary"
-              disabled={!projectDirty || !name.trim()}
-              onClick={() => saveProjectMeta(name.trim(), timelineLabel.trim() || 'Chapter')}
+              disabled={!projectDirty || !meta.name.trim()}
+              onClick={() => saveProjectMeta(meta)}
             >
               Save project settings
             </button>

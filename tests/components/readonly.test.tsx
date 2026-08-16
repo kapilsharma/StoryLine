@@ -15,7 +15,8 @@ const snapshot: ProjectSnapshot = {
     timelineLabel: 'Chapter',
     boards: ['main'],
     created: '2026-08-01',
-    lastOpened: '2026-08-10'
+    lastOpened: '2026-08-10',
+    families: {}
   },
   boards: [
     {
@@ -31,11 +32,15 @@ const snapshot: ProjectSnapshot = {
         colOrder: ['ch1'],
         collapsedRowGroups: [],
         collapsedColGroups: [],
-        zoom: 1
+        zoom: 1,
+        members: null,
+        views: [],
       },
       characters: [{ id: 'aeri', type: 'character', name: 'Aeri', colour: '#22c55e' }],
       timeline: [{ id: 'ch1', label: 'Chapter 1', order: 1 }],
-      notes: []
+      notes: [],
+      views: [],
+      problems: []
     }
   ]
 }

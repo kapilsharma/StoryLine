@@ -8,6 +8,7 @@ import { CharacterForm } from '../CharacterForm'
 import { TimelineForm } from '../TimelineForm'
 import { BoardGrid } from './BoardGrid'
 import { addBoardMember, nonMembers } from './grid-utils'
+import { rowLabel, timelineLabel } from '@shared/project'
 
 const MIME_BOARD = 'application/x-znstoryline-board'
 
@@ -28,6 +29,9 @@ export function BoardsView(): JSX.Element {
   const characters = activeBoard?.characters ?? []
   const timeline = activeBoard?.timeline ?? []
   const board = activeBoard?.board ?? null
+  // What this project calls its two axes (#62).
+  const rowWord = snapshot ? rowLabel(snapshot.project) : 'Character'
+  const colWord = snapshot ? timelineLabel(snapshot.project) : 'Chapter'
 
   const [tabMenu, setTabMenu] = useState<{ boardId: string; x: number; y: number } | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
@@ -205,10 +209,10 @@ export function BoardsView(): JSX.Element {
               <select
                 className="preset-select"
                 value=""
-                title="Put a character who is already in this project onto this board"
+                title={`Put a ${rowWord.toLowerCase()} that is already in this project onto this board`}
                 onChange={(e) => e.target.value && addCharacterToBoard(e.target.value)}
               >
-                <option value="">Add character… ({offBoard.length})</option>
+                <option value="">Add {rowWord.toLowerCase()}… ({offBoard.length})</option>
                 {offBoard.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -239,7 +243,7 @@ export function BoardsView(): JSX.Element {
       )}
 
       {addModal === 'row' && (
-        <Modal title="New character" onClose={() => setAddModal(null)}>
+        <Modal title={`New ${rowWord.toLowerCase()}`} onClose={() => setAddModal(null)}>
           {/* Created *from* the board, so being a row is the reason it exists —
               unlike the Characters tab, where a new character stays off the grid. */}
           <CharacterForm
@@ -252,7 +256,7 @@ export function BoardsView(): JSX.Element {
       )}
       {addModal === 'column' && (
         <Modal
-          title={`New ${(snapshot?.project.timelineLabel ?? 'unit').toLowerCase()}`}
+          title={`New ${colWord.toLowerCase()}`}
           onClose={() => setAddModal(null)}
         >
           <TimelineForm
