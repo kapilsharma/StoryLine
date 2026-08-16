@@ -41,6 +41,7 @@ function boardData(id: string, name: string, views: View[], cast?: Character[]):
       collapsedRowGroups: [],
       collapsedColGroups: [],
       zoom: 1,
+      members: null,
       views: views.map((v) => v.id)
     },
     characters:

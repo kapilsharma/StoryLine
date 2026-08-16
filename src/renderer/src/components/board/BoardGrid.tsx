@@ -61,7 +61,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const [menu, setMenu] = useState<ContextMenu | null>(null)
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
-  const { isExpanded, toggle: toggleExpand, registerCards } = useBoardUi()
+  const { isExpanded, toggle: toggleExpand, registerCards, revising, isRevealed, toggleRevealed, revealMany } =
+    useBoardUi()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const zoom = board.zoom || 1
@@ -94,7 +95,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     () => buildBoardLayout(effectiveBoard, characters, timeline, notes),
     [effectiveBoard, characters, timeline, notes]
   )
-  const { cols, rows, fullCards, markers } = layout
+  const { cols, rows, fullCards, markers, stackDepth } = layout
   const fullOrder = useMemo(() => orderedColumnIds(timeline), [timeline])
 
   // unit id per slot (null for collapsed-group slots), for resize hit-testing.
@@ -134,10 +135,16 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     return s
   }, [fullCards, isExpanded])
 
+  /** Vertical gap between stacked cards, and above/below the stack (#66). */
+  const STACK_GAP = 6
+
   const rowTracks = rows.lines
     .map((line) => {
       if (line.kind === 'groupHeader') return `${GROUPHEAD_LINE_H * zoom}px`
       if (line.kind === 'row' && expandedLines.has(line.index)) return `minmax(${rowH}px, auto)`
+      // A row holding overlapping cards grows to fit the whole stack (#66).
+      const depth = line.kind === 'row' ? (stackDepth.get(line.index) ?? 1) : 1
+      if (depth > 1) return `${depth * cardH + (depth + 1) * STACK_GAP}px`
       return `${rowH}px`
     })
     .join(' ')
@@ -196,6 +203,25 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   }
 
   // ── Create / move / resize ──
+  /**
+   * Reveal a whole row or column at once, or put it back (#67).
+   *
+   * "Reveal" flips to "hide" once everything in the group is already showing, so
+   * one control does both and you can re-hide a column to try it again.
+   */
+  const revealGroup = (ids: string[]): void => {
+    if (ids.length === 0) return
+    revealMany(ids, !ids.every((id) => isRevealed(id)))
+  }
+  const revealRow = (lineIndex: number): void =>
+    revealGroup(fullCards.filter((pc) => pc.lineIndex === lineIndex).map((pc) => pc.card.id))
+  const revealColumn = (slotIndex: number): void =>
+    revealGroup(
+      fullCards
+        .filter((pc) => pc.startSlot <= slotIndex && pc.endSlot >= slotIndex)
+        .map((pc) => pc.card.id)
+    )
+
   const createAt = async (rowId: string, colId: string): Promise<void> => {
     const title = await ask({ title: 'New card', placeholder: 'Card title' })
     if (title && title.trim()) {
@@ -293,7 +319,15 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                 key={slot.unit.id}
                 className="col-head"
                 style={{ gridColumn: slot.index + 2, gridRow: colHeadRow }}
-                title={slot.unit.summary}
+                title={
+                  revising
+                    ? `Reveal or re-hide every card in ${slot.unit.label}`
+                    : slot.unit.summary
+                }
+                onClick={() => {
+                  if (!revising) return
+                  revealColumn(slot.index)
+                }}
                 onContextMenu={(e) => {
                   e.preventDefault()
                   hideCol(slot.unit.id)
@@ -397,7 +431,12 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                   }}
                   title="Drag to reorder · right-click for row options"
                 >
-                  <span className="swatch" style={{ background: char.colour }} />
+                  <span
+                    className="swatch"
+                    style={{ background: char.colour }}
+                    title={revising ? `Reveal or re-hide ${char.name}'s cards` : undefined}
+                    onClick={() => revising && revealRow(line.index)}
+                  />
                   {/* Only a character who has a note is clickable (issue #41),
                       and the 📝 marks which those are — so the board never
                       offers a click that opens nothing. */}
@@ -455,6 +494,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                 {fullCards
                   .filter((pc) => pc.lineIndex === line.index)
                   .map((pc) => {
+                    const lineDepth = stackDepth.get(line.index) ?? 1
+                    const masked = revising && !isRevealed(pc.card.id)
                     const note = pc.note
                     const isExp = isExpanded(pc.card.id)
                     // Board cards show the title only (quick view); the full note
@@ -463,16 +504,32 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                     return (
                       <div
                         key={pc.card.id}
-                        className={`board-card${isExp ? ' expanded' : ''}`}
+                        className={`board-card${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}`}
                         draggable
                         onDragStart={(e) => onCardDragStart(e, pc.card)}
                         style={{
                           gridColumn: `${pc.startSlot + 2} / ${pc.endSlot + 3}`,
                           gridRow,
                           height: isExp ? 'auto' : `${cardH}px`,
-                          ['--card-border' as string]: pc.colour
+                          ['--card-border' as string]: pc.colour,
+                          // Stacked rows lay their cards out from the top so the
+                          // levels line up; a lone card keeps centring (#66).
+                          ...(lineDepth > 1
+                            ? {
+                                alignSelf: 'start',
+                                marginTop: `${STACK_GAP + pc.stackIndex * (cardH + STACK_GAP)}px`
+                              }
+                            : {})
                         }}
-                        onClick={() => note && setOpenNoteId(note.id)}
+                        onClick={() => {
+                          // In revision mode the first click is the reveal —
+                          // opening the note would give the answer away (#67).
+                          if (revising && !isRevealed(pc.card.id)) {
+                            toggleRevealed(pc.card.id)
+                            return
+                          }
+                          if (note) setOpenNoteId(note.id)
+                        }}
                         onContextMenu={(e) => {
                           e.preventDefault()
                           setMenu({ cardId: pc.card.id, x: e.clientX, y: e.clientY })
@@ -484,16 +541,24 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                         />
                         <div className="card-content">
                           <div className="card-title">
-                            {/* A card whose note has a body opens onto more than
-                                its title, so it says so up front (issue #46). */}
-                            {note?.hasBody && (
-                              <span className="card-note-icon" title="Has note details">
-                                📝{' '}
+                            {masked ? (
+                              <span className="card-masked" aria-label="Hidden — click to reveal">
+                                • • •
                               </span>
-                            )}
-                            {note?.title ?? '(missing note)'}
-                            {note?.related && note.related.length > 0 && (
-                              <span className="link-icon"> 🔗</span>
+                            ) : (
+                              <>
+                                {/* A card whose note has a body opens onto more
+                                    than its title, so it says so up front (#46). */}
+                                {note?.hasBody && (
+                                  <span className="card-note-icon" title="Has note details">
+                                    📝{' '}
+                                  </span>
+                                )}
+                                {note?.title ?? '(missing note)'}
+                                {note?.related && note.related.length > 0 && (
+                                  <span className="link-icon"> 🔗</span>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>

@@ -2,7 +2,15 @@ import { promises as fs } from 'fs'
 import { basename, join } from 'path'
 import type { Board, Character, Note, Project, TimelineUnit, View } from '@shared/types'
 import { isEmptyEntityBody, normalizeEntityBody } from '@shared/entityBody'
+import {
+  ASSETS_DIR,
+  MAX_ASSET_BYTES,
+  isAllowedAsset,
+  type AssetImport,
+  type AssetRef
+} from '@shared/assets'
 import { parseFrontmatter, serializeFrontmatter } from './frontmatter'
+import { uniqueSlug } from './slug'
 import { exists, readText, writeTextGuarded } from './fsutil'
 import {
   characterToFrontmatter,
@@ -53,6 +61,9 @@ const notesDir = (root: string, boardId: string): string => join(boardDir(root, 
  * spanning two of them would have no shared characters to draw.
  */
 const viewsDir = (root: string, boardId: string): string => join(boardDir(root, boardId), 'views')
+/** Images and other files referenced from this board's markdown (Issue #61). */
+export const assetsDir = (root: string, boardId: string): string =>
+  join(boardDir(root, boardId), ASSETS_DIR)
 
 const charPath = (root: string, boardId: string, id: string): string =>
   join(charsDir(root, boardId), `${id}.md`)
@@ -96,6 +107,11 @@ function normalizeProject(raw: Partial<Project>): Project {
     schemaVersion: typeof raw.schemaVersion === 'number' ? raw.schemaVersion : 1,
     name: raw.name ?? 'Untitled',
     timelineLabel: raw.timelineLabel ?? 'Chapter',
+    // Both optional and additive (#62, #63). Left `undefined` when absent rather
+    // than defaulted here, so a project that never set them is written back
+    // without the keys — see `applyMeta` in @shared/project.
+    ...(typeof raw.rowLabel === 'string' && raw.rowLabel.trim() ? { rowLabel: raw.rowLabel } : {}),
+    ...(raw.kind === 'general' ? { kind: 'general' as const } : {}),
     boards: raw.boards ?? [],
     created: raw.created ?? '',
     lastOpened: raw.lastOpened ?? '',
@@ -424,4 +440,63 @@ export async function writeView(
 
 export function deleteView(root: string, boardId: string, id: string): Promise<void> {
   return fs.rm(viewPath(root, boardId, id), { force: true })
+}
+
+// ── Assets (per board, Issue #61) ────────────────────────────────────────────
+
+/** Filenames present in a board's assets folder. Empty when there is none. */
+export async function listAssets(root: string, boardId: string): Promise<string[]> {
+  try {
+    const names = await fs.readdir(assetsDir(root, boardId))
+    return names.filter((n) => !n.startsWith('.')).sort()
+  } catch {
+    return []
+  }
+}
+
+/** Absolute path of one asset. Callers must have validated `file` is a bare name. */
+export function assetPath(root: string, boardId: string, file: string): string {
+  return join(assetsDir(root, boardId), file)
+}
+
+/**
+ * Write an imported file into the board's assets folder.
+ *
+ * The name is slugified (keeping its extension) and de-duplicated against what
+ * is already there, so importing `Screen Shot 2026.png` twice yields
+ * `screen-shot-2026.png` and `screen-shot-2026-2.png` rather than an overwrite.
+ */
+export async function writeAsset(
+  root: string,
+  boardId: string,
+  file: AssetImport
+): Promise<AssetRef> {
+  if (!isAllowedAsset(file.name)) {
+    throw new Error(`Unsupported file type: ${basename(file.name)}`)
+  }
+  const bytes = Buffer.from(file.data, 'base64')
+  if (bytes.byteLength > MAX_ASSET_BYTES) {
+    throw new Error(
+      `That file is ${(bytes.byteLength / 1024 / 1024).toFixed(1)} MB — the limit is ` +
+        `${MAX_ASSET_BYTES / 1024 / 1024} MB.`
+    )
+  }
+
+  const dot = file.name.lastIndexOf('.')
+  const stem = dot > 0 ? file.name.slice(0, dot) : file.name
+  const ext = dot > 0 ? file.name.slice(dot).toLowerCase() : ''
+  const taken = (await listAssets(root, boardId)).map((n) =>
+    n.toLowerCase().endsWith(ext) ? n.slice(0, n.length - ext.length) : n
+  )
+  const name = uniqueSlug(stem, taken) + ext
+
+  await fs.mkdir(assetsDir(root, boardId), { recursive: true })
+  await fs.writeFile(assetPath(root, boardId, name), bytes)
+
+  return {
+    boardId,
+    file: name,
+    markdownPath: `${ASSETS_DIR}/${name}`,
+    bytes: bytes.byteLength
+  }
 }

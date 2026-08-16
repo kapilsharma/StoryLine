@@ -296,6 +296,18 @@ export interface View {
  */
 export const SCHEMA_VERSION = 3
 
+/**
+ * What sort of project this is (Issue #63).
+ *
+ * `story` keeps the full novel-planning UI — family fields on a character, the
+ * Family tab. `general` hides both, for a project whose rows are topics, phases
+ * or products rather than people. Absent means `story`, so every project written
+ * before this existed behaves exactly as it did.
+ */
+export type ProjectKind = 'story' | 'general'
+
+export const PROJECT_KINDS: ProjectKind[] = ['story', 'general']
+
 /** Project metadata — `project.json`. */
 export interface Project {
   /** On-disk schema version (see SCHEMA_VERSION). */
@@ -303,6 +315,14 @@ export interface Project {
   name: string
   /** Label for timeline units, e.g. "Chapter". */
   timelineLabel: string
+  /**
+   * Label for board rows, e.g. "Character", "Topic", "Phase" (Issue #62).
+   * Optional and additive: absent means "Character", which is what every
+   * project written before this field behaved as.
+   */
+  rowLabel?: string
+  /** See {@link ProjectKind}. Absent = `story`. */
+  kind?: ProjectKind
   /** Board ids belonging to this project. */
   boards: string[]
   /** ISO date. */

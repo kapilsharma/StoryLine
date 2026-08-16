@@ -19,6 +19,7 @@ import { promises as fs } from 'fs'
 import { basename, isAbsolute, join, resolve } from 'path'
 import { spawn } from 'child_process'
 import { SNAPSHOT_GLOBAL } from '@shared/export'
+import { ASSETS_DIR } from '@shared/assets'
 import type { Theme } from '@shared/config'
 import { applyThemeToHtml, buildExportBundle, UnknownBoardError } from '../src/main/data/exportBundle'
 import { readLocalSettings } from './appSettingsPath'
@@ -152,6 +153,30 @@ async function prepareOutDir(dir: string, force: boolean): Promise<void> {
   await Promise.all(entries.map((e) => fs.rm(join(dir, e), { recursive: true, force: true })))
 }
 
+/**
+ * Copy each exported board's `assets/` folder into `<out>/assets/<boardId>/`,
+ * the layout `staticAssetResolver` expects. Returns how many files were copied.
+ */
+async function copyAssets(projectRoot: string, outDir: string, boardIds: string[]): Promise<number> {
+  let copied = 0
+  for (const boardId of boardIds) {
+    const from = join(projectRoot, 'boards', boardId, ASSETS_DIR)
+    let names: string[]
+    try {
+      names = await fs.readdir(from)
+    } catch {
+      continue // no assets on this board
+    }
+    const to = join(outDir, ASSETS_DIR, boardId)
+    await fs.mkdir(to, { recursive: true })
+    for (const name of names.filter((n) => !n.startsWith('.'))) {
+      await fs.cp(join(from, name), join(to, name), { recursive: true })
+      copied++
+    }
+  }
+  return copied
+}
+
 /** Total bytes and file count under a folder, for the summary line. */
 async function measure(dir: string): Promise<{ files: number; bytes: number }> {
   let files = 0
@@ -224,6 +249,13 @@ async function main(): Promise<void> {
     `/* ZN Story Line ${bundle.appVersion} — generated ${bundle.generatedAt}. Do not edit. */\n` +
     `window.${SNAPSHOT_GLOBAL} = ${JSON.stringify(bundle)};\n`
   await fs.writeFile(join(outDir, 'snapshot.js'), snapshot, 'utf8')
+
+  // Images and other files a note references (Issue #61). They are copied rather
+  // than inlined so the page stays small and the CSP's `img-src 'self'` is
+  // satisfied by a plain relative URL — which is exactly what
+  // `staticAssetResolver` produces.
+  const assetCount = await copyAssets(projectRoot, outDir, bundle.project.boards)
+  if (assetCount > 0) console.log(`  copied ${assetCount} asset(s)`)
 
   await fs.writeFile(
     join(outDir, MARKER),

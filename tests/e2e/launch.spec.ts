@@ -12,7 +12,7 @@ import { join } from 'path'
 let app: ElectronApplication
 
 test.beforeAll(async () => {
-  const env = { ...process.env }
+  const env: Record<string, string> = { ...process.env } as Record<string, string>
   delete env.ELECTRON_RUN_AS_NODE
   app = await electron.launch({
     args: [join(__dirname, '../../out/main/index.js')],

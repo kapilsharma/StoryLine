@@ -301,6 +301,14 @@ export interface PlacedCard {
   startSlot: number
   endSlot: number
   colour: string
+  /**
+   * Which level within the row this card sits on (Issue #66).
+   *
+   * 0 for a card that shares its span with nothing. Cards on the same row whose
+   * column spans overlap get successive levels and are drawn stacked, so a cell
+   * can hold more than one card instead of them landing on top of each other.
+   */
+  stackIndex: number
 }
 
 export interface BoardLayout {
@@ -309,9 +317,39 @@ export interface BoardLayout {
   fullCards: PlacedCard[]
   /** Marker counts for collapsed regions, keyed `lineIndex:slotIndex`. */
   markers: Map<string, number>
+  /**
+   * How many stack levels each row line needs (Issue #66). Keyed by
+   * `lineIndex`; absent means one. The grid uses it to grow the row track.
+   */
+  stackDepth: Map<number, number>
 }
 
 export const markerKey = (lineIndex: number, slotIndex: number): string => `${lineIndex}:${slotIndex}`
+
+/**
+ * Assign each card on a row a stack level, so overlapping cards sit above one
+ * another rather than on top of each other (Issue #66).
+ *
+ * Classic greedy interval colouring: take the cards left to right and drop each
+ * onto the first level whose previous card has already ended. Cards that do not
+ * overlap therefore stay on level 0 and a board that never stacks looks exactly
+ * as it did before.
+ *
+ * Mutates `stackIndex` in place and returns the depth needed.
+ */
+function assignStackLevels(cards: PlacedCard[]): number {
+  const ordered = [...cards].sort((a, b) => a.startSlot - b.startSlot || a.endSlot - b.endSlot)
+  /** Last occupied slot on each level. */
+  const levelEnds: number[] = []
+
+  for (const pc of ordered) {
+    let level = levelEnds.findIndex((end) => end < pc.startSlot)
+    if (level === -1) level = levelEnds.length
+    levelEnds[level] = pc.endSlot
+    pc.stackIndex = level
+  }
+  return Math.max(1, levelEnds.length)
+}
 
 /**
  * Compute the full board layout: column slots/headers, row lines, placed cards,
@@ -363,12 +401,26 @@ export function buildBoardLayout(
         lineIndex,
         startSlot,
         endSlot,
-        colour: char?.colour ?? '#888'
+        colour: char?.colour ?? '#888',
+        stackIndex: 0
       })
     }
   }
 
-  return { cols, rows, fullCards, markers }
+  // Stack levels are per row line, so each line is coloured independently.
+  const stackDepth = new Map<number, number>()
+  const byLine = new Map<number, PlacedCard[]>()
+  for (const pc of fullCards) {
+    const list = byLine.get(pc.lineIndex)
+    if (list) list.push(pc)
+    else byLine.set(pc.lineIndex, [pc])
+  }
+  for (const [lineIndex, cards] of byLine) {
+    const depth = assignStackLevels(cards)
+    if (depth > 1) stackDepth.set(lineIndex, depth)
+  }
+
+  return { cols, rows, fullCards, markers, stackDepth }
 }
 
 // ── Reordering (custom row/group sort, persisted in board JSON) ──────────────

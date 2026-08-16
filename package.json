@@ -3,7 +3,7 @@
   "productName": "ZN Story Line",
   "version": "0.13.0",
   "private": true,
-  "description": "Visual story planning — a structured 2D grid (characters × timeline). Filesystem-first.",
+  "description": "Visual story planning \u2014 a structured 2D grid (characters \u00d7 timeline). Filesystem-first.",
   "author": "Kapil Sharma",
   "main": "./out/main/index.js",
   "scripts": {
@@ -15,11 +15,12 @@
     "preview": "electron-vite preview",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
-    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web && npm run typecheck:test",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "typecheck:test": "tsc --noEmit -p tsconfig.test.json"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
@@ -44,6 +45,7 @@
   "dependencies": {
     "chokidar": "^5.0.0",
     "gray-matter": "^4.0.3",
+    "highlight.js": "^11.12.0",
     "marked": "^18.0.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

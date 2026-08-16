@@ -184,7 +184,9 @@ describe('board repository', () => {
       colOrder: ['ch1', 'ch2', 'ch3'],
       collapsedRowGroups: [],
       collapsedColGroups: [],
-      zoom: 1.5
+      zoom: 1.5,
+      members: null,
+      views: []
     })
     const { value } = await readBoard(root, BID)
     expect(value.cards[0].colEnd).toBe('ch3')

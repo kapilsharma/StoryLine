@@ -6,10 +6,30 @@ Bare `MAJOR.MINOR.PATCH` — **no `v` prefix** (tags, `CHANGELOG.md` headers, re
 
 Releases are automated by release-please from Conventional Commits; the maintainer merges the release PR. See [../workflow.md](../workflow.md).
 
+## What the major version means here
+
+`0.x` meant **not yet in a usable state**. `1.0.0` marks the point where the app
+is usable for real work — it is a statement about the product, not a promise of
+API compatibility to anyone. There is no external consumer of the IPC layer, and
+the app ships main, preload and renderer together, so an internal signature
+change is not a "breaking change" in the semver sense and should not be labelled
+one.
+
+What *is* breaking is a change to the **on-disk format**, because that is the
+only contract with anything outside a single build: the user's project folder.
+See below.
+
 ## Semver policy
 
-- **Pre-1.0.0 (current):** loose — patch bumps are acceptable even for small features. No data migrations yet beyond those already shipped.
-- **Post-1.0.0:** strict semver — **major** = breaking schema/code change, **minor** = non-breaking feature, **patch** = bugfix.
+- **Pre-1.0.0:** loose — patch bumps were acceptable even for small features.
+- **1.0.0 onward (current):** **major** = a change that makes an existing project
+  folder load wrong (see "When is a change breaking?"), **minor** = a
+  non-breaking feature, **patch** = bugfix.
+
+Which conventional-commit type drives which bump: `fix:` → patch, `feat:` → minor, `feat!:` / `BREAKING CHANGE:` → major. `chore`/`docs`/`ci`/`test`/`refactor` → no release.
+
+To release a specific version regardless of the commit types — as 1.0.0 itself
+was — put `Release-As: <version>` in the commit footer.
 
 Which conventional-commit type drives which bump: `fix:` → patch, `feat:` → minor, `feat!:` / `BREAKING CHANGE:` → major. `chore`/`docs`/`ci`/`test`/`refactor` → no release.
 

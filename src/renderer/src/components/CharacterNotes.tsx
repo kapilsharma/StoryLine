@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { isEmptyEntityBody } from '@shared/entityBody'
 import { useStore } from '../store'
-import { renderMarkdown } from '../lib/markdown'
+import { MarkdownPreview } from './MarkdownPreview'
 
 /**
  * The notes column of the Characters tab (issue #33) — the markdown body of the
@@ -48,7 +48,6 @@ export function CharacterNotes({ characterId }: { characterId: string }): JSX.El
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [body])
 
-  const html = useMemo(() => renderMarkdown(body), [body])
   const empty = isEmptyEntityBody(body)
 
   const startNote = (): void => {
@@ -112,7 +111,7 @@ export function CharacterNotes({ characterId }: { characterId: string }): JSX.El
           )}
         </div>
       ) : (
-        <div className="character-notes-body markdown" dangerouslySetInnerHTML={{ __html: html }} />
+        <MarkdownPreview markdown={body} className="character-notes-body" />
       )}
     </>
   )

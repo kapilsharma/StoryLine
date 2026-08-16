@@ -9,7 +9,10 @@
  */
 import type { Board, Card, Character, Note, Problem, Project, TimelineUnit, View, ViewMode } from './types'
 import type { AppConfig, AppSettings } from './config'
+import type { ProjectMeta } from './project'
 import type { ProjectChange } from './changes'
+import type { SearchHit, SearchScope } from './search'
+import type { AssetImport, AssetRef } from './assets'
 
 /** Entities whose markdown body the dedicated editor can edit (notes use getNote/saveNote). */
 export type EntityBodyKind = 'character' | 'timeline'
@@ -63,8 +66,8 @@ export interface AppApi {
   openProject(root: string): Promise<ProjectSnapshot>
   reloadProject(root: string): Promise<ProjectSnapshot>
   removeRecent(root: string): Promise<AppConfig>
-  /** Update project-level metadata (name, timeline label). */
-  saveProjectMeta(root: string, name: string, timelineLabel: string): Promise<ProjectSnapshot>
+  /** Update project-level metadata (name, row/timeline labels, project kind). */
+  saveProjectMeta(root: string, meta: ProjectMeta): Promise<ProjectSnapshot>
   /** Persist the family → colour map used by the family tree. */
   saveFamilyColours(root: string, families: Record<string, string>): Promise<ProjectSnapshot>
 
@@ -157,6 +160,26 @@ export interface AppApi {
   createCard(root: string, input: NewCardInput): Promise<ProjectSnapshot>
   updateCard(root: string, boardId: string, card: Card): Promise<ProjectSnapshot>
   deleteCard(root: string, boardId: string, cardId: string): Promise<ProjectSnapshot>
+
+  // ── Search (Issues #59, #60) ──
+  /**
+   * Full-text search over note, character and timeline bodies.
+   *
+   * Runs in the main process because note bodies are not in the snapshot —
+   * `listNoteMetas` drops them on purpose. An empty `scope.boardIds` searches
+   * every board, which is the whole point of #60.
+   */
+  searchNotes(root: string, query: string, scope: SearchScope): Promise<SearchHit[]>
+
+  // ── Assets (Issue #61) ──
+  /**
+   * Copy a file into `boards/<boardId>/assets/`, de-duplicating the name, and
+   * return what to write in the markdown. Rejects unknown extensions and
+   * anything over {@link MAX_ASSET_BYTES}.
+   */
+  importAsset(root: string, boardId: string, file: AssetImport): Promise<AssetRef>
+  /** Open the OS file picker and import whatever is chosen. Null if cancelled. */
+  pickAsset(root: string, boardId: string): Promise<AssetRef | null>
 
   // ── Live reload ──
   onProjectChange(listener: (change: ProjectChange) => void): () => void

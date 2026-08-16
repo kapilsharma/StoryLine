@@ -25,7 +25,7 @@ test.beforeAll(async () => {
   projectDir = join(await fs.mkdtemp(join(tmpdir(), 'zn-characters-e2e-')), 'ashvale-family')
   await fs.cp(join(__dirname, '../fixtures/ashvale-family'), projectDir, { recursive: true })
 
-  const env = { ...process.env }
+  const env: Record<string, string> = { ...process.env } as Record<string, string>
   // Clear or Electron starts as plain Node (a quirk of some dev shells).
   delete env.ELECTRON_RUN_AS_NODE
   app = await electron.launch({ args: [join(__dirname, '../../out/main/index.js')], env })

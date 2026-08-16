@@ -38,6 +38,8 @@ const board = (over: Partial<Board>): Board => ({
   collapsedRowGroups: [],
   collapsedColGroups: [],
   zoom: 1,
+  members: null,
+  views: [],
   ...over
 })
 
@@ -178,5 +180,102 @@ describe('card placement + markers', () => {
     expect(layout.fullCards).toHaveLength(0)
     const line = layout.rows.lineOfChar.get('b')!
     expect(layout.markers.get(markerKey(line, 0))).toBe(1)
+  })
+})
+
+/**
+ * Stacking overlapping cards in one cell (Issue #66).
+ *
+ * The invariant that matters: two cards whose column spans overlap on the same
+ * row must never share a stack level, and a board that never overlaps must keep
+ * every card on level 0 so it looks exactly as it did before.
+ */
+describe('card stacking (#66)', () => {
+  const note: Note[] = [{ id: 'n1', uid: 'n_1111', title: 'X', body: '' }]
+  const at = (id: string, rowId: string, colStart: string, colEnd = colStart) => ({
+    id,
+    noteUid: 'n_1111',
+    rowId,
+    colStart,
+    colEnd
+  })
+
+  it('keeps a single card on level 0 and records no depth', () => {
+    const layout = buildBoardLayout(board({ cards: [at('c1', 'a', 'ch3')] }), chars, timeline, note)
+    expect(layout.fullCards[0].stackIndex).toBe(0)
+    expect(layout.stackDepth.size).toBe(0)
+  })
+
+  it('keeps non-overlapping cards on the same row at level 0', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [at('c1', 'a', 'ch1'), at('c2', 'a', 'ch3')] }),
+      chars,
+      timeline,
+      note
+    )
+    expect(layout.fullCards.map((c) => c.stackIndex)).toEqual([0, 0])
+    expect(layout.stackDepth.size).toBe(0)
+  })
+
+  it('stacks two cards that share a cell', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [at('c1', 'a', 'ch3'), at('c2', 'a', 'ch3')] }),
+      chars,
+      timeline,
+      note
+    )
+    const levels = layout.fullCards.map((c) => c.stackIndex).sort()
+    expect(levels).toEqual([0, 1])
+    const line = layout.rows.lineOfChar.get('a')!
+    expect(layout.stackDepth.get(line)).toBe(2)
+  })
+
+  it('stacks a spanning card above one it overlaps', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [at('span', 'a', 'ch1', 'ch4'), at('single', 'a', 'ch3')] }),
+      chars,
+      timeline,
+      note
+    )
+    const byId = new Map(layout.fullCards.map((c) => [c.card.id, c.stackIndex]))
+    expect(byId.get('span')).not.toBe(byId.get('single'))
+  })
+
+  it('reuses a level once the earlier card has ended', () => {
+    // ch1–ch1, ch1–ch1 (forces level 1), then ch4 which clears both.
+    const layout = buildBoardLayout(
+      board({ cards: [at('c1', 'a', 'ch1'), at('c2', 'a', 'ch1'), at('c3', 'a', 'ch4')] }),
+      chars,
+      timeline,
+      note
+    )
+    const byId = new Map(layout.fullCards.map((c) => [c.card.id, c.stackIndex]))
+    expect(byId.get('c3')).toBe(0)
+    expect(layout.stackDepth.get(layout.rows.lineOfChar.get('a')!)).toBe(2)
+  })
+
+  it('counts stack levels per row, not across the board', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [at('c1', 'a', 'ch3'), at('c2', 'a', 'ch3'), at('c3', 'b', 'ch3')] }),
+      chars,
+      timeline,
+      note
+    )
+    const lineA = layout.rows.lineOfChar.get('a')!
+    const lineB = layout.rows.lineOfChar.get('b')!
+    expect(layout.stackDepth.get(lineA)).toBe(2)
+    expect(layout.stackDepth.get(lineB)).toBeUndefined()
+    expect(layout.fullCards.find((c) => c.card.id === 'c3')!.stackIndex).toBe(0)
+  })
+
+  it('stacks three cards in the same cell onto three levels', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [at('c1', 'a', 'ch3'), at('c2', 'a', 'ch3'), at('c3', 'a', 'ch3')] }),
+      chars,
+      timeline,
+      note
+    )
+    expect(layout.fullCards.map((c) => c.stackIndex).sort()).toEqual([0, 1, 2])
+    expect(layout.stackDepth.get(layout.rows.lineOfChar.get('a')!)).toBe(3)
   })
 })

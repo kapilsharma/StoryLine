@@ -23,3 +23,6 @@ static/
 
 # Local agent/editor tooling config (machine-specific paths — not for sharing)
 .claude/
+
+# Example projects
+examples/togaf

@@ -18,7 +18,8 @@ const snapshot: ProjectSnapshot = {
     timelineLabel: 'Chapter',
     boards: ['main'],
     created: '2026-08-01',
-    lastOpened: '2026-08-10'
+    lastOpened: '2026-08-10',
+    families: {}
   },
   boards: [
     {

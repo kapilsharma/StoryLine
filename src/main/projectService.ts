@@ -17,6 +17,21 @@ import {
 } from './data/repository'
 import { migrateIfNeeded } from './data/migrate'
 
+/**
+ * The project the app currently has open.
+ *
+ * Held here because the `zn-asset://` protocol handler (see `src/main/index.ts`)
+ * has to resolve a board-relative asset path against *some* root, and a URL
+ * carrying an absolute filesystem path would be both ugly and a way to read
+ * arbitrary files. Set by `loadSnapshot`, which every open goes through.
+ */
+let openRoot: string | null = null
+
+/** The root of the currently open project, or null before one is opened. */
+export function currentRoot(): string | null {
+  return openRoot
+}
+
 /** Today's date as YYYY-MM-DD. */
 function today(): string {
   return new Date().toISOString().slice(0, 10)
@@ -109,6 +124,8 @@ export async function loadSnapshot(root: string, stampLastOpened = false): Promi
   const extra = onDisk.filter((id) => !ordered.includes(id))
   const boardIds = [...ordered, ...extra]
   const boards = await Promise.all(boardIds.map((id) => loadBoardData(root, id)))
+
+  openRoot = root
 
   if (stampLastOpened) {
     try {

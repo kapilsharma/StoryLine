@@ -2,7 +2,7 @@
 id: aeri
 type: character
 name: Aeri
-colour: '#00ff00'
+colour: '#ff0000'
 species: Dragon
 family: Seer
 gender: female
@@ -19,3 +19,13 @@ She is young talented dragon researcher. She works in project ==Thettana Twin Re
 - Kenera - Hatch brother
 - Vaeli - Friend in office (3 years senior)
 - Senkor - Director @ Thettana Twin Resonance Project
+
+```php
+class Zoey {
+    const name = "Zoey"
+
+    public getName() {
+        return $this->name;
+    }
+}
+```

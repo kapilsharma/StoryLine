@@ -37,10 +37,33 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/shared/types.ts',
         'src/shared/ipc.ts',
+        'src/shared/assets.ts',
         'src/main/index.ts',
         'src/preload/**',
-        'src/renderer/src/main.tsx'
-      ]
+        'src/renderer/src/main.tsx',
+        'src/web/main.tsx'
+      ],
+      /**
+       * A ratchet, not a target.
+       *
+       * Set just under the numbers the suite actually reaches, so a change that
+       * adds untested code fails `npm run test:coverage` instead of quietly
+       * lowering the bar. Raise them when coverage rises; do not lower them
+       * without saying why.
+       *
+       * The pure layers are held far higher than the UI: they are plain
+       * functions with no excuse for being untested, and they are where a silent
+       * regression does the most damage.
+       */
+      thresholds: {
+        statements: 74,
+        branches: 66,
+        functions: 63,
+        lines: 77,
+        'src/shared/**': { statements: 95, branches: 90, functions: 100, lines: 95 },
+        'src/main/data/**': { statements: 90, branches: 78, functions: 90, lines: 92 },
+        'src/renderer/src/lib/**': { statements: 95, branches: 88, functions: 100, lines: 95 }
+      }
     }
   }
 })

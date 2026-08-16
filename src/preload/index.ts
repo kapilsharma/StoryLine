@@ -15,8 +15,7 @@ const api: AppApi = {
   openProject: (root) => ipcRenderer.invoke('project:open', root),
   reloadProject: (root) => ipcRenderer.invoke('project:reload', root),
   removeRecent: (root) => ipcRenderer.invoke('project:removeRecent', root),
-  saveProjectMeta: (root, name, timelineLabel) =>
-    ipcRenderer.invoke('project:saveMeta', root, name, timelineLabel),
+  saveProjectMeta: (root, meta) => ipcRenderer.invoke('project:saveMeta', root, meta),
   saveFamilyColours: (root, families) => ipcRenderer.invoke('project:saveFamilies', root, families),
 
   saveCharacter: (root, boardId, character, addToBoard) =>
@@ -57,6 +56,11 @@ const api: AppApi = {
   deleteView: (root, boardId, id) => ipcRenderer.invoke('view:delete', root, boardId, id),
   reorderViews: (root, boardId, orderedIds) =>
     ipcRenderer.invoke('view:reorder', root, boardId, orderedIds),
+
+  searchNotes: (root, query, scope) => ipcRenderer.invoke('search:notes', root, query, scope),
+
+  importAsset: (root, boardId, file) => ipcRenderer.invoke('asset:import', root, boardId, file),
+  pickAsset: (root, boardId) => ipcRenderer.invoke('asset:pick', root, boardId),
 
   createCard: (root, input) => ipcRenderer.invoke('card:create', root, input),
   updateCard: (root, boardId, card) => ipcRenderer.invoke('card:update', root, boardId, card),
