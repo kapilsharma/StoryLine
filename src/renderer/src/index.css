@@ -818,6 +818,45 @@ textarea {
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
+/* Drag the row-header column's right edge to resize it (issue #80).
+
+   The rail spans the full height of the grid so the whole boundary is grabbable,
+   and sticks to the left so it stays on the edge as the board scrolls sideways.
+   It sits above the header cells but takes no pointer events of its own — only
+   the strip does — so dragging a row to reorder it still works underneath. */
+.header-resize-rail {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+.header-resize {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  pointer-events: auto;
+  touch-action: none;
+}
+/* The line itself, drawn over the border on hover — the cursor says the edge is
+   draggable, this says exactly which edge. */
+.header-resize::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+}
+.header-resize:hover::after,
+.header-resize:active::after {
+  opacity: 0.7;
+}
 .col-head {
   display: flex;
   align-items: center;
@@ -838,7 +877,8 @@ textarea {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0 0.7rem;
+  /* Right padding leaves room for the expand button (issue #80). */
+  padding: 0 1.1rem 0 0.7rem;
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -848,9 +888,8 @@ textarea {
   cursor: context-menu;
 }
 .row-name {
+  min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 /* A character with a note (issue #41): the name opens a read-only preview, and
    the 📝 is what says so before the click. */
@@ -868,21 +907,59 @@ textarea {
   text-align: left;
   cursor: pointer;
 }
-.row-note-name {
+/* Two lines by default, so a name wider than the column stays readable instead
+   of being cut off after one (issue #80); the expand button lifts the clamp.
+   Names are often a single long word (surnames, place names), so the break has
+   to be allowed mid-word or such a name still shows only its first line. */
+.row-name-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+.row-head.expanded .row-name-text {
+  -webkit-line-clamp: unset;
+}
+/* Expanded, the row is as tall as the name needs; sit the header at the top so
+   the name starts on the row's first line rather than floating in the middle. */
+.row-head.expanded {
+  align-items: flex-start;
+  padding-top: 0.45rem;
 }
 .row-note-icon {
   font-size: 0.75em;
   opacity: 0.65;
   flex: none;
 }
-.row-name.row-note:hover .row-note-name {
+.row-name.row-note:hover .row-name-text {
   text-decoration: underline;
 }
 .row-name.row-note:hover .row-note-icon {
   opacity: 1;
+}
+/* Mirrors .card-expand — shown only on a name that actually overflows, and only
+   on hover so the column isn't peppered with buttons. */
+.row-expand {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  border: none;
+  background: none;
+  padding: 0;
+  line-height: 1;
+  font-size: 0.7rem;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0;
+}
+.row-head:hover .row-expand,
+.row-head.expanded .row-expand {
+  opacity: 1;
+}
+.row-expand:hover {
+  color: var(--accent);
 }
 /* Same marker as .row-note-icon, reused in the character tab's list (issue #55). */
 .entity-note-icon {

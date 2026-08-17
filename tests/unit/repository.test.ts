@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { isEmptyEntityBody } from '@shared/entityBody'
+import type { Board } from '@shared/types'
+import { ROW_HEADER_W_MIN, normalizeRowHeaderWidth } from '@shared/types'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -204,5 +206,52 @@ describe('board repository', () => {
     expect(value.rowGroupOrder).toEqual([])
     expect(value.collapsedRowGroups).toEqual([])
     expect(value.zoom).toBe(1)
+    // Absent means "the default width" (#80) — nothing to migrate.
+    expect(value.rowHeaderWidth).toBeUndefined()
+  })
+
+  it('round-trips a dragged row-header width, clamped to the minimum', async () => {
+    const base: Board = {
+      id: 'wide',
+      name: 'Wide',
+      cards: [],
+      hiddenRows: [],
+      hiddenCols: [],
+      presets: [],
+      rowOrder: [],
+      rowGroupOrder: [],
+      colOrder: [],
+      collapsedRowGroups: [],
+      collapsedColGroups: [],
+      zoom: 1,
+      members: null,
+      views: [],
+      rowHeaderWidth: 320
+    }
+    await writeBoard(root, base)
+    expect((await readBoard(root, 'wide')).value.rowHeaderWidth).toBe(320)
+
+    // A width narrower than the minimum — hand-edited, or written by a build
+    // with a lower floor — comes back at the floor rather than unusably narrow.
+    await writeBoard(root, { ...base, rowHeaderWidth: 10 })
+    expect((await readBoard(root, 'wide')).value.rowHeaderWidth).toBe(ROW_HEADER_W_MIN)
+  })
+})
+
+describe('normalizeRowHeaderWidth', () => {
+  it('keeps a usable width and rounds it', () => {
+    expect(normalizeRowHeaderWidth(240)).toBe(240)
+    expect(normalizeRowHeaderWidth(240.6)).toBe(241)
+  })
+
+  it('drops anything that is not a usable number', () => {
+    for (const bad of [undefined, null, '200', NaN, Infinity, {}]) {
+      expect(normalizeRowHeaderWidth(bad)).toBeUndefined()
+    }
+  })
+
+  it('raises a too-narrow width to the minimum', () => {
+    expect(normalizeRowHeaderWidth(0)).toBe(ROW_HEADER_W_MIN)
+    expect(normalizeRowHeaderWidth(-50)).toBe(ROW_HEADER_W_MIN)
   })
 })

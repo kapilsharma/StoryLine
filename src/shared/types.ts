@@ -204,6 +204,34 @@ export interface Board {
    * Added in v0.6.0; absent on older boards and defaulted to `[]`.
    */
   views: string[]
+  /**
+   * Width in px of the sticky row-header column, as the user dragged it (#80).
+   *
+   * Genuinely optional: absent means {@link ROW_HEADER_W_DEFAULT}, so a board
+   * written before this existed needs no migration and no schema bump. Unlike
+   * `zoom` it is *not* scaled by zoom — it is a real width on screen.
+   */
+  rowHeaderWidth?: number
+}
+
+/** Width of a board's row-header column before the user resizes it (#80). */
+export const ROW_HEADER_W_DEFAULT = 170
+/** Narrowest the header column can be dragged — still fits a swatch and a short name. */
+export const ROW_HEADER_W_MIN = 120
+/**
+ * Widest the header column can be dragged, as a share of the *visible* board.
+ * A fraction rather than a px cap, so the grid can never be pushed off screen.
+ */
+export const ROW_HEADER_W_MAX_FRACTION = 0.5
+
+/**
+ * Coerce a persisted row-header width into range. Only the minimum is applied
+ * here: the maximum depends on the window size, which the data layer cannot
+ * know, so the drag enforces it (see `BoardGrid`).
+ */
+export function normalizeRowHeaderWidth(raw: unknown): number | undefined {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return undefined
+  return Math.max(ROW_HEADER_W_MIN, Math.round(raw))
 }
 
 /**
