@@ -31,6 +31,18 @@ boards/<boardId>/
 - **Renderer:** `src/renderer/src/{App,store,api}.tsx`, `components/*`, `lib/{markdown,reorder,text}.ts`; family tree under `components/tree/*` with a pure layout engine in `components/tree/layout/*`.
 - **Store** = React context. Snapshot shape `{ root, project, boards: BoardData[] }`; mutations return a fresh `ProjectSnapshot`. Live-reload via a chokidar watcher — `classify` in `watcher.ts` must match the per-board paths.
 
+## User-facing docs live in `examples/sl-docs`
+
+The end-user manual is a ZN Story Line project (`examples/sl-docs`, 4 boards, 288
+notes) rather than Markdown in `docs/`. Its notes describe real UI strings —
+button labels, menu items, confirmation text — so **a change to the interface or
+to the on-disk format needs the matching note updated in the same change**, the
+same way this wiki does. The boards are `start`, `reference`, `howto` and `files`;
+find the affected note under `boards/<board>/notes/` (searching for the button
+label is usually quickest) and edit it as an ordinary Markdown file.
+
+`docs/` stays developer-facing: publishing, build/release workflow, and this wiki.
+
 ## Verify workflow
 
 Run after any change, before handing off:

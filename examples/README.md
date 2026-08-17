@@ -2,6 +2,21 @@
 
 Sample ZN Story Line projects you can open to explore the app.
 
+## `sl-docs/`
+
+**The user manual for ZN Story Line, written as a ZN Story Line project.** Four
+boards — *Start here*, *Feature reference*, *How do I…?* and *Your files on disk*
+— covering every tab, button, setting and file the app has, in 288 notes.
+
+Open this one if you want to know how something works. It doubles as the app's
+heaviest non-fiction example: 79 rows, groups, spanning cards, presets,
+screenshots, and a `general` project kind (rows are topics, so the Family tab is
+hidden).
+
+**To open it:** launch ZN Story Line → **Open project** → choose the
+`examples/sl-docs` folder. See [`sl-docs/README.md`](sl-docs/README.md) for what
+is on each board and how to read them.
+
 ## `dracula/`
 
 Bram Stoker's **Dracula** (1897), mapped onto a single board: 28 columns (the 27
@@ -40,6 +55,12 @@ so edits in place will show up as failures.
 ## Content license
 
 The examples here are **not** all under the same terms — check which one you are looking at.
+
+### `sl-docs/` — MIT, like the rest of the repository
+
+Documentation of the application rather than story content, so it is covered by
+the repository's MIT license. Copy and adapt it freely. Its screenshots are of
+`sl-docs/` and `dracula/`, both MIT.
 
 ### `dracula/` — MIT, like the rest of the repository
 

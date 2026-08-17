@@ -1,0 +1,367 @@
+{
+  "id": "start",
+  "name": "Start here",
+  "cards": [
+    {
+      "id": "card-2fcca6f6",
+      "noteUid": "n_5031e9ec",
+      "rowId": "install",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-790a7400",
+      "noteUid": "n_ce61085b",
+      "rowId": "install",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-961a5da0",
+      "noteUid": "n_9b24138b",
+      "rowId": "install",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-e8111f6e",
+      "noteUid": "n_7c8c1e75",
+      "rowId": "new-project",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-8c70897c",
+      "noteUid": "n_394c6503",
+      "rowId": "new-project",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-8636262b",
+      "noteUid": "n_48c45ec0",
+      "rowId": "new-project",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-a3375136",
+      "noteUid": "n_c1b9cefc",
+      "rowId": "grid",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-26b7a2cc",
+      "noteUid": "n_e8093da5",
+      "rowId": "grid",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-989c2669",
+      "noteUid": "n_cacd08ea",
+      "rowId": "grid",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-5f3b7213",
+      "noteUid": "n_e52c995c",
+      "rowId": "rows",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-9870220d",
+      "noteUid": "n_bc41c72f",
+      "rowId": "rows",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-47ec96b6",
+      "noteUid": "n_3d2b1de4",
+      "rowId": "rows",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-52cf53c4",
+      "noteUid": "n_17e80836",
+      "rowId": "cols",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-f099ac58",
+      "noteUid": "n_77618d77",
+      "rowId": "cols",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-ad93300f",
+      "noteUid": "n_e2e54845",
+      "rowId": "cols",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-b9711a78",
+      "noteUid": "n_4baa8c81",
+      "rowId": "cards",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-f197b1e5",
+      "noteUid": "n_fc946bbc",
+      "rowId": "cards",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-656771a5",
+      "noteUid": "n_1bc31302",
+      "rowId": "cards",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-aba4127e",
+      "noteUid": "n_c859fe9b",
+      "rowId": "notes",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-5f3760d7",
+      "noteUid": "n_6e46517e",
+      "rowId": "notes",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-ff6d4cdf",
+      "noteUid": "n_50a4a4b7",
+      "rowId": "notes",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-8e5042b7",
+      "noteUid": "n_4372990f",
+      "rowId": "group",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-aa6a7568",
+      "noteUid": "n_5da93811",
+      "rowId": "group",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-55b3982c",
+      "noteUid": "n_9b850c23",
+      "rowId": "group",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-a80485d8",
+      "noteUid": "n_c7a25554",
+      "rowId": "presets",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-09c9a23d",
+      "noteUid": "n_2106299a",
+      "rowId": "presets",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-effcd17c",
+      "noteUid": "n_230cd05e",
+      "rowId": "presets",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-d392052b",
+      "noteUid": "n_171212c6",
+      "rowId": "labels",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-7c5ff366",
+      "noteUid": "n_c3d7821f",
+      "rowId": "labels",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-746976c5",
+      "noteUid": "n_bef77a3e",
+      "rowId": "labels",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-f7f17265",
+      "noteUid": "n_9334d401",
+      "rowId": "files",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-3439bef7",
+      "noteUid": "n_6298abe2",
+      "rowId": "files",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-99cbae46",
+      "noteUid": "n_8ac1d3ec",
+      "rowId": "files",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-a936abe9",
+      "noteUid": "n_152cc089",
+      "rowId": "backup",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-dafb0a04",
+      "noteUid": "n_e8edea15",
+      "rowId": "backup",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-677d46cc",
+      "noteUid": "n_c7ec6da4",
+      "rowId": "backup",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-87ae3996",
+      "noteUid": "n_622322d2",
+      "rowId": "publish",
+      "colStart": "do",
+      "colEnd": "do"
+    },
+    {
+      "id": "card-0d890be5",
+      "noteUid": "n_cb8e6969",
+      "rowId": "publish",
+      "colStart": "why",
+      "colEnd": "why"
+    },
+    {
+      "id": "card-16b357d4",
+      "noteUid": "n_41775d41",
+      "rowId": "publish",
+      "colStart": "watch",
+      "colEnd": "watch"
+    }
+  ],
+  "hiddenRows": [],
+  "hiddenCols": [],
+  "presets": [
+    {
+      "name": "① Just the steps",
+      "hiddenRows": [],
+      "hiddenCols": [
+        "why",
+        "watch"
+      ]
+    },
+    {
+      "name": "② Steps + reasons",
+      "hiddenRows": [],
+      "hiddenCols": [
+        "watch"
+      ]
+    },
+    {
+      "name": "③ Gotchas only",
+      "hiddenRows": [],
+      "hiddenCols": [
+        "do",
+        "why"
+      ]
+    },
+    {
+      "name": "④ Setting up only",
+      "hiddenRows": [
+        "rows",
+        "cols",
+        "cards",
+        "notes",
+        "group",
+        "presets",
+        "labels",
+        "files",
+        "backup",
+        "publish"
+      ],
+      "hiddenCols": []
+    }
+  ],
+  "members": [
+    "install",
+    "new-project",
+    "grid",
+    "rows",
+    "cols",
+    "cards",
+    "notes",
+    "group",
+    "presets",
+    "labels",
+    "files",
+    "backup",
+    "publish"
+  ],
+  "rowOrder": [
+    "install",
+    "new-project",
+    "grid",
+    "rows",
+    "cols",
+    "cards",
+    "notes",
+    "group",
+    "presets",
+    "labels",
+    "files",
+    "backup",
+    "publish"
+  ],
+  "rowGroupOrder": [
+    "Set up",
+    "Fill it in",
+    "Shape it",
+    "Keep it"
+  ],
+  "colOrder": [
+    "do",
+    "why",
+    "watch"
+  ],
+  "collapsedRowGroups": [],
+  "collapsedColGroups": [],
+  "zoom": 1,
+  "views": []
+}

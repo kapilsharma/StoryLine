@@ -1,0 +1,306 @@
+{
+  "id": "files",
+  "name": "Your files on disk",
+  "cards": [
+    {
+      "id": "card-fccab0dc",
+      "noteUid": "n_ab5e35be",
+      "rowId": "project-json",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-fff955af",
+      "noteUid": "n_5897f9e4",
+      "rowId": "project-json",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-c3a39344",
+      "noteUid": "n_683447af",
+      "rowId": "project-json",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-c1a314a2",
+      "noteUid": "n_853e2c90",
+      "rowId": "schema",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-c2b29861",
+      "noteUid": "n_ec9eb9b5",
+      "rowId": "schema",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-046dfc17",
+      "noteUid": "n_9ffa29b8",
+      "rowId": "schema",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-d851d4d5",
+      "noteUid": "n_0d86d283",
+      "rowId": "backups",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-867ab574",
+      "noteUid": "n_e3d37865",
+      "rowId": "backups",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-18b9333f",
+      "noteUid": "n_f9af60b0",
+      "rowId": "backups",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-a05905f7",
+      "noteUid": "n_63c3b9c5",
+      "rowId": "board-json",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-954cdbea",
+      "noteUid": "n_ec2cd55a",
+      "rowId": "board-json",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-3a58e5fa",
+      "noteUid": "n_de576ec2",
+      "rowId": "board-json",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-e59ffaa4",
+      "noteUid": "n_cbae2cb1",
+      "rowId": "characters",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-607cc524",
+      "noteUid": "n_d1aed815",
+      "rowId": "characters",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-723a9e30",
+      "noteUid": "n_d0c3a79a",
+      "rowId": "characters",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-04804013",
+      "noteUid": "n_baa2fffe",
+      "rowId": "timeline",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-980b81f7",
+      "noteUid": "n_5c423392",
+      "rowId": "timeline",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-ad92f4d5",
+      "noteUid": "n_a4ad37b1",
+      "rowId": "timeline",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-2f8a13a9",
+      "noteUid": "n_1925e1a4",
+      "rowId": "notes",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-d11e412d",
+      "noteUid": "n_8275295c",
+      "rowId": "notes",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-c567df7a",
+      "noteUid": "n_b0fb8abb",
+      "rowId": "notes",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-6c7e198f",
+      "noteUid": "n_1559468a",
+      "rowId": "views",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-217eb5db",
+      "noteUid": "n_beb99b0f",
+      "rowId": "views",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-ff8b61af",
+      "noteUid": "n_dfc1d03b",
+      "rowId": "views",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-a2fadef8",
+      "noteUid": "n_acbb4f80",
+      "rowId": "assets",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-59dc4f4c",
+      "noteUid": "n_b6a9745c",
+      "rowId": "assets",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-6c8ce63e",
+      "noteUid": "n_e2c29036",
+      "rowId": "assets",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-2c3a4479",
+      "noteUid": "n_0f6bd8c2",
+      "rowId": "frontmatter",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-8127a967",
+      "noteUid": "n_c34be5a8",
+      "rowId": "frontmatter",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-16fad5de",
+      "noteUid": "n_1b2a02de",
+      "rowId": "frontmatter",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    },
+    {
+      "id": "card-3d0a1b69",
+      "noteUid": "n_a2499aec",
+      "rowId": "ids",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-8bab6bf7",
+      "noteUid": "n_b1188fbb",
+      "rowId": "ids",
+      "colStart": "edit",
+      "colEnd": "edit"
+    },
+    {
+      "id": "card-11887c40",
+      "noteUid": "n_811f069a",
+      "rowId": "ids",
+      "colStart": "breaks",
+      "colEnd": "breaks"
+    }
+  ],
+  "hiddenRows": [],
+  "hiddenCols": [],
+  "presets": [
+    {
+      "name": "① Reference",
+      "hiddenRows": [],
+      "hiddenCols": [
+        "breaks"
+      ]
+    },
+    {
+      "name": "② Before you hand-edit",
+      "hiddenRows": [],
+      "hiddenCols": [
+        "what"
+      ]
+    },
+    {
+      "name": "③ Board files only",
+      "hiddenRows": [
+        "project-json",
+        "schema",
+        "backups",
+        "frontmatter",
+        "ids"
+      ],
+      "hiddenCols": []
+    }
+  ],
+  "members": [
+    "project-json",
+    "schema",
+    "backups",
+    "board-json",
+    "characters",
+    "timeline",
+    "notes",
+    "views",
+    "assets",
+    "frontmatter",
+    "ids"
+  ],
+  "rowOrder": [
+    "project-json",
+    "schema",
+    "backups",
+    "board-json",
+    "characters",
+    "timeline",
+    "notes",
+    "views",
+    "assets",
+    "frontmatter",
+    "ids"
+  ],
+  "rowGroupOrder": [
+    "Project level",
+    "Board level",
+    "Conventions"
+  ],
+  "colOrder": [
+    "what",
+    "edit",
+    "breaks"
+  ],
+  "collapsedRowGroups": [],
+  "collapsedColGroups": [],
+  "zoom": 1,
+  "views": []
+}

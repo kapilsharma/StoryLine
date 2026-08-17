@@ -1,0 +1,754 @@
+{
+  "id": "howto",
+  "name": "How do I…?",
+  "cards": [
+    {
+      "id": "card-9983f33d",
+      "noteUid": "n_3b132895",
+      "rowId": "add-card",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-1308148d",
+      "noteUid": "n_f9cf0f66",
+      "rowId": "add-card",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-677b387f",
+      "noteUid": "n_633aacea",
+      "rowId": "add-card",
+      "colStart": "s3",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-93778f57",
+      "noteUid": "n_09f0a8ba",
+      "rowId": "move-card",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-0c523459",
+      "noteUid": "n_4ffe34cf",
+      "rowId": "move-card",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-8bec3d03",
+      "noteUid": "n_3c9d1248",
+      "rowId": "move-card",
+      "colStart": "s3",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-77cd4cb6",
+      "noteUid": "n_26127453",
+      "rowId": "span",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-09b9a85f",
+      "noteUid": "n_07cd0043",
+      "rowId": "span",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-1b492e46",
+      "noteUid": "n_f9da099e",
+      "rowId": "span",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-f97b2fcf",
+      "noteUid": "n_bbaa046a",
+      "rowId": "span",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-fd819421",
+      "noteUid": "n_cd151635",
+      "rowId": "write",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-a12785db",
+      "noteUid": "n_aef4355a",
+      "rowId": "write",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-f05a3f73",
+      "noteUid": "n_bb072f92",
+      "rowId": "write",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-d2fe9763",
+      "noteUid": "n_fbf3c50a",
+      "rowId": "write",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-ae390811",
+      "noteUid": "n_f2ec2dd1",
+      "rowId": "find",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-cc37b34c",
+      "noteUid": "n_ea348bf9",
+      "rowId": "find",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-37bb1fe2",
+      "noteUid": "n_57bbc1fb",
+      "rowId": "find",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-98a3f4a2",
+      "noteUid": "n_5ad80813",
+      "rowId": "find",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-7dec9104",
+      "noteUid": "n_d789f84e",
+      "rowId": "group-rows",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-e62c7efb",
+      "noteUid": "n_deac1528",
+      "rowId": "group-rows",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-845aedb9",
+      "noteUid": "n_d7c4e88b",
+      "rowId": "group-rows",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-5f8db9ea",
+      "noteUid": "n_33058082",
+      "rowId": "group-rows",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-1c2dc7c5",
+      "noteUid": "n_204be287",
+      "rowId": "preset",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-9beae32e",
+      "noteUid": "n_f2b4a2dd",
+      "rowId": "preset",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-d1cd51ea",
+      "noteUid": "n_e78ad7a3",
+      "rowId": "preset",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-0601a7bd",
+      "noteUid": "n_35d2c069",
+      "rowId": "preset",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-915ee366",
+      "noteUid": "n_a151d38f",
+      "rowId": "reorder",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-d6c0feca",
+      "noteUid": "n_0d69940d",
+      "rowId": "reorder",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-5fa87e4b",
+      "noteUid": "n_222b0d11",
+      "rowId": "reorder",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-5e661a07",
+      "noteUid": "n_926cc567",
+      "rowId": "reorder",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-1127beba",
+      "noteUid": "n_3f2d3a4f",
+      "rowId": "general",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-85a85bec",
+      "noteUid": "n_d8adaaf7",
+      "rowId": "general",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-f65f51db",
+      "noteUid": "n_ed3c5e5f",
+      "rowId": "general",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-084c8ae0",
+      "noteUid": "n_577c6187",
+      "rowId": "general",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-6cf73166",
+      "noteUid": "n_9d3437be",
+      "rowId": "drill",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-54f4db76",
+      "noteUid": "n_a04a3350",
+      "rowId": "drill",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-d67f7ac1",
+      "noteUid": "n_1b6729b5",
+      "rowId": "drill",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-905d4524",
+      "noteUid": "n_0f428c00",
+      "rowId": "drill",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-e0a5bbee",
+      "noteUid": "n_e9d011f2",
+      "rowId": "add-existing",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-6e85d51f",
+      "noteUid": "n_fc7a8c86",
+      "rowId": "add-existing",
+      "colStart": "s2",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-d3a41e76",
+      "noteUid": "n_c1cb6c3a",
+      "rowId": "add-existing",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-947a57ae",
+      "noteUid": "n_010fd318",
+      "rowId": "off-board",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-a4af59d1",
+      "noteUid": "n_a122db5b",
+      "rowId": "off-board",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-a9f42d4a",
+      "noteUid": "n_cbd72e73",
+      "rowId": "off-board",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-e8ecc85f",
+      "noteUid": "n_3fca58f8",
+      "rowId": "off-board",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-030683e0",
+      "noteUid": "n_98214738",
+      "rowId": "new-board",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-8d5c6a82",
+      "noteUid": "n_8840fed6",
+      "rowId": "new-board",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-bb00aa77",
+      "noteUid": "n_ce474572",
+      "rowId": "new-board",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-f35a86b7",
+      "noteUid": "n_c2a94d9d",
+      "rowId": "new-board",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-24e5379e",
+      "noteUid": "n_7e18c107",
+      "rowId": "char-note",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-0e6edc08",
+      "noteUid": "n_e0d76549",
+      "rowId": "char-note",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-166b9aa8",
+      "noteUid": "n_02304838",
+      "rowId": "char-note",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-e88de74a",
+      "noteUid": "n_7ca9b60a",
+      "rowId": "char-note",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-1502883c",
+      "noteUid": "n_a934fd45",
+      "rowId": "tree",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-b2e9b676",
+      "noteUid": "n_9e1fc570",
+      "rowId": "tree",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-bcb599cf",
+      "noteUid": "n_865290d0",
+      "rowId": "tree",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-99916d5a",
+      "noteUid": "n_013d5b7f",
+      "rowId": "tree",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-06bdf340",
+      "noteUid": "n_cb0e3103",
+      "rowId": "image",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-33751583",
+      "noteUid": "n_535f743e",
+      "rowId": "image",
+      "colStart": "s2",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-41db9137",
+      "noteUid": "n_fabedd81",
+      "rowId": "image",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-d918988f",
+      "noteUid": "n_b4ac9a1d",
+      "rowId": "external",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-99e815b6",
+      "noteUid": "n_3d0db583",
+      "rowId": "external",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-97b5798f",
+      "noteUid": "n_30e95692",
+      "rowId": "external",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-20fb679a",
+      "noteUid": "n_931dd389",
+      "rowId": "external",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-12334735",
+      "noteUid": "n_635b8612",
+      "rowId": "move-project",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-aae13611",
+      "noteUid": "n_405ff94f",
+      "rowId": "move-project",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-a2f82cd3",
+      "noteUid": "n_2888db79",
+      "rowId": "move-project",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-173bd8d7",
+      "noteUid": "n_e9323919",
+      "rowId": "move-project",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-7848cd46",
+      "noteUid": "n_1cb74ae7",
+      "rowId": "git",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-501167a4",
+      "noteUid": "n_3bcfddb3",
+      "rowId": "git",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-0efbbcd1",
+      "noteUid": "n_44b5fc31",
+      "rowId": "git",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-2c47d5cd",
+      "noteUid": "n_deda595e",
+      "rowId": "git",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-348a0a0b",
+      "noteUid": "n_3565305b",
+      "rowId": "publish",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-cde49b1f",
+      "noteUid": "n_a56a56d3",
+      "rowId": "publish",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-eda9c03a",
+      "noteUid": "n_b1af8b20",
+      "rowId": "publish",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-b3776cf6",
+      "noteUid": "n_ec50dc57",
+      "rowId": "publish",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-c857a338",
+      "noteUid": "n_818ad4d8",
+      "rowId": "missing",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-3aeaafe9",
+      "noteUid": "n_f2c39c9b",
+      "rowId": "missing",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-581625c2",
+      "noteUid": "n_1ba7f376",
+      "rowId": "missing",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-cb9b4184",
+      "noteUid": "n_d2486e94",
+      "rowId": "missing",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-1f407be5",
+      "noteUid": "n_e5363f04",
+      "rowId": "undo",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-e15569e0",
+      "noteUid": "n_2f6e0221",
+      "rowId": "undo",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-84ed2b87",
+      "noteUid": "n_74f2def0",
+      "rowId": "undo",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-f161918a",
+      "noteUid": "n_04825836",
+      "rowId": "undo",
+      "colStart": "s4",
+      "colEnd": "s4"
+    },
+    {
+      "id": "card-daa65237",
+      "noteUid": "n_b69b9217",
+      "rowId": "broken-board",
+      "colStart": "s1",
+      "colEnd": "s1"
+    },
+    {
+      "id": "card-3d30b3a3",
+      "noteUid": "n_0d4095e9",
+      "rowId": "broken-board",
+      "colStart": "s2",
+      "colEnd": "s2"
+    },
+    {
+      "id": "card-43c6403a",
+      "noteUid": "n_0d819ef8",
+      "rowId": "broken-board",
+      "colStart": "s3",
+      "colEnd": "s3"
+    },
+    {
+      "id": "card-7fdb0c74",
+      "noteUid": "n_a8d58c85",
+      "rowId": "broken-board",
+      "colStart": "s4",
+      "colEnd": "s4"
+    }
+  ],
+  "hiddenRows": [],
+  "hiddenCols": [],
+  "presets": [
+    {
+      "name": "① First steps only",
+      "hiddenRows": [],
+      "hiddenCols": [
+        "s2",
+        "s3",
+        "s4"
+      ]
+    },
+    {
+      "name": "② Everyday tasks",
+      "hiddenRows": [
+        "group-rows",
+        "preset",
+        "reorder",
+        "general",
+        "drill",
+        "add-existing",
+        "off-board",
+        "new-board",
+        "char-note",
+        "tree",
+        "image",
+        "external",
+        "move-project",
+        "git",
+        "publish",
+        "missing",
+        "undo",
+        "broken-board"
+      ],
+      "hiddenCols": []
+    },
+    {
+      "name": "③ Troubleshooting",
+      "hiddenRows": [
+        "add-card",
+        "move-card",
+        "span",
+        "write",
+        "find",
+        "group-rows",
+        "preset",
+        "reorder",
+        "general",
+        "drill",
+        "add-existing",
+        "off-board",
+        "new-board",
+        "char-note",
+        "tree",
+        "image",
+        "external",
+        "move-project",
+        "git",
+        "publish"
+      ],
+      "hiddenCols": []
+    }
+  ],
+  "members": [
+    "add-card",
+    "move-card",
+    "span",
+    "write",
+    "find",
+    "group-rows",
+    "preset",
+    "reorder",
+    "general",
+    "drill",
+    "add-existing",
+    "off-board",
+    "new-board",
+    "char-note",
+    "tree",
+    "image",
+    "external",
+    "move-project",
+    "git",
+    "publish",
+    "missing",
+    "undo",
+    "broken-board"
+  ],
+  "rowOrder": [
+    "add-card",
+    "move-card",
+    "span",
+    "write",
+    "find",
+    "group-rows",
+    "preset",
+    "reorder",
+    "general",
+    "drill",
+    "add-existing",
+    "off-board",
+    "new-board",
+    "char-note",
+    "tree",
+    "image",
+    "external",
+    "move-project",
+    "git",
+    "publish",
+    "missing",
+    "undo",
+    "broken-board"
+  ],
+  "rowGroupOrder": [
+    "Every day",
+    "Shaping a board",
+    "Content",
+    "Files & sharing",
+    "When it goes wrong"
+  ],
+  "colOrder": [
+    "s1",
+    "s2",
+    "s3",
+    "s4"
+  ],
+  "collapsedRowGroups": [
+    "When it goes wrong"
+  ],
+  "collapsedColGroups": [],
+  "zoom": 1,
+  "views": []
+}
