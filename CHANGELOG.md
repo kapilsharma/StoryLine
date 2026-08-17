@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.0](https://github.com/kapilsharma/StoryLine/compare/1.2.0...1.3.0) (2026-08-17)
+
+
+### Features
+
+* **#80:** Merge pull request [#81](https://github.com/kapilsharma/StoryLine/issues/81) from kapilsharma/issue-80-multiline-row-title ([a96dcf5](https://github.com/kapilsharma/StoryLine/commit/a96dcf5eb377017237e30c952ece116972c46239))
+* **#80:** two-line row headers, expandable names and a resizable hea… ([a96dcf5](https://github.com/kapilsharma/StoryLine/commit/a96dcf5eb377017237e30c952ece116972c46239))
+* **#80:** two-line row headers, expandable names and a resizable header column ([8248ee4](https://github.com/kapilsharma/StoryLine/commit/8248ee43fa59d58478af3ac4eb452248da91ede3)), closes [#80](https://github.com/kapilsharma/StoryLine/issues/80)
+
 ## [1.2.0](https://github.com/kapilsharma/StoryLine/compare/1.1.0...1.2.0) (2026-08-17)
 
 
