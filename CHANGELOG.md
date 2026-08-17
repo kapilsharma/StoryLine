@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/kapilsharma/StoryLine/compare/1.0.0...1.1.0) (2026-08-17)
+
+
+### Features
+
+* **#71:** Dracula example ([d385430](https://github.com/kapilsharma/StoryLine/commit/d385430aaf53763ac560b4ba717f27770e767288))
+* **#71:** Dracula example ([961b401](https://github.com/kapilsharma/StoryLine/commit/961b40165ec8106def5cd82001b7b0ce4310bd48))
+
 ## [1.0.0](https://github.com/kapilsharma/StoryLine/compare/0.13.0...1.0.0) (2026-08-16)
 
 
