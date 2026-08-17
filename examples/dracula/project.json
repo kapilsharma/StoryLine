@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 3,
+  "name": "Dracula — Bram Stoker (1897)",
+  "timelineLabel": "Chapter",
+  "boards": [
+    "dracula"
+  ],
+  "created": "2026-08-16",
+  "lastOpened": "2026-08-17",
+  "families": {
+    "Harker": "#3B6FD4",
+    "Westenra": "#C2413B"
+  }
+}

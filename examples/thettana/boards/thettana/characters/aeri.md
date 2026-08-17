@@ -20,12 +20,3 @@ She is young talented dragon researcher. She works in project ==Thettana Twin Re
 - Vaeli - Friend in office (3 years senior)
 - Senkor - Director @ Thettana Twin Resonance Project
 
-```php
-class Zoey {
-    const name = "Zoey"
-
-    public getName() {
-        return $this->name;
-    }
-}
-```
