@@ -4,6 +4,25 @@ import type { EntityBodyKind } from '@shared/ipc'
 import { isAllowedAsset, type AssetRef } from '@shared/assets'
 import { useStore, type EditorTarget } from '../store'
 import { MarkdownPreview } from './MarkdownPreview'
+import {
+  headingLevelAt,
+  insertAt,
+  setHeading,
+  toggleInline,
+  type HeadingLevel,
+  type InlineFormat,
+  type MdSelection
+} from '../lib/mdFormat'
+
+/** The inline buttons, in toolbar order (Issue #72). */
+const INLINE_TOOLS: { format: InlineFormat; label: string; title: string }[] = [
+  { format: 'bold', label: 'B', title: 'Bold  **text**' },
+  { format: 'italic', label: 'I', title: 'Italic  *text*' },
+  { format: 'strikethrough', label: 'S', title: 'Strikethrough  ~~text~~' },
+  { format: 'highlight', label: '==', title: 'Highlight  ==text==' }
+]
+
+const HEADING_LEVELS: HeadingLevel[] = [0, 1, 2, 3, 4, 5, 6]
 
 const parseTags = (s: string): string[] => s.split(',').map((t) => t.trim()).filter(Boolean)
 
@@ -33,6 +52,10 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
   const [body, setBody] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [assetError, setAssetError] = useState<string | null>(null)
+  // Caret position, mirrored into state only so the heading dropdown can show
+  // the level of the line you are on. The textarea itself stays uncontrolled
+  // where the selection is concerned.
+  const [caret, setCaret] = useState(0)
   const noteRef = useRef<Note | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const dirty = useRef(false)
@@ -87,6 +110,35 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
         ? (activeBoard?.characters.find((c) => c.id === id)?.name ?? id)
         : (activeBoard?.timeline.find((t) => t.id === id)?.label ?? id)
 
+  /** Where the textarea's selection is right now, falling back to the end. */
+  const selection = (): MdSelection => {
+    const el = textareaRef.current
+    return {
+      text: body,
+      start: el ? el.selectionStart : body.length,
+      end: el ? el.selectionEnd : body.length
+    }
+  }
+
+  /**
+   * Run one of the pure edits from `lib/mdFormat` over the current selection and
+   * write the result back, restoring focus and the selection the edit asks for
+   * once React has re-rendered — otherwise clicking a toolbar button would leave
+   * the caret at the end of the note.
+   */
+  const applyEdit = (edit: (sel: MdSelection) => MdSelection): void => {
+    const next = edit(selection())
+    dirty.current = true
+    setBody(next.text)
+    setCaret(next.start)
+    requestAnimationFrame(() => {
+      const el = textareaRef.current
+      if (!el) return
+      el.focus()
+      el.setSelectionRange(next.start, next.end)
+    })
+  }
+
   /**
    * Put an imported asset into the text at the caret (Issue #61).
    *
@@ -95,18 +147,7 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
    */
   const insertAsset = (ref: AssetRef): void => {
     const isImage = !ref.file.toLowerCase().endsWith('.pdf')
-    const snippet = `${isImage ? '!' : ''}[${ref.file}](${ref.markdownPath})`
-    const el = textareaRef.current
-    const at = el ? el.selectionStart : body.length
-    const next = body.slice(0, at) + snippet + body.slice(el ? el.selectionEnd : body.length)
-    dirty.current = true
-    setBody(next)
-    // Put the caret after what was just inserted, once React has re-rendered.
-    requestAnimationFrame(() => {
-      if (!el) return
-      el.focus()
-      el.selectionStart = el.selectionEnd = at + snippet.length
-    })
+    applyEdit((sel) => insertAt(sel, `${isImage ? '!' : ''}[${ref.file}](${ref.markdownPath})`))
   }
 
   /** Import every acceptable file out of a paste or drop. */
@@ -129,6 +170,35 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
     <div className="editor-pane">
       {!readOnly && (
         <div className="editor-tools">
+          {/* Formatting shortcuts for people who don't write Markdown by hand
+              (Issue #72). Underline is deliberately absent — Markdown has none;
+              highlight is the equivalent emphasis the preview supports. */}
+          <select
+            className="editor-heading-select"
+            aria-label="Heading level"
+            value={String(headingLevelAt(body, caret))}
+            onChange={(e) => {
+              const level = Number(e.target.value) as HeadingLevel
+              applyEdit((sel) => setHeading(sel, level))
+            }}
+          >
+            {HEADING_LEVELS.map((level) => (
+              <option key={level} value={level}>
+                {level === 0 ? 'Normal text' : `Heading ${level}`}
+              </option>
+            ))}
+          </select>
+          {INLINE_TOOLS.map(({ format, label, title }) => (
+            <button
+              key={format}
+              className={`btn small md-tool md-tool-${format}`}
+              title={title}
+              aria-label={title.split('  ')[0]}
+              onClick={() => applyEdit((sel) => toggleInline(sel, format))}
+            >
+              {label}
+            </button>
+          ))}
           <button
             className="btn small"
             onClick={async () => {
@@ -154,7 +224,9 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
         onChange={(e) => {
           dirty.current = true
           setBody(e.target.value)
+          setCaret(e.target.selectionStart)
         }}
+        onSelect={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart)}
         onPaste={(e) => {
           const files = Array.from(e.clipboardData.files)
           if (files.length === 0 || readOnly) return

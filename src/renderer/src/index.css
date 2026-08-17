@@ -1359,6 +1359,9 @@ textarea {
   background: var(--bg);
   min-width: 0;
   display: flex;
+  /* Column, so the toolbar and any asset error stack *above* the textarea. As a
+     row they were laid out beside it, squeezing the text into what was left. */
+  flex-direction: column;
 }
 .editor-textarea {
   flex: 1;
@@ -1741,8 +1744,52 @@ ol.footnotes li {
 .editor-tools {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0 0 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  /* Left padding matches the textarea's, so the toolbar lines up with the text. */
+  padding: 0.6rem 1.2rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.editor-pane > .error {
+  padding: 0.4rem 1.2rem 0;
+  margin: 0;
+}
+
+/* ── Editor formatting toolbar (Issue #72) ───────────────────────────────── */
+
+.editor-heading-select {
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.8rem;
+}
+/* Fixed width so B/I/S/== line up as one strip rather than a ragged row. */
+.md-tool {
+  min-width: 2rem;
+  text-align: center;
+  line-height: 1.4;
+}
+.md-tool-bold {
+  font-weight: 700;
+}
+.md-tool-italic {
+  font-style: italic;
+  font-family: Georgia, serif;
+}
+.md-tool-strikethrough {
+  text-decoration: line-through;
+}
+/* A fixed swatch rather than --md-highlight-bg: that variable is the user's
+   chosen highlight colour for the *preview*, and its dark-theme value is a deep
+   brown that leaves this small label unreadable. */
+.md-tool-highlight {
+  background: #fde68a;
+  color: #1f2937;
+}
+.md-tool-highlight:hover {
+  background: #fcd34d;
 }
 
 /* ── Revision mode (Issue #67) ───────────────────────────────────────────── */
