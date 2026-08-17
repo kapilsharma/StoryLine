@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 3,
+  "id": "the-two-families",
+  "name": "Harkers & Westenras",
+  "mode": "freeflow",
+  "members": [
+    "jonathan-harker",
+    "mina-harker",
+    "quincey-harker",
+    "mrs-westenra",
+    "lucy-westenra"
+  ],
+  "root": null,
+  "parentDepth": null,
+  "childDepth": null,
+  "includeSpouseFamilies": true,
+  "hidden": [],
+  "arranged": false,
+  "showGhosts": true,
+  "collapsed": [],
+  "zoom": 1.5,
+  "panX": 322,
+  "panY": 179,
+  "overrides": {},
+  "edgeRoutes": {}
+}
