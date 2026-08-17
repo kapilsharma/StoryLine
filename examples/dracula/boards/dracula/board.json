@@ -1,0 +1,926 @@
+{
+  "id": "dracula",
+  "name": "Dracula",
+  "cards": [
+    {
+      "id": "card-8daafb04",
+      "noteUid": "n_2874d8de",
+      "rowId": "jonathan-harker",
+      "colStart": "ch01-the-borgo-pass",
+      "colEnd": "ch01-the-borgo-pass"
+    },
+    {
+      "id": "card-cc2a57ea",
+      "noteUid": "n_e94eb64b",
+      "rowId": "count-dracula",
+      "colStart": "ch01-the-borgo-pass",
+      "colEnd": "ch01-the-borgo-pass"
+    },
+    {
+      "id": "card-1b702599",
+      "noteUid": "n_5e6f903c",
+      "rowId": "jonathan-harker",
+      "colStart": "ch02-enter-freely",
+      "colEnd": "ch02-enter-freely"
+    },
+    {
+      "id": "card-f0cbc36f",
+      "noteUid": "n_f88675d8",
+      "rowId": "count-dracula",
+      "colStart": "ch02-enter-freely",
+      "colEnd": "ch02-enter-freely"
+    },
+    {
+      "id": "card-def91ecc",
+      "noteUid": "n_c7f9519b",
+      "rowId": "jonathan-harker",
+      "colStart": "ch03-the-castle-closes",
+      "colEnd": "ch03-the-castle-closes"
+    },
+    {
+      "id": "card-75468c18",
+      "noteUid": "n_c7c020f4",
+      "rowId": "count-dracula",
+      "colStart": "ch03-the-castle-closes",
+      "colEnd": "ch03-the-castle-closes"
+    },
+    {
+      "id": "card-0abbf942",
+      "noteUid": "n_99a8c4ad",
+      "rowId": "the-three-women",
+      "colStart": "ch03-the-castle-closes",
+      "colEnd": "ch03-the-castle-closes"
+    },
+    {
+      "id": "card-08afb7e4",
+      "noteUid": "n_3edbee03",
+      "rowId": "count-dracula",
+      "colStart": "ch04-down-the-wall",
+      "colEnd": "ch04-down-the-wall"
+    },
+    {
+      "id": "card-265a2b5e",
+      "noteUid": "n_fbd5ace2",
+      "rowId": "jonathan-harker",
+      "colStart": "ch04-down-the-wall",
+      "colEnd": "ch04-down-the-wall"
+    },
+    {
+      "id": "card-a27e44f8",
+      "noteUid": "n_d27261bd",
+      "rowId": "mina-harker",
+      "colStart": "ch05-three-proposals",
+      "colEnd": "ch05-three-proposals"
+    },
+    {
+      "id": "card-d4a98e81",
+      "noteUid": "n_35b50cdc",
+      "rowId": "lucy-westenra",
+      "colStart": "ch05-three-proposals",
+      "colEnd": "ch05-three-proposals"
+    },
+    {
+      "id": "card-ae2bd77b",
+      "noteUid": "n_ea74fb72",
+      "rowId": "john-seward",
+      "colStart": "ch05-three-proposals",
+      "colEnd": "ch05-three-proposals"
+    },
+    {
+      "id": "card-4690c47e",
+      "noteUid": "n_2902995a",
+      "rowId": "quincey-morris",
+      "colStart": "ch05-three-proposals",
+      "colEnd": "ch05-three-proposals"
+    },
+    {
+      "id": "card-30b68ec3",
+      "noteUid": "n_1d52d77a",
+      "rowId": "arthur-holmwood",
+      "colStart": "ch05-three-proposals",
+      "colEnd": "ch05-three-proposals"
+    },
+    {
+      "id": "card-ed7638ce",
+      "noteUid": "n_df4f4cdf",
+      "rowId": "mina-harker",
+      "colStart": "ch06-whitby",
+      "colEnd": "ch06-whitby"
+    },
+    {
+      "id": "card-e637a9fb",
+      "noteUid": "n_01124dbe",
+      "rowId": "mr-swales",
+      "colStart": "ch06-whitby",
+      "colEnd": "ch06-whitby"
+    },
+    {
+      "id": "card-136e4aef",
+      "noteUid": "n_bcaa9f88",
+      "rowId": "john-seward",
+      "colStart": "ch06-whitby",
+      "colEnd": "ch06-whitby"
+    },
+    {
+      "id": "card-c4d3c52a",
+      "noteUid": "n_88ba2d75",
+      "rowId": "renfield",
+      "colStart": "ch06-whitby",
+      "colEnd": "ch06-whitby"
+    },
+    {
+      "id": "card-092bdd0d",
+      "noteUid": "n_ed5bc125",
+      "rowId": "count-dracula",
+      "colStart": "ch07-the-demeter",
+      "colEnd": "ch08-sleepwalking"
+    },
+    {
+      "id": "card-21aa853e",
+      "noteUid": "n_f26e1611",
+      "rowId": "mina-harker",
+      "colStart": "ch07-the-demeter",
+      "colEnd": "ch07-the-demeter"
+    },
+    {
+      "id": "card-be008cde",
+      "noteUid": "n_31d0d0e3",
+      "rowId": "lucy-westenra",
+      "colStart": "ch08-sleepwalking",
+      "colEnd": "ch08-sleepwalking"
+    },
+    {
+      "id": "card-246a644b",
+      "noteUid": "n_7a90a9ff",
+      "rowId": "mina-harker",
+      "colStart": "ch08-sleepwalking",
+      "colEnd": "ch08-sleepwalking"
+    },
+    {
+      "id": "card-e2699403",
+      "noteUid": "n_ed984568",
+      "rowId": "jonathan-harker",
+      "colStart": "ch08-sleepwalking",
+      "colEnd": "ch08-sleepwalking"
+    },
+    {
+      "id": "card-03ae2ae2",
+      "noteUid": "n_85a32bb9",
+      "rowId": "mr-swales",
+      "colStart": "ch08-sleepwalking",
+      "colEnd": "ch08-sleepwalking"
+    },
+    {
+      "id": "card-5b3e6356",
+      "noteUid": "n_dd9598d3",
+      "rowId": "renfield",
+      "colStart": "ch08-sleepwalking",
+      "colEnd": "ch08-sleepwalking"
+    },
+    {
+      "id": "card-3a44d52e",
+      "noteUid": "n_dfcd8305",
+      "rowId": "mina-harker",
+      "colStart": "ch09-budapest-and-hillingham",
+      "colEnd": "ch09-budapest-and-hillingham"
+    },
+    {
+      "id": "card-6b755527",
+      "noteUid": "n_8ba2959d",
+      "rowId": "jonathan-harker",
+      "colStart": "ch09-budapest-and-hillingham",
+      "colEnd": "ch09-budapest-and-hillingham"
+    },
+    {
+      "id": "card-418a148c",
+      "noteUid": "n_b52258eb",
+      "rowId": "lucy-westenra",
+      "colStart": "ch09-budapest-and-hillingham",
+      "colEnd": "ch09-budapest-and-hillingham"
+    },
+    {
+      "id": "card-bf4f2f61",
+      "noteUid": "n_a4db474a",
+      "rowId": "john-seward",
+      "colStart": "ch09-budapest-and-hillingham",
+      "colEnd": "ch09-budapest-and-hillingham"
+    },
+    {
+      "id": "card-70102313",
+      "noteUid": "n_41492a36",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch09-budapest-and-hillingham",
+      "colEnd": "ch09-budapest-and-hillingham"
+    },
+    {
+      "id": "card-f6b3ee53",
+      "noteUid": "n_61af415b",
+      "rowId": "renfield",
+      "colStart": "ch09-budapest-and-hillingham",
+      "colEnd": "ch09-budapest-and-hillingham"
+    },
+    {
+      "id": "card-521c6018",
+      "noteUid": "n_4ecc90b6",
+      "rowId": "lucy-westenra",
+      "colStart": "ch10-the-first-transfusion",
+      "colEnd": "ch10-the-first-transfusion"
+    },
+    {
+      "id": "card-ac64662b",
+      "noteUid": "n_4700f77b",
+      "rowId": "arthur-holmwood",
+      "colStart": "ch10-the-first-transfusion",
+      "colEnd": "ch10-the-first-transfusion"
+    },
+    {
+      "id": "card-00696975",
+      "noteUid": "n_d0257dcb",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch10-the-first-transfusion",
+      "colEnd": "ch10-the-first-transfusion"
+    },
+    {
+      "id": "card-1cf2ab97",
+      "noteUid": "n_2c14bcae",
+      "rowId": "john-seward",
+      "colStart": "ch10-the-first-transfusion",
+      "colEnd": "ch10-the-first-transfusion"
+    },
+    {
+      "id": "card-f14b501b",
+      "noteUid": "n_8baf1cc6",
+      "rowId": "lucy-westenra",
+      "colStart": "ch11-the-wolf-at-the-window",
+      "colEnd": "ch11-the-wolf-at-the-window"
+    },
+    {
+      "id": "card-07c0ce50",
+      "noteUid": "n_83987373",
+      "rowId": "mrs-westenra",
+      "colStart": "ch11-the-wolf-at-the-window",
+      "colEnd": "ch11-the-wolf-at-the-window"
+    },
+    {
+      "id": "card-332be202",
+      "noteUid": "n_95fb9328",
+      "rowId": "count-dracula",
+      "colStart": "ch11-the-wolf-at-the-window",
+      "colEnd": "ch11-the-wolf-at-the-window"
+    },
+    {
+      "id": "card-771ce2ef",
+      "noteUid": "n_cf4ca229",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch12-lucy-dies",
+      "colEnd": "ch12-lucy-dies"
+    },
+    {
+      "id": "card-73193196",
+      "noteUid": "n_d215d7c9",
+      "rowId": "quincey-morris",
+      "colStart": "ch12-lucy-dies",
+      "colEnd": "ch12-lucy-dies"
+    },
+    {
+      "id": "card-696836eb",
+      "noteUid": "n_ccb6bc0d",
+      "rowId": "lucy-westenra",
+      "colStart": "ch12-lucy-dies",
+      "colEnd": "ch12-lucy-dies"
+    },
+    {
+      "id": "card-c442fcb4",
+      "noteUid": "n_564ae1d2",
+      "rowId": "arthur-holmwood",
+      "colStart": "ch12-lucy-dies",
+      "colEnd": "ch12-lucy-dies"
+    },
+    {
+      "id": "card-e0381ac4",
+      "noteUid": "n_bcf433da",
+      "rowId": "john-seward",
+      "colStart": "ch12-lucy-dies",
+      "colEnd": "ch12-lucy-dies"
+    },
+    {
+      "id": "card-4ec72cf3",
+      "noteUid": "n_2ee5e374",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch13-the-bloofer-lady",
+      "colEnd": "ch13-the-bloofer-lady"
+    },
+    {
+      "id": "card-e385ac40",
+      "noteUid": "n_e89e55b0",
+      "rowId": "lucy-westenra",
+      "colStart": "ch13-the-bloofer-lady",
+      "colEnd": "ch13-the-bloofer-lady"
+    },
+    {
+      "id": "card-2b7855e8",
+      "noteUid": "n_3be2c286",
+      "rowId": "jonathan-harker",
+      "colStart": "ch13-the-bloofer-lady",
+      "colEnd": "ch13-the-bloofer-lady"
+    },
+    {
+      "id": "card-4b85a6ab",
+      "noteUid": "n_8964cff5",
+      "rowId": "mina-harker",
+      "colStart": "ch13-the-bloofer-lady",
+      "colEnd": "ch13-the-bloofer-lady"
+    },
+    {
+      "id": "card-ff59c453",
+      "noteUid": "n_1613aa2c",
+      "rowId": "count-dracula",
+      "colStart": "ch13-the-bloofer-lady",
+      "colEnd": "ch13-the-bloofer-lady"
+    },
+    {
+      "id": "card-51eaa7d6",
+      "noteUid": "n_694cb9c4",
+      "rowId": "mina-harker",
+      "colStart": "ch14-the-journal-is-believed",
+      "colEnd": "ch14-the-journal-is-believed"
+    },
+    {
+      "id": "card-1b99739c",
+      "noteUid": "n_640b3f66",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch14-the-journal-is-believed",
+      "colEnd": "ch14-the-journal-is-believed"
+    },
+    {
+      "id": "card-702c7d7a",
+      "noteUid": "n_e21a8cb7",
+      "rowId": "jonathan-harker",
+      "colStart": "ch14-the-journal-is-believed",
+      "colEnd": "ch14-the-journal-is-believed"
+    },
+    {
+      "id": "card-17ce554d",
+      "noteUid": "n_b3719e48",
+      "rowId": "john-seward",
+      "colStart": "ch14-the-journal-is-believed",
+      "colEnd": "ch14-the-journal-is-believed"
+    },
+    {
+      "id": "card-c29afebf",
+      "noteUid": "n_ffba1451",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch15-the-empty-tomb",
+      "colEnd": "ch15-the-empty-tomb"
+    },
+    {
+      "id": "card-5d4b91f7",
+      "noteUid": "n_ac8e6018",
+      "rowId": "john-seward",
+      "colStart": "ch15-the-empty-tomb",
+      "colEnd": "ch15-the-empty-tomb"
+    },
+    {
+      "id": "card-1147b1a1",
+      "noteUid": "n_21e00375",
+      "rowId": "lucy-westenra",
+      "colStart": "ch16-the-stake",
+      "colEnd": "ch16-the-stake"
+    },
+    {
+      "id": "card-452605eb",
+      "noteUid": "n_ab16345d",
+      "rowId": "arthur-holmwood",
+      "colStart": "ch16-the-stake",
+      "colEnd": "ch16-the-stake"
+    },
+    {
+      "id": "card-9402e98e",
+      "noteUid": "n_999292ac",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch16-the-stake",
+      "colEnd": "ch16-the-stake"
+    },
+    {
+      "id": "card-f35f36cf",
+      "noteUid": "n_34dcded4",
+      "rowId": "quincey-morris",
+      "colStart": "ch16-the-stake",
+      "colEnd": "ch16-the-stake"
+    },
+    {
+      "id": "card-26677825",
+      "noteUid": "n_7677463b",
+      "rowId": "mina-harker",
+      "colStart": "ch17-one-narrative",
+      "colEnd": "ch17-one-narrative"
+    },
+    {
+      "id": "card-bf19189b",
+      "noteUid": "n_830c73e4",
+      "rowId": "john-seward",
+      "colStart": "ch17-one-narrative",
+      "colEnd": "ch17-one-narrative"
+    },
+    {
+      "id": "card-1a71ba74",
+      "noteUid": "n_12908bca",
+      "rowId": "jonathan-harker",
+      "colStart": "ch17-one-narrative",
+      "colEnd": "ch17-one-narrative"
+    },
+    {
+      "id": "card-69a0e612",
+      "noteUid": "n_32e99e1e",
+      "rowId": "renfield",
+      "colStart": "ch17-one-narrative",
+      "colEnd": "ch17-one-narrative"
+    },
+    {
+      "id": "card-13a14fe1",
+      "noteUid": "n_ecc95f54",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch18-the-compact",
+      "colEnd": "ch18-the-compact"
+    },
+    {
+      "id": "card-983012f2",
+      "noteUid": "n_7cf5be6d",
+      "rowId": "renfield",
+      "colStart": "ch18-the-compact",
+      "colEnd": "ch18-the-compact"
+    },
+    {
+      "id": "card-998b2a58",
+      "noteUid": "n_761e8316",
+      "rowId": "mina-harker",
+      "colStart": "ch18-the-compact",
+      "colEnd": "ch18-the-compact"
+    },
+    {
+      "id": "card-1cbffb65",
+      "noteUid": "n_0a7aae67",
+      "rowId": "arthur-holmwood",
+      "colStart": "ch18-the-compact",
+      "colEnd": "ch18-the-compact"
+    },
+    {
+      "id": "card-ee48ecbc",
+      "noteUid": "n_c1124535",
+      "rowId": "jonathan-harker",
+      "colStart": "ch19-carfax",
+      "colEnd": "ch19-carfax"
+    },
+    {
+      "id": "card-e48c9501",
+      "noteUid": "n_7b012def",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch19-carfax",
+      "colEnd": "ch19-carfax"
+    },
+    {
+      "id": "card-e4224dd7",
+      "noteUid": "n_6345b83d",
+      "rowId": "count-dracula",
+      "colStart": "ch19-carfax",
+      "colEnd": "ch21-flesh-of-my-flesh"
+    },
+    {
+      "id": "card-ea8d1cc3",
+      "noteUid": "n_d1bc15ea",
+      "rowId": "mina-harker",
+      "colStart": "ch19-carfax",
+      "colEnd": "ch19-carfax"
+    },
+    {
+      "id": "card-28919b41",
+      "noteUid": "n_6cb9d392",
+      "rowId": "jonathan-harker",
+      "colStart": "ch20-tracing-the-boxes",
+      "colEnd": "ch20-tracing-the-boxes"
+    },
+    {
+      "id": "card-c7df8b5d",
+      "noteUid": "n_ddc6172e",
+      "rowId": "john-seward",
+      "colStart": "ch20-tracing-the-boxes",
+      "colEnd": "ch20-tracing-the-boxes"
+    },
+    {
+      "id": "card-ff394523",
+      "noteUid": "n_aaa12e98",
+      "rowId": "renfield",
+      "colStart": "ch20-tracing-the-boxes",
+      "colEnd": "ch20-tracing-the-boxes"
+    },
+    {
+      "id": "card-e88cdc23",
+      "noteUid": "n_d24a7ba3",
+      "rowId": "renfield",
+      "colStart": "ch21-flesh-of-my-flesh",
+      "colEnd": "ch21-flesh-of-my-flesh"
+    },
+    {
+      "id": "card-9fdba104",
+      "noteUid": "n_aaf5e229",
+      "rowId": "count-dracula",
+      "colStart": "ch21-flesh-of-my-flesh",
+      "colEnd": "ch21-flesh-of-my-flesh"
+    },
+    {
+      "id": "card-a90e6767",
+      "noteUid": "n_dd23750b",
+      "rowId": "mina-harker",
+      "colStart": "ch21-flesh-of-my-flesh",
+      "colEnd": "ch21-flesh-of-my-flesh"
+    },
+    {
+      "id": "card-a8a8386c",
+      "noteUid": "n_e7858cfe",
+      "rowId": "jonathan-harker",
+      "colStart": "ch21-flesh-of-my-flesh",
+      "colEnd": "ch21-flesh-of-my-flesh"
+    },
+    {
+      "id": "card-ca4b264e",
+      "noteUid": "n_96ea2f56",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch21-flesh-of-my-flesh",
+      "colEnd": "ch21-flesh-of-my-flesh"
+    },
+    {
+      "id": "card-709ff5d8",
+      "noteUid": "n_9abce4a9",
+      "rowId": "mina-harker",
+      "colStart": "ch22-unclean",
+      "colEnd": "ch22-unclean"
+    },
+    {
+      "id": "card-345e6ebb",
+      "noteUid": "n_00450307",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch22-unclean",
+      "colEnd": "ch22-unclean"
+    },
+    {
+      "id": "card-b8d9e45e",
+      "noteUid": "n_d682ddc6",
+      "rowId": "jonathan-harker",
+      "colStart": "ch22-unclean",
+      "colEnd": "ch22-unclean"
+    },
+    {
+      "id": "card-3bdf62f5",
+      "noteUid": "n_f98a535d",
+      "rowId": "count-dracula",
+      "colStart": "ch23-out-of-the-window",
+      "colEnd": "ch23-out-of-the-window"
+    },
+    {
+      "id": "card-085ee4b3",
+      "noteUid": "n_fd87921d",
+      "rowId": "quincey-morris",
+      "colStart": "ch23-out-of-the-window",
+      "colEnd": "ch23-out-of-the-window"
+    },
+    {
+      "id": "card-f4d52c7e",
+      "noteUid": "n_ee7a7058",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch23-out-of-the-window",
+      "colEnd": "ch23-out-of-the-window"
+    },
+    {
+      "id": "card-b34f2361",
+      "noteUid": "n_406af6dd",
+      "rowId": "mina-harker",
+      "colStart": "ch23-out-of-the-window",
+      "colEnd": "ch23-out-of-the-window"
+    },
+    {
+      "id": "card-0e467416",
+      "noteUid": "n_3104e6d2",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch24-the-czarina-catherine",
+      "colEnd": "ch24-the-czarina-catherine"
+    },
+    {
+      "id": "card-ac55a744",
+      "noteUid": "n_196dba09",
+      "rowId": "mina-harker",
+      "colStart": "ch24-the-czarina-catherine",
+      "colEnd": "ch24-the-czarina-catherine"
+    },
+    {
+      "id": "card-28f569ab",
+      "noteUid": "n_96cc4edf",
+      "rowId": "jonathan-harker",
+      "colStart": "ch24-the-czarina-catherine",
+      "colEnd": "ch24-the-czarina-catherine"
+    },
+    {
+      "id": "card-a4ba40df",
+      "noteUid": "n_072a02cf",
+      "rowId": "arthur-holmwood",
+      "colStart": "ch24-the-czarina-catherine",
+      "colEnd": "ch24-the-czarina-catherine"
+    },
+    {
+      "id": "card-784f93a5",
+      "noteUid": "n_eec918d9",
+      "rowId": "mina-harker",
+      "colStart": "ch25-a-promise",
+      "colEnd": "ch25-a-promise"
+    },
+    {
+      "id": "card-7b612026",
+      "noteUid": "n_153fa513",
+      "rowId": "arthur-holmwood",
+      "colStart": "ch25-a-promise",
+      "colEnd": "ch25-a-promise"
+    },
+    {
+      "id": "card-8a2a4e4e",
+      "noteUid": "n_84c7990a",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch25-a-promise",
+      "colEnd": "ch25-a-promise"
+    },
+    {
+      "id": "card-3bcf53e9",
+      "noteUid": "n_af9b0808",
+      "rowId": "count-dracula",
+      "colStart": "ch26-galatz",
+      "colEnd": "ch26-galatz"
+    },
+    {
+      "id": "card-238c6fff",
+      "noteUid": "n_6a0c1936",
+      "rowId": "mina-harker",
+      "colStart": "ch26-galatz",
+      "colEnd": "ch26-galatz"
+    },
+    {
+      "id": "card-be8c5c1d",
+      "noteUid": "n_a3d52f61",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch26-galatz",
+      "colEnd": "ch26-galatz"
+    },
+    {
+      "id": "card-ffa5135b",
+      "noteUid": "n_d28a92ab",
+      "rowId": "arthur-holmwood",
+      "colStart": "ch26-galatz",
+      "colEnd": "ch26-galatz"
+    },
+    {
+      "id": "card-01534ca7",
+      "noteUid": "n_7053467f",
+      "rowId": "john-seward",
+      "colStart": "ch26-galatz",
+      "colEnd": "ch26-galatz"
+    },
+    {
+      "id": "card-4e31be47",
+      "noteUid": "n_b22ce5a9",
+      "rowId": "quincey-morris",
+      "colStart": "ch26-galatz",
+      "colEnd": "ch26-galatz"
+    },
+    {
+      "id": "card-a772352e",
+      "noteUid": "n_8c65edaf",
+      "rowId": "mina-harker",
+      "colStart": "ch27-the-castle-road",
+      "colEnd": "ch27-the-castle-road"
+    },
+    {
+      "id": "card-b29f36b4",
+      "noteUid": "n_09949b89",
+      "rowId": "the-three-women",
+      "colStart": "ch27-the-castle-road",
+      "colEnd": "ch27-the-castle-road"
+    },
+    {
+      "id": "card-db78f879",
+      "noteUid": "n_95cc3c08",
+      "rowId": "abraham-van-helsing",
+      "colStart": "ch27-the-castle-road",
+      "colEnd": "ch27-the-castle-road"
+    },
+    {
+      "id": "card-7748cc3a",
+      "noteUid": "n_46e9e6dd",
+      "rowId": "count-dracula",
+      "colStart": "ch27-the-castle-road",
+      "colEnd": "ch27-the-castle-road"
+    },
+    {
+      "id": "card-c0bc43de",
+      "noteUid": "n_658b6882",
+      "rowId": "jonathan-harker",
+      "colStart": "ch27-the-castle-road",
+      "colEnd": "ch27-the-castle-road"
+    },
+    {
+      "id": "card-cb53c7c2",
+      "noteUid": "n_ab720487",
+      "rowId": "quincey-morris",
+      "colStart": "ch27-the-castle-road",
+      "colEnd": "ch27-the-castle-road"
+    },
+    {
+      "id": "card-78e9251b",
+      "noteUid": "n_1d1a9875",
+      "rowId": "mina-harker",
+      "colStart": "note-seven-years-later",
+      "colEnd": "note-seven-years-later"
+    },
+    {
+      "id": "card-a7ecbde1",
+      "noteUid": "n_9f2cb824",
+      "rowId": "jonathan-harker",
+      "colStart": "note-seven-years-later",
+      "colEnd": "note-seven-years-later"
+    },
+    {
+      "id": "card-18487b17",
+      "noteUid": "n_ed77dafe",
+      "rowId": "abraham-van-helsing",
+      "colStart": "note-seven-years-later",
+      "colEnd": "note-seven-years-later"
+    }
+  ],
+  "hiddenRows": [],
+  "hiddenCols": [],
+  "presets": [
+    {
+      "name": "Castle Dracula only",
+      "hiddenRows": [
+        "mina-harker",
+        "abraham-van-helsing",
+        "john-seward",
+        "arthur-holmwood",
+        "quincey-morris",
+        "lucy-westenra",
+        "mrs-westenra",
+        "mr-swales",
+        "renfield"
+      ],
+      "hiddenCols": [
+        "ch05-three-proposals",
+        "ch06-whitby",
+        "ch07-the-demeter",
+        "ch08-sleepwalking",
+        "ch09-budapest-and-hillingham",
+        "ch10-the-first-transfusion",
+        "ch11-the-wolf-at-the-window",
+        "ch12-lucy-dies",
+        "ch13-the-bloofer-lady",
+        "ch14-the-journal-is-believed",
+        "ch15-the-empty-tomb",
+        "ch16-the-stake",
+        "ch17-one-narrative",
+        "ch18-the-compact",
+        "ch19-carfax",
+        "ch20-tracing-the-boxes",
+        "ch21-flesh-of-my-flesh",
+        "ch22-unclean",
+        "ch23-out-of-the-window",
+        "ch24-the-czarina-catherine",
+        "ch25-a-promise",
+        "ch26-galatz",
+        "ch27-the-castle-road",
+        "note-seven-years-later"
+      ]
+    },
+    {
+      "name": "Lucy's thread",
+      "hiddenRows": [
+        "jonathan-harker",
+        "mina-harker",
+        "mr-swales",
+        "the-three-women",
+        "renfield"
+      ],
+      "hiddenCols": [
+        "ch01-the-borgo-pass",
+        "ch02-enter-freely",
+        "ch03-the-castle-closes",
+        "ch04-down-the-wall",
+        "ch17-one-narrative",
+        "ch18-the-compact",
+        "ch19-carfax",
+        "ch20-tracing-the-boxes",
+        "ch21-flesh-of-my-flesh",
+        "ch22-unclean",
+        "ch23-out-of-the-window",
+        "ch24-the-czarina-catherine",
+        "ch25-a-promise",
+        "ch26-galatz",
+        "ch27-the-castle-road",
+        "note-seven-years-later"
+      ]
+    },
+    {
+      "name": "The hunt (ch. 17–27)",
+      "hiddenRows": [
+        "lucy-westenra",
+        "mrs-westenra",
+        "mr-swales",
+        "the-three-women"
+      ],
+      "hiddenCols": [
+        "ch01-the-borgo-pass",
+        "ch02-enter-freely",
+        "ch03-the-castle-closes",
+        "ch04-down-the-wall",
+        "ch05-three-proposals",
+        "ch06-whitby",
+        "ch07-the-demeter",
+        "ch08-sleepwalking",
+        "ch09-budapest-and-hillingham",
+        "ch10-the-first-transfusion",
+        "ch11-the-wolf-at-the-window",
+        "ch12-lucy-dies",
+        "ch13-the-bloofer-lady",
+        "ch14-the-journal-is-believed",
+        "ch15-the-empty-tomb",
+        "ch16-the-stake"
+      ]
+    }
+  ],
+  "members": [
+    "jonathan-harker",
+    "mina-harker",
+    "abraham-van-helsing",
+    "john-seward",
+    "arthur-holmwood",
+    "quincey-morris",
+    "lucy-westenra",
+    "mrs-westenra",
+    "mr-swales",
+    "count-dracula",
+    "the-three-women",
+    "renfield"
+  ],
+  "rowOrder": [
+    "jonathan-harker",
+    "mina-harker",
+    "abraham-van-helsing",
+    "john-seward",
+    "arthur-holmwood",
+    "quincey-morris",
+    "lucy-westenra",
+    "mrs-westenra",
+    "mr-swales",
+    "count-dracula",
+    "the-three-women",
+    "renfield"
+  ],
+  "rowGroupOrder": [
+    "The Hunters",
+    "Whitby",
+    "The Un-Dead",
+    "Carfax Asylum"
+  ],
+  "colOrder": [
+    "ch01-the-borgo-pass",
+    "ch02-enter-freely",
+    "ch03-the-castle-closes",
+    "ch04-down-the-wall",
+    "ch05-three-proposals",
+    "ch06-whitby",
+    "ch07-the-demeter",
+    "ch08-sleepwalking",
+    "ch09-budapest-and-hillingham",
+    "ch10-the-first-transfusion",
+    "ch11-the-wolf-at-the-window",
+    "ch12-lucy-dies",
+    "ch13-the-bloofer-lady",
+    "ch14-the-journal-is-believed",
+    "ch15-the-empty-tomb",
+    "ch16-the-stake",
+    "ch17-one-narrative",
+    "ch18-the-compact",
+    "ch19-carfax",
+    "ch20-tracing-the-boxes",
+    "ch21-flesh-of-my-flesh",
+    "ch22-unclean",
+    "ch23-out-of-the-window",
+    "ch24-the-czarina-catherine",
+    "ch25-a-promise",
+    "ch26-galatz",
+    "ch27-the-castle-road",
+    "note-seven-years-later"
+  ],
+  "collapsedRowGroups": [
+    "Carfax Asylum"
+  ],
+  "collapsedColGroups": [],
+  "zoom": 1,
+  "views": [
+    "the-two-families"
+  ]
+}

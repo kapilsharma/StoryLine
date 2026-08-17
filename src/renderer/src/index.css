@@ -1731,6 +1731,12 @@ ol.footnotes li {
   max-width: 100%;
   height: auto;
   border-radius: 4px;
+  /* Diagrams lifted out of a document almost always have a white background.
+     Without a mat and a border they read as a hole punched in a dark page, so
+     frame them instead. Harmless for a photo: it just gains a thin white edge. */
+  background: #fff;
+  padding: 6px;
+  border: 1px solid var(--border);
 }
 .editor-tools {
   display: flex;
