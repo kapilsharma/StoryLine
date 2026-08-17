@@ -1,0 +1,1072 @@
+{
+  "id": "reference",
+  "name": "Feature reference",
+  "cards": [
+    {
+      "id": "card-0c6c2766",
+      "noteUid": "n_bf28131f",
+      "rowId": "dashboard",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-298a0f66",
+      "noteUid": "n_4c154d37",
+      "rowId": "dashboard",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-10511570",
+      "noteUid": "n_7e49806f",
+      "rowId": "dashboard",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-a07e365e",
+      "noteUid": "n_2b794bf8",
+      "rowId": "dashboard",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-ef80b9f8",
+      "noteUid": "n_e02eaa7f",
+      "rowId": "multi-board",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-7255a86e",
+      "noteUid": "n_cd5a0994",
+      "rowId": "multi-board",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-bf2dc017",
+      "noteUid": "n_c6916546",
+      "rowId": "multi-board",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-7cdfef91",
+      "noteUid": "n_1e5f77c9",
+      "rowId": "multi-board",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-9addc82d",
+      "noteUid": "n_038e0234",
+      "rowId": "live-reload",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-36eb8255",
+      "noteUid": "n_862de6d0",
+      "rowId": "live-reload",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-96b53a34",
+      "noteUid": "n_b9435fd0",
+      "rowId": "live-reload",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-8010bfe7",
+      "noteUid": "n_71fe5bae",
+      "rowId": "live-reload",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-eccf5b37",
+      "noteUid": "n_9820e22b",
+      "rowId": "grid",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-3338ec6e",
+      "noteUid": "n_ab01d3c5",
+      "rowId": "grid",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-6d0c526e",
+      "noteUid": "n_fd1fbaa2",
+      "rowId": "grid",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-2653be25",
+      "noteUid": "n_73eb273e",
+      "rowId": "grid",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-1af14d66",
+      "noteUid": "n_51cd4454",
+      "rowId": "cards",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-a6e25e99",
+      "noteUid": "n_84830262",
+      "rowId": "cards",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-2fe71c98",
+      "noteUid": "n_0457d7b8",
+      "rowId": "cards",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-72fb3f4e",
+      "noteUid": "n_dadd75b8",
+      "rowId": "cards",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-b37d5fa0",
+      "noteUid": "n_14f14f83",
+      "rowId": "spanning",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-a6ff9ce8",
+      "noteUid": "n_c4f3a349",
+      "rowId": "spanning",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-96f3b762",
+      "noteUid": "n_cfc90f3a",
+      "rowId": "spanning",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-f3c29238",
+      "noteUid": "n_87fbb9f4",
+      "rowId": "spanning",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-9abb193f",
+      "noteUid": "n_478af032",
+      "rowId": "groups",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-c2d1a8b8",
+      "noteUid": "n_7ba76911",
+      "rowId": "groups",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-205b921e",
+      "noteUid": "n_b52d7593",
+      "rowId": "groups",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-1a94950d",
+      "noteUid": "n_b9e6d124",
+      "rowId": "groups",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-80c0ccb6",
+      "noteUid": "n_e898f9d7",
+      "rowId": "hiding",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-b2056700",
+      "noteUid": "n_1448937f",
+      "rowId": "hiding",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-7ccbf0b7",
+      "noteUid": "n_71b5aea4",
+      "rowId": "hiding",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-7b813a30",
+      "noteUid": "n_8d260236",
+      "rowId": "hiding",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-3ff385c9",
+      "noteUid": "n_3b793f39",
+      "rowId": "expand",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-1a4be353",
+      "noteUid": "n_d36d3c5c",
+      "rowId": "expand",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-9135f17d",
+      "noteUid": "n_ccd7e0c0",
+      "rowId": "expand",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-dbddfd05",
+      "noteUid": "n_18d58eff",
+      "rowId": "expand",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-f18f0aac",
+      "noteUid": "n_9dd208af",
+      "rowId": "revision",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-01e8493b",
+      "noteUid": "n_a3eba8eb",
+      "rowId": "revision",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-39e01c45",
+      "noteUid": "n_f8e9759e",
+      "rowId": "revision",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-0f3f3131",
+      "noteUid": "n_d9344be6",
+      "rowId": "revision",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-8501457a",
+      "noteUid": "n_7ad2b419",
+      "rowId": "char-tab",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-88811e40",
+      "noteUid": "n_ef7788dd",
+      "rowId": "char-tab",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-64d3cecc",
+      "noteUid": "n_f40aaa2a",
+      "rowId": "char-tab",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-d449e9c2",
+      "noteUid": "n_157c5ea1",
+      "rowId": "char-tab",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-141545b0",
+      "noteUid": "n_f3d1431d",
+      "rowId": "char-fields",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-14dc0779",
+      "noteUid": "n_ce5ee1e8",
+      "rowId": "char-fields",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-c72533bf",
+      "noteUid": "n_71c1e910",
+      "rowId": "char-fields",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-1e37414f",
+      "noteUid": "n_dc6a93f9",
+      "rowId": "char-fields",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-5051eaa4",
+      "noteUid": "n_88ed71ad",
+      "rowId": "membership",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-9a6c0913",
+      "noteUid": "n_666eeeb5",
+      "rowId": "membership",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-2d1f82db",
+      "noteUid": "n_05a226a8",
+      "rowId": "membership",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-deed1ffe",
+      "noteUid": "n_f3a86426",
+      "rowId": "membership",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-76748afd",
+      "noteUid": "n_74a082c7",
+      "rowId": "char-note",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-9db20e32",
+      "noteUid": "n_acab382a",
+      "rowId": "char-note",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-960ba738",
+      "noteUid": "n_a7f296b1",
+      "rowId": "char-note",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-8b638244",
+      "noteUid": "n_4b217742",
+      "rowId": "char-note",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-b6d87a03",
+      "noteUid": "n_afe49aa0",
+      "rowId": "time-tab",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-43f9d691",
+      "noteUid": "n_0162f8ce",
+      "rowId": "time-tab",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-b1118369",
+      "noteUid": "n_68f3bfa5",
+      "rowId": "time-tab",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-3c069a7b",
+      "noteUid": "n_2c5e622d",
+      "rowId": "time-tab",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-193dc333",
+      "noteUid": "n_96f03b3d",
+      "rowId": "time-fields",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-524d16ed",
+      "noteUid": "n_0392ca4f",
+      "rowId": "time-fields",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-5bf5420f",
+      "noteUid": "n_540d1f95",
+      "rowId": "time-fields",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-f050952f",
+      "noteUid": "n_1e076cb5",
+      "rowId": "time-fields",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-2d976227",
+      "noteUid": "n_64562f15",
+      "rowId": "notes-tab",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-e8cbb257",
+      "noteUid": "n_f65750fa",
+      "rowId": "notes-tab",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-0bb7f56e",
+      "noteUid": "n_54cf1fb9",
+      "rowId": "notes-tab",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-bb6d4e25",
+      "noteUid": "n_0f725b01",
+      "rowId": "notes-tab",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-572eb125",
+      "noteUid": "n_f7ce64c4",
+      "rowId": "note-popup",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-0ce131b5",
+      "noteUid": "n_653bfc86",
+      "rowId": "note-popup",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-08d662a4",
+      "noteUid": "n_2a3d22c2",
+      "rowId": "note-popup",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-8d58ae9f",
+      "noteUid": "n_5574fd9e",
+      "rowId": "note-popup",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-922256a8",
+      "noteUid": "n_9cc111f2",
+      "rowId": "links",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-10577f06",
+      "noteUid": "n_a4479346",
+      "rowId": "links",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-3c294538",
+      "noteUid": "n_cc015e01",
+      "rowId": "links",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-096e7eaf",
+      "noteUid": "n_4a11ccec",
+      "rowId": "links",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-35f44b86",
+      "noteUid": "n_80ae3c04",
+      "rowId": "rename-safe",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-36d6be92",
+      "noteUid": "n_bf5e0745",
+      "rowId": "rename-safe",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-0a33fc1c",
+      "noteUid": "n_35693426",
+      "rowId": "rename-safe",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-f05f2dfa",
+      "noteUid": "n_299b9d0c",
+      "rowId": "rename-safe",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-20807a35",
+      "noteUid": "n_8bba5f9e",
+      "rowId": "editor",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-68c7d5a7",
+      "noteUid": "n_3572070b",
+      "rowId": "editor",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-39756e6a",
+      "noteUid": "n_14b8a717",
+      "rowId": "editor",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-92aee880",
+      "noteUid": "n_d7c9b7e0",
+      "rowId": "editor",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-9906695e",
+      "noteUid": "n_24a70129",
+      "rowId": "md-support",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-be24b55a",
+      "noteUid": "n_f9873e6b",
+      "rowId": "md-support",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-bcb4f407",
+      "noteUid": "n_30f3c853",
+      "rowId": "md-support",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-92b55f94",
+      "noteUid": "n_847fd7db",
+      "rowId": "md-support",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-8df31aa3",
+      "noteUid": "n_066d0fd6",
+      "rowId": "assets",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-d3f78983",
+      "noteUid": "n_46319288",
+      "rowId": "assets",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-ce9a0ce8",
+      "noteUid": "n_d5eef670",
+      "rowId": "assets",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-d1b06996",
+      "noteUid": "n_98789b92",
+      "rowId": "assets",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-72ac0241",
+      "noteUid": "n_06577b12",
+      "rowId": "trees",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-00ba4517",
+      "noteUid": "n_36926873",
+      "rowId": "trees",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-182ff8a0",
+      "noteUid": "n_176bca79",
+      "rowId": "trees",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-0abb5a4d",
+      "noteUid": "n_9245feaf",
+      "rowId": "trees",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-e7e9cf33",
+      "noteUid": "n_9b40a7e9",
+      "rowId": "tree-filters",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-15888ec3",
+      "noteUid": "n_a644f6ba",
+      "rowId": "tree-filters",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-9bf574ff",
+      "noteUid": "n_7bf25310",
+      "rowId": "tree-filters",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-4a8556cc",
+      "noteUid": "n_0a37d5a4",
+      "rowId": "tree-filters",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-6063b678",
+      "noteUid": "n_c53602eb",
+      "rowId": "tree-arrange",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-d7552f4c",
+      "noteUid": "n_fb486fd6",
+      "rowId": "tree-arrange",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-28cb46f4",
+      "noteUid": "n_6beabb1f",
+      "rowId": "tree-arrange",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-18a58caa",
+      "noteUid": "n_1fc428a0",
+      "rowId": "tree-arrange",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-e41f7005",
+      "noteUid": "n_1a91984f",
+      "rowId": "tree-timeline",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-521e4752",
+      "noteUid": "n_784a8d1a",
+      "rowId": "tree-timeline",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-13eaa94d",
+      "noteUid": "n_2a100378",
+      "rowId": "tree-timeline",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-917a3c5f",
+      "noteUid": "n_4141fe38",
+      "rowId": "tree-timeline",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-6da18b5f",
+      "noteUid": "n_493be37e",
+      "rowId": "proj-settings",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-c648f671",
+      "noteUid": "n_1332eb48",
+      "rowId": "proj-settings",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-9ea123b2",
+      "noteUid": "n_e2723e4c",
+      "rowId": "proj-settings",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-60616e81",
+      "noteUid": "n_061efa83",
+      "rowId": "proj-settings",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-eebf04e4",
+      "noteUid": "n_3361a640",
+      "rowId": "app-settings",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-6d113c25",
+      "noteUid": "n_fdff97b1",
+      "rowId": "app-settings",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-cd2eecf3",
+      "noteUid": "n_27a57c7b",
+      "rowId": "app-settings",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-2aad0737",
+      "noteUid": "n_bf703719",
+      "rowId": "app-settings",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-a0937605",
+      "noteUid": "n_f4267b0a",
+      "rowId": "editor-styles",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-50cc5916",
+      "noteUid": "n_4a025f96",
+      "rowId": "editor-styles",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-a1853d9c",
+      "noteUid": "n_10be83d7",
+      "rowId": "editor-styles",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-fda126c2",
+      "noteUid": "n_55c9fd5a",
+      "rowId": "editor-styles",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-b4e8c6ee",
+      "noteUid": "n_3c02ddcc",
+      "rowId": "export",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-ba4edd61",
+      "noteUid": "n_f7edc79a",
+      "rowId": "export",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-704d40f3",
+      "noteUid": "n_c897d33b",
+      "rowId": "export",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-a656f218",
+      "noteUid": "n_a1b96a30",
+      "rowId": "export",
+      "colStart": "watch",
+      "colEnd": "watch"
+    },
+    {
+      "id": "card-9769cfcc",
+      "noteUid": "n_152a3926",
+      "rowId": "readonly",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-20147b82",
+      "noteUid": "n_8889fef8",
+      "rowId": "readonly",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-afede757",
+      "noteUid": "n_8df93a9c",
+      "rowId": "readonly",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-6056fa52",
+      "noteUid": "n_b09a1ad7",
+      "rowId": "readonly",
+      "colStart": "watch",
+      "colEnd": "watch"
+    }
+  ],
+  "hiddenRows": [],
+  "hiddenCols": [],
+  "presets": [
+    {
+      "name": "① What & how",
+      "hiddenRows": [],
+      "hiddenCols": [
+        "options",
+        "watch"
+      ]
+    },
+    {
+      "name": "② Gotchas only",
+      "hiddenRows": [],
+      "hiddenCols": [
+        "what",
+        "how",
+        "options"
+      ]
+    },
+    {
+      "name": "③ Board features only",
+      "hiddenRows": [
+        "dashboard",
+        "multi-board",
+        "live-reload",
+        "char-tab",
+        "char-fields",
+        "membership",
+        "char-note",
+        "time-tab",
+        "time-fields",
+        "notes-tab",
+        "note-popup",
+        "links",
+        "rename-safe",
+        "editor",
+        "md-support",
+        "assets",
+        "trees",
+        "tree-filters",
+        "tree-arrange",
+        "tree-timeline",
+        "proj-settings",
+        "app-settings",
+        "editor-styles",
+        "export",
+        "readonly"
+      ],
+      "hiddenCols": []
+    },
+    {
+      "name": "④ Writing & notes only",
+      "hiddenRows": [
+        "dashboard",
+        "multi-board",
+        "live-reload",
+        "grid",
+        "cards",
+        "spanning",
+        "groups",
+        "hiding",
+        "expand",
+        "revision",
+        "char-tab",
+        "char-fields",
+        "membership",
+        "time-tab",
+        "time-fields",
+        "trees",
+        "tree-filters",
+        "tree-arrange",
+        "tree-timeline",
+        "proj-settings",
+        "app-settings",
+        "export",
+        "readonly"
+      ],
+      "hiddenCols": []
+    }
+  ],
+  "members": [
+    "dashboard",
+    "multi-board",
+    "live-reload",
+    "grid",
+    "cards",
+    "spanning",
+    "groups",
+    "hiding",
+    "expand",
+    "revision",
+    "char-tab",
+    "char-fields",
+    "membership",
+    "char-note",
+    "time-tab",
+    "time-fields",
+    "notes-tab",
+    "note-popup",
+    "links",
+    "rename-safe",
+    "editor",
+    "md-support",
+    "assets",
+    "trees",
+    "tree-filters",
+    "tree-arrange",
+    "tree-timeline",
+    "proj-settings",
+    "app-settings",
+    "editor-styles",
+    "export",
+    "readonly"
+  ],
+  "rowOrder": [
+    "dashboard",
+    "multi-board",
+    "live-reload",
+    "grid",
+    "cards",
+    "spanning",
+    "groups",
+    "hiding",
+    "expand",
+    "revision",
+    "char-tab",
+    "char-fields",
+    "membership",
+    "char-note",
+    "time-tab",
+    "time-fields",
+    "notes-tab",
+    "note-popup",
+    "links",
+    "rename-safe",
+    "editor",
+    "md-support",
+    "assets",
+    "trees",
+    "tree-filters",
+    "tree-arrange",
+    "tree-timeline",
+    "proj-settings",
+    "app-settings",
+    "editor-styles",
+    "export",
+    "readonly"
+  ],
+  "rowGroupOrder": [
+    "Projects",
+    "The board",
+    "Rows",
+    "Columns",
+    "Notes",
+    "Editor",
+    "Family",
+    "Settings",
+    "Publishing"
+  ],
+  "colOrder": [
+    "what",
+    "how",
+    "options",
+    "watch"
+  ],
+  "collapsedRowGroups": [],
+  "collapsedColGroups": [],
+  "zoom": 1,
+  "views": []
+}

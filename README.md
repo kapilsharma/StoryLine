@@ -28,6 +28,17 @@ I made this tool for myself, but also publishing as open-source, in case helpful
 - **Light / dark themes.**
 - **Publish to the web** — export a project as a self-contained, read-only static site you can upload anywhere (see [`docs/publishing.md`](./docs/publishing.md)).
 
+## Help
+
+The user manual lives in [`examples/sl-docs`](./examples/sl-docs) — and is itself
+a ZN Story Line project. Open it in the app (**Open project** → pick that folder)
+and you get four boards covering every feature: *Start here*, *Feature
+reference*, *How do I…?* and *Your files on disk*.
+
+Developer-facing docs stay here in the repo: [`docs/publishing.md`](./docs/publishing.md)
+for the static export, [`docs/workflow.md`](./docs/workflow.md) for build and
+release, and [`docs/llmwiki/`](./docs/llmwiki) for AI agents.
+
 ## Screenshots
 
 **Board**

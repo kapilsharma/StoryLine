@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 3,
+  "name": "SL-Docs — ZN Story Line Help",
+  "timelineLabel": "Step",
+  "rowLabel": "Topic",
+  "kind": "general",
+  "boards": [
+    "start",
+    "reference",
+    "howto",
+    "files"
+  ],
+  "created": "2026-08-17",
+  "lastOpened": "2026-08-17",
+  "families": {}
+}
