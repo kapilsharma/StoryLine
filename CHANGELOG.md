@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0](https://github.com/kapilsharma/StoryLine/compare/1.1.0...1.2.0) (2026-08-17)
+
+
+### Features
+
+* **#77:** Merge pull request [#78](https://github.com/kapilsharma/StoryLine/issues/78) from kapilsharma/issue-77-sl-docs ([789d26c](https://github.com/kapilsharma/StoryLine/commit/789d26c7eea754ebcf63876cd81d7b7ca62b93e5))
+* **#77:** SL Docs ([789d26c](https://github.com/kapilsharma/StoryLine/commit/789d26c7eea754ebcf63876cd81d7b7ca62b93e5))
+* **#77:** SL Docs ([0b501e2](https://github.com/kapilsharma/StoryLine/commit/0b501e268486c1b694c7aa2c9b9235f999086830))
+
 ## [1.1.0](https://github.com/kapilsharma/StoryLine/compare/1.0.0...1.1.0) (2026-08-17)
 
 
