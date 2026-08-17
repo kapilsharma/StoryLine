@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs'
 import { basename, join } from 'path'
 import type { Board, Character, Note, Project, TimelineUnit, View } from '@shared/types'
+import { normalizeRowHeaderWidth } from '@shared/types'
 import { isEmptyEntityBody, normalizeEntityBody } from '@shared/entityBody'
 import {
   ASSETS_DIR,
@@ -371,7 +372,8 @@ function normalizeBoard(raw: Partial<Board> & { id: string; name: string }): Boa
     collapsedRowGroups: raw.collapsedRowGroups ?? [],
     collapsedColGroups: raw.collapsedColGroups ?? [],
     zoom: raw.zoom ?? 1,
-    views: raw.views ?? []
+    views: raw.views ?? [],
+    rowHeaderWidth: normalizeRowHeaderWidth(raw.rowHeaderWidth)
   }
 }
 

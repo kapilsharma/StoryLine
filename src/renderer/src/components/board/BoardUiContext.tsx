@@ -14,6 +14,16 @@ interface BoardUiValue {
   allExpanded: boolean
   setAll: (expand: boolean) => void
 
+  // ── Row headers (Issue #80) ──
+  /**
+   * True when this character's row header shows its whole name instead of the
+   * two-line default. Keyed by character id, and separate from card expansion:
+   * a long name and a long card title are different problems, fixed one at a
+   * time by the control next to each.
+   */
+  isRowExpanded: (charId: string) => boolean
+  toggleRow: (charId: string) => void
+
   // ── Revision mode (Issue #67) ──
   /**
    * When on, card titles are masked until revealed. Turns a board into a prompt
@@ -35,6 +45,7 @@ const BoardUiContext = createContext<BoardUiValue | null>(null)
 
 export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Element {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [cardIds, setCardIds] = useState<string[]>([])
   const [revising, setRevisingState] = useState(false)
   const [revealed, setRevealed] = useState<Set<string>>(new Set())
@@ -43,6 +54,16 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
 
   const toggle = useCallback((id: string) => {
     setExpanded((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }, [])
+
+  const isRowExpanded = useCallback((id: string) => expandedRows.has(id), [expandedRows])
+
+  const toggleRow = useCallback((id: string) => {
+    setExpandedRows((prev) => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
@@ -97,6 +118,8 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
       registerCards,
       allExpanded,
       setAll,
+      isRowExpanded,
+      toggleRow,
       revising,
       setRevising,
       isRevealed,
@@ -111,6 +134,8 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
       registerCards,
       allExpanded,
       setAll,
+      isRowExpanded,
+      toggleRow,
       revising,
       setRevising,
       isRevealed,

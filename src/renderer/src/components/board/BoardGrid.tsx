@@ -1,5 +1,10 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import type { Board, Card } from '@shared/types'
+import type { Board, Card, Character } from '@shared/types'
+import {
+  ROW_HEADER_W_DEFAULT,
+  ROW_HEADER_W_MAX_FRACTION,
+  ROW_HEADER_W_MIN
+} from '@shared/types'
 import type { BoardData } from '@shared/ipc'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
@@ -19,7 +24,6 @@ import {
 const MIME_MEMBER = 'application/x-znstoryline-row-member'
 const MIME_BLOCK = 'application/x-znstoryline-row-block'
 
-const HEADER_W = 170
 const BASE_COL_W = 160
 // Compact default row height — fits ~2 lines of card text. Rows with an
 // expanded card grow to fit (see the per-row track heights below).
@@ -48,6 +52,77 @@ interface Preview {
   colEnd: string
 }
 
+/**
+ * A character's name in the fixed first column (#80).
+ *
+ * The name wraps to two lines by default and the expand button opens it out in
+ * full. Whether it *needs* expanding is measured rather than guessed from the
+ * length: the column is resizable and the name shares the line with a swatch
+ * and a 📝, so no character count predicts the wrap.
+ */
+function RowHeadName({
+  char,
+  expanded,
+  headerW,
+  zoom,
+  onOpenNote,
+  onToggle
+}: {
+  char: Character
+  expanded: boolean
+  headerW: number
+  zoom: number
+  onOpenNote: () => void
+  onToggle: () => void
+}): JSX.Element {
+  const nameRef = useRef<HTMLSpanElement>(null)
+  const [clipped, setClipped] = useState(false)
+
+  useEffect(() => {
+    // Only measure while clamped — expanded, the name fits by definition, and
+    // re-measuring would drop the button needed to collapse it again.
+    if (expanded) return
+    const el = nameRef.current
+    if (el) setClipped(el.scrollHeight > el.clientHeight + 1)
+  }, [expanded, char.name, char.hasNote, headerW, zoom])
+
+  const name = (
+    <span className="row-name-text" ref={nameRef}>
+      {char.name}
+    </span>
+  )
+
+  return (
+    <>
+      {/* Only a character who has a note is clickable (issue #41), and the 📝
+          marks which those are — so the board never offers a click that opens
+          nothing. */}
+      {char.hasNote ? (
+        <button className="row-name row-note" title={`Read ${char.name}’s note`} onClick={onOpenNote}>
+          {name}
+          <span className="row-note-icon" aria-hidden="true">
+            📝
+          </span>
+        </button>
+      ) : (
+        <span className="row-name">{name}</span>
+      )}
+      {(clipped || expanded) && (
+        <button
+          className="row-expand"
+          title={expanded ? 'Collapse name' : 'Show full name'}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggle()
+          }}
+        >
+          {expanded ? '⤡' : '⤢'}
+        </button>
+      )}
+    </>
+  )
+}
+
 export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const { config, createCard, updateCard, deleteCard, saveBoard } = useStore()
   const ask = usePrompt()
@@ -61,11 +136,26 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const [menu, setMenu] = useState<ContextMenu | null>(null)
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
-  const { isExpanded, toggle: toggleExpand, registerCards, revising, isRevealed, toggleRevealed, revealMany } =
-    useBoardUi()
+  // Live width while the header column is being dragged; null when it isn't.
+  const [headerDrag, setHeaderDrag] = useState<number | null>(null)
+  const {
+    isExpanded,
+    toggle: toggleExpand,
+    registerCards,
+    isRowExpanded,
+    toggleRow,
+    revising,
+    isRevealed,
+    toggleRevealed,
+    revealMany
+  } = useBoardUi()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const zoom = board.zoom || 1
+  // The header column keeps the width the user dragged (#80). Unlike the data
+  // columns it is deliberately not scaled by zoom: zoom is about how much of the
+  // plot fits on screen, and the names have to stay readable either way.
+  const headerW = headerDrag ?? board.rowHeaderWidth ?? ROW_HEADER_W_DEFAULT
   const colW = BASE_COL_W * zoom
   const rowH = COMPACT_ROW_H * zoom
   const cardH = Math.round(rowH - 16)
@@ -141,7 +231,9 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const rowTracks = rows.lines
     .map((line) => {
       if (line.kind === 'groupHeader') return `${GROUPHEAD_LINE_H * zoom}px`
-      if (line.kind === 'row' && expandedLines.has(line.index)) return `minmax(${rowH}px, auto)`
+      // A row grows to fit either an expanded card or an expanded header name.
+      if (line.kind === 'row' && (expandedLines.has(line.index) || isRowExpanded(line.char.id)))
+        return `minmax(${rowH}px, auto)`
       // A row holding overlapping cards grows to fit the whole stack (#66).
       const depth = line.kind === 'row' ? (stackDepth.get(line.index) ?? 1) : 1
       if (depth > 1) return `${depth * cardH + (depth + 1) * STACK_GAP}px`
@@ -150,7 +242,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     .join(' ')
 
   const gridStyle: React.CSSProperties = {
-    gridTemplateColumns: `${HEADER_W}px repeat(${cols.slots.length}, ${colW}px)`,
+    gridTemplateColumns: `${headerW}px repeat(${cols.slots.length}, ${colW}px)`,
     gridTemplateRows: `${cols.hasGroups ? `${GROUP_H}px ` : ''}${COLHEAD_H}px ${rowTracks}`,
     ['--card-font' as string]: `${cardFont}px`
   }
@@ -253,7 +345,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     if (!grid) return
     const slotAtX = (clientX: number): number => {
       const rect = grid.getBoundingClientRect()
-      const x = clientX - rect.left + grid.scrollLeft - HEADER_W
+      const x = clientX - rect.left + grid.scrollLeft - headerW
       return Math.min(cols.slots.length - 1, Math.max(0, Math.floor(x / colW)))
     }
     const onMove = (ev: PointerEvent): void => {
@@ -285,6 +377,44 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     window.addEventListener('pointerup', onUp)
   }
 
+  /**
+   * Drag the corner's right edge to widen or narrow the row headers (#80).
+   *
+   * The maximum is half the *visible* board rather than a fixed px, so however
+   * small the window is the plot itself always keeps half of it. Only the final
+   * width is saved — the drag itself just previews.
+   */
+  const beginHeaderResize = (e: React.PointerEvent): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    const scroll = scrollRef.current
+    if (!scroll) return
+    const startX = e.clientX
+    const startW = board.rowHeaderWidth ?? ROW_HEADER_W_DEFAULT
+    // Floored, not rounded: half is a ceiling, so overshooting it by a pixel on
+    // an odd-width window would be wrong in the one direction that matters.
+    const maxW = Math.max(ROW_HEADER_W_MIN, Math.floor(scroll.clientWidth * ROW_HEADER_W_MAX_FRACTION))
+    const onMove = (ev: PointerEvent): void => {
+      setHeaderDrag(Math.min(maxW, Math.max(ROW_HEADER_W_MIN, startW + ev.clientX - startX)))
+    }
+    const onUp = (): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      setHeaderDrag((w) => {
+        if (w != null && w !== startW) void saveBoard({ ...board, rowHeaderWidth: w })
+        return null
+      })
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  const resetHeaderWidth = (): void => {
+    if ((board.rowHeaderWidth ?? ROW_HEADER_W_DEFAULT) !== ROW_HEADER_W_DEFAULT) {
+      void saveBoard({ ...board, rowHeaderWidth: ROW_HEADER_W_DEFAULT })
+    }
+  }
+
   const empty = cols.slots.length === 0 || rows.lines.length === 0
 
   return (
@@ -297,6 +427,23 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
         <div className="board-grid" style={gridStyle}>
           {/* corner */}
           <div className="grid-corner" style={{ gridColumn: 1, gridRow: `1 / ${headerRows + 1}` }} />
+
+          {/* Grab rail for the header column's width (#80). It spans the whole
+              boundary rather than sitting in the corner: the edge is as tall as
+              the board, and a strip only as tall as one header cell is a target
+              you have to already know about to find. The rail itself ignores the
+              pointer so the row headers under it stay clickable. */}
+          <div
+            className="header-resize-rail"
+            style={{ gridColumn: 1, gridRow: `1 / ${dataRowBase + rows.lines.length}` }}
+          >
+            <span
+              className="header-resize"
+              title="Drag to resize the row headers · double-click to reset"
+              onPointerDown={beginHeaderResize}
+              onDoubleClick={resetHeaderWidth}
+            />
+          </div>
 
           {/* column group headers (row 1) */}
           {cols.hasGroups &&
@@ -387,7 +534,11 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                   >
                     <span className="chevron">▸</span>
                     <span className="row-name">
-                      {line.group} ({line.members.length})
+                      {/* Clamped like a character name, so a long group label
+                          reads over two lines instead of one (#80). */}
+                      <span className="row-name-text">
+                        {line.group} ({line.members.length})
+                      </span>
                     </span>
                   </div>
                   {cols.slots.map((slot) => {
@@ -409,10 +560,11 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
 
             // normal character row
             const char = line.char
+            const rowExpanded = isRowExpanded(char.id)
             return (
               <Fragment key={char.id}>
                 <div
-                  className="row-head draggable"
+                  className={`row-head draggable${rowExpanded ? ' expanded' : ''}`}
                   style={{ gridColumn: 1, gridRow }}
                   draggable
                   onDragStart={(e) =>
@@ -437,23 +589,14 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                     title={revising ? `Reveal or re-hide ${char.name}'s cards` : undefined}
                     onClick={() => revising && revealRow(line.index)}
                   />
-                  {/* Only a character who has a note is clickable (issue #41),
-                      and the 📝 marks which those are — so the board never
-                      offers a click that opens nothing. */}
-                  {char.hasNote ? (
-                    <button
-                      className="row-name row-note"
-                      title={`Read ${char.name}’s note`}
-                      onClick={() => setOpenCharId(char.id)}
-                    >
-                      <span className="row-note-name">{char.name}</span>
-                      <span className="row-note-icon" aria-hidden="true">
-                        📝
-                      </span>
-                    </button>
-                  ) : (
-                    <span className="row-name">{char.name}</span>
-                  )}
+                  <RowHeadName
+                    char={char}
+                    expanded={rowExpanded}
+                    headerW={headerW}
+                    zoom={zoom}
+                    onOpenNote={() => setOpenCharId(char.id)}
+                    onToggle={() => toggleRow(char.id)}
+                  />
                 </div>
 
                 <div
