@@ -33,6 +33,21 @@ export type InlineFormat = keyof typeof INLINE_MARKERS
 /** A heading level, or 0 for body text. */
 export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
+/**
+ * The inline buttons, in toolbar order (Issue #72) — shared by the fullscreen
+ * editor and the board's side panel (Issue #83) so the two toolbars cannot drift
+ * apart.
+ */
+export const INLINE_TOOLS: { format: InlineFormat; label: string; title: string }[] = [
+  { format: 'bold', label: 'B', title: 'Bold  **text**' },
+  { format: 'italic', label: 'I', title: 'Italic  *text*' },
+  { format: 'strikethrough', label: 'S', title: 'Strikethrough  ~~text~~' },
+  { format: 'highlight', label: '==', title: 'Highlight  ==text==' }
+]
+
+/** Every level the heading dropdown offers, body text first. */
+export const HEADING_LEVELS: HeadingLevel[] = [0, 1, 2, 3, 4, 5, 6]
+
 const HEADING_RE = /^(#{1,6})[ \t]+/
 
 /** Start of the line containing `at`. */

@@ -7,4 +7,4 @@ group: Settings
 tags:
   - settings
 ---
-Theme, card font size, preview position, tree geometry.
+Theme, card font size, how board notes open, preview position, tree geometry.

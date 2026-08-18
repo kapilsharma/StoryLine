@@ -9,6 +9,6 @@ created: '2026-08-17'
 ---
 Clicking a card opens its note as rendered Markdown, with its tags above and its related notes listed below.
 
-It is read-only on purpose — a place to check something mid-thought without starting to edit.
+The popup is read-only on purpose — a place to check something mid-thought without starting to edit. The panel is the other way round: reading and editing are the same view.
 
 ![A note opened from a card](assets/note-popup.png)

@@ -8,8 +8,6 @@ import {
 import type { BoardData } from '@shared/ipc'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
-import { NotePopup } from '../NotePopup'
-import { CharacterNotePopup } from '../CharacterNotePopup'
 import { useBoardUi } from './BoardUiContext'
 import {
   buildBoardLayout,
@@ -131,8 +129,6 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const timeline = data.timeline
   const notes = data.notes
 
-  const [openNoteId, setOpenNoteId] = useState<string | null>(null)
-  const [openCharId, setOpenCharId] = useState<string | null>(null)
   const [menu, setMenu] = useState<ContextMenu | null>(null)
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -144,11 +140,16 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     registerCards,
     isRowExpanded,
     toggleRow,
+    openPanel,
     revising,
     isRevealed,
     toggleRevealed,
     revealMany
   } = useBoardUi()
+  // Both clicks that used to open a modal now open the side panel beside the
+  // board (#83); `BoardsView` is what renders it.
+  const openNote = (id: string): void => openPanel({ kind: 'note', id })
+  const openCharacterNote = (id: string): void => openPanel({ kind: 'character', id })
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const zoom = board.zoom || 1
@@ -207,12 +208,6 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     window.addEventListener('click', close)
     return () => window.removeEventListener('click', close)
   }, [rowMenu])
-
-  const openNote = useMemo(() => notes.find((n) => n.id === openNoteId) ?? null, [notes, openNoteId])
-  const openChar = useMemo(
-    () => characters.find((c) => c.id === openCharId) ?? null,
-    [characters, openCharId]
-  )
 
   const headerRows = cols.hasGroups ? 2 : 1
   const colHeadRow = headerRows // 1-based grid row for the column-header line
@@ -594,7 +589,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                     expanded={rowExpanded}
                     headerW={headerW}
                     zoom={zoom}
-                    onOpenNote={() => setOpenCharId(char.id)}
+                    onOpenNote={() => openCharacterNote(char.id)}
                     onToggle={() => toggleRow(char.id)}
                   />
                 </div>
@@ -671,7 +666,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                             toggleRevealed(pc.card.id)
                             return
                           }
-                          if (note) setOpenNoteId(note.id)
+                          if (note) openNote(note.id)
                         }}
                         onContextMenu={(e) => {
                           e.preventDefault()
@@ -736,7 +731,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
             onClick={() => {
               const card = board.cards.find((c) => c.id === menu.cardId)
               const note = card && noteForCard(notes, card.noteUid)
-              if (note) setOpenNoteId(note.id)
+              if (note) openNote(note.id)
             }}
           >
             Open note
@@ -776,13 +771,6 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
         </div>
       )}
 
-      {openNote && (
-        <NotePopup note={openNote} onClose={() => setOpenNoteId(null)} onOpenNote={setOpenNoteId} />
-      )}
-
-      {openChar && (
-        <CharacterNotePopup character={openChar} onClose={() => setOpenCharId(null)} />
-      )}
     </div>
   )
 }

@@ -1,28 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Note } from '@shared/types'
 import type { EntityBodyKind } from '@shared/ipc'
-import { isAllowedAsset, type AssetRef } from '@shared/assets'
 import { useStore, type EditorTarget } from '../store'
 import { MarkdownPreview } from './MarkdownPreview'
+import { useAssetInsert } from './useAssetInsert'
 import {
+  HEADING_LEVELS,
+  INLINE_TOOLS,
   headingLevelAt,
   insertAt,
   setHeading,
   toggleInline,
   type HeadingLevel,
-  type InlineFormat,
   type MdSelection
 } from '../lib/mdFormat'
-
-/** The inline buttons, in toolbar order (Issue #72). */
-const INLINE_TOOLS: { format: InlineFormat; label: string; title: string }[] = [
-  { format: 'bold', label: 'B', title: 'Bold  **text**' },
-  { format: 'italic', label: 'I', title: 'Italic  *text*' },
-  { format: 'strikethrough', label: 'S', title: 'Strikethrough  ~~text~~' },
-  { format: 'highlight', label: '==', title: 'Highlight  ==text==' }
-]
-
-const HEADING_LEVELS: HeadingLevel[] = [0, 1, 2, 3, 4, 5, 6]
 
 const parseTags = (s: string): string[] => s.split(',').map((t) => t.trim()).filter(Boolean)
 
@@ -41,17 +32,15 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
     saveNote,
     getEntityBody,
     saveEntityBody,
-    readOnly,
-    importAsset,
-    pickAsset
+    readOnly
   } = useStore()
   const previewOnLeft = (config?.settings.previewPosition ?? 'left') === 'left'
+  const assets = useAssetInsert()
 
   const [title, setTitle] = useState('')
   const [tags, setTags] = useState('')
   const [body, setBody] = useState('')
   const [loaded, setLoaded] = useState(false)
-  const [assetError, setAssetError] = useState<string | null>(null)
   // Caret position, mirrored into state only so the heading dropdown can show
   // the level of the line you are on. The textarea itself stays uncontrolled
   // where the selection is concerned.
@@ -139,32 +128,8 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
     })
   }
 
-  /**
-   * Put an imported asset into the text at the caret (Issue #61).
-   *
-   * A PDF gets a link rather than an image embed, because an `<img>` pointing at
-   * a PDF renders as a broken image in every browser.
-   */
-  const insertAsset = (ref: AssetRef): void => {
-    const isImage = !ref.file.toLowerCase().endsWith('.pdf')
-    applyEdit((sel) => insertAt(sel, `${isImage ? '!' : ''}[${ref.file}](${ref.markdownPath})`))
-  }
-
-  /** Import every acceptable file out of a paste or drop. */
-  const importFiles = async (files: FileList | File[]): Promise<void> => {
-    for (const file of Array.from(files)) {
-      if (!isAllowedAsset(file.name)) continue
-      try {
-        const buffer = await file.arrayBuffer()
-        let binary = ''
-        const bytes = new Uint8Array(buffer)
-        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-        insertAsset(await importAsset({ name: file.name, data: btoa(binary) }))
-      } catch (err) {
-        setAssetError(err instanceof Error ? err.message : String(err))
-      }
-    }
-  }
+  /** Put markdown for an imported asset into the text at the caret (Issue #61). */
+  const insertMarkdown = (markdown: string): void => applyEdit((sel) => insertAt(sel, markdown))
 
   const editorPane = (
     <div className="editor-pane">
@@ -202,12 +167,8 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
           <button
             className="btn small"
             onClick={async () => {
-              try {
-                const ref = await pickAsset()
-                if (ref) insertAsset(ref)
-              } catch (err) {
-                setAssetError(err instanceof Error ? err.message : String(err))
-              }
+              const markdown = await assets.pick()
+              if (markdown) insertMarkdown(markdown)
             }}
             title="Add an image or PDF — it is copied into this board's assets folder"
           >
@@ -216,7 +177,7 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
           <span className="muted small">…or paste / drop a file into the text.</span>
         </div>
       )}
-      {assetError && <p className="small error">{assetError}</p>}
+      {assets.error && <p className="small error">{assets.error}</p>}
       <textarea
         ref={textareaRef}
         className="editor-textarea"
@@ -231,7 +192,7 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
           const files = Array.from(e.clipboardData.files)
           if (files.length === 0 || readOnly) return
           e.preventDefault()
-          void importFiles(files)
+          void assets.importFiles(files, insertMarkdown)
         }}
         onDragOver={(e) => {
           if (!readOnly && e.dataTransfer.types.includes('Files')) e.preventDefault()
@@ -239,7 +200,7 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
         onDrop={(e) => {
           if (readOnly || e.dataTransfer.files.length === 0) return
           e.preventDefault()
-          void importFiles(e.dataTransfer.files)
+          void assets.importFiles(e.dataTransfer.files, insertMarkdown)
         }}
         placeholder={loaded ? 'Write in Markdown…' : 'Loading…'}
         autoFocus

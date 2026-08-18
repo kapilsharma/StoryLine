@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type MouseEvent } from 'react'
+import { useCallback, useMemo, type MouseEvent, type RefObject } from 'react'
 import { desktopAssetResolver, staticAssetResolver } from '@shared/assets'
 import { useStore } from '../store'
 import { renderMarkdown } from '../lib/markdown'
@@ -13,6 +13,13 @@ interface Props {
    * with nowhere to navigate to.
    */
   onOpenNote?: (noteId: string) => void
+  /**
+   * Where to look for a footnote's other half. Defaults to this preview, which is
+   * right when it holds the whole note — but the live-preview editor (#83)
+   * renders one preview *per block*, so a reference and its definition are in
+   * different ones and the search has to cover both.
+   */
+  scrollRoot?: RefObject<HTMLElement | null>
 }
 
 /**
@@ -28,7 +35,12 @@ interface Props {
  *  - **Footnote jumps** (#64) scroll within the preview instead of pushing a
  *    hash onto the location, which inside a modal would do nothing useful.
  */
-export function MarkdownPreview({ markdown, className, onOpenNote }: Props): JSX.Element {
+export function MarkdownPreview({
+  markdown,
+  className,
+  onOpenNote,
+  scrollRoot
+}: Props): JSX.Element {
   const { activeBoard, activeBoardId, readOnly } = useStore()
 
   const html = useMemo(() => {
@@ -63,11 +75,12 @@ export function MarkdownPreview({ markdown, className, onOpenNote }: Props): JSX
       const href = anchor.getAttribute('href') ?? ''
       if (href.startsWith('#fn')) {
         e.preventDefault()
-        const target = e.currentTarget.querySelector(`[id="${CSS.escape(href.slice(1))}"]`)
+        const root = scrollRoot?.current ?? e.currentTarget
+        const target = root.querySelector(`[id="${CSS.escape(href.slice(1))}"]`)
         target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
     },
-    [onOpenNote]
+    [onOpenNote, scrollRoot]
   )
 
   return (

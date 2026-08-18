@@ -799,10 +799,19 @@ textarea {
   color: var(--danger);
 }
 
+/* Board and note panel side by side (#83). */
+.board-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
 .board-scroll {
   flex: 1;
   overflow: auto;
   position: relative;
+  /* Without this the grid's `min-width: max-content` wins the flex negotiation
+     and the panel gets squeezed off the right-hand edge. */
+  min-width: 0;
 }
 .board-grid {
   display: grid;
@@ -1892,4 +1901,126 @@ ol.footnotes li {
   letter-spacing: 0.15em;
   opacity: 0.65;
   user-select: none;
+}
+
+/* ── Note side panel (#83) ── */
+.note-panel {
+  flex-grow: 0;
+  flex-shrink: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+.note-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+.note-panel-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1.1rem;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.note-panel .note-tags-input,
+.note-panel-hint {
+  margin: 0.5rem 0.9rem 0;
+}
+.note-panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 0.4rem 0.9rem 1.5rem;
+}
+.note-panel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.5rem 0.9rem;
+  border-top: 1px solid var(--border);
+}
+.note-panel-foot code {
+  background: var(--panel);
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+}
+/* The divider. Wider than it looks: a 1px target is a target you have to aim
+   at, and the visible line is drawn by the panel's own border. */
+.note-panel-rail {
+  flex: 0 0 7px;
+  margin-right: -3px;
+  cursor: col-resize;
+  z-index: 2;
+}
+.note-panel-rail:hover {
+  background: var(--accent);
+  opacity: 0.35;
+}
+
+/* ── Live preview editor (#83) ── */
+.live-md {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.live-md-tools {
+  position: sticky;
+  top: -0.4rem;
+  z-index: 1;
+  background: var(--bg);
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+.live-md-hint {
+  margin-left: auto;
+}
+.live-md-body {
+  flex: 1;
+}
+/* A rendered block. The hover tint is the only hint that it is clickable —
+   anything stronger and a note would read as a page of buttons. */
+.live-md-block {
+  border-radius: 6px;
+  padding: 0 0.35rem;
+  margin: 0 -0.35rem;
+}
+.live-md-block.editable:hover {
+  background: var(--panel);
+}
+.live-md-block > .markdown > :first-child {
+  margin-top: 0.25rem;
+}
+.live-md-source {
+  display: block;
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  margin: 0.35rem 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+.live-md-source:focus {
+  outline: none;
+}
+.live-md-empty {
+  cursor: text;
+  padding: 0.5rem 0;
+}
+/* Clicking below the note starts a new block, so the empty room has to be
+   clickable — and tall enough to hit. */
+.live-md-tail {
+  min-height: 3rem;
+  cursor: text;
 }

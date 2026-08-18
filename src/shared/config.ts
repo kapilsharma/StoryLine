@@ -8,6 +8,18 @@ export type Theme = 'light' | 'dark'
 /** Which side the rendered preview sits on in the dedicated editor. */
 export type PreviewPosition = 'left' | 'right'
 
+/**
+ * How a note opens from a board card or row header (Issue #83).
+ *
+ * `popup` is the modal that has been there since Feature 12 — a read-only
+ * preview over the grid, with **Edit** going to the fullscreen editor. `panel`
+ * is the side panel: half the page, beside a board that stays visible, and
+ * editable in place. Both are kept because they suit different work — a quick
+ * check mid-thought against sitting with a note while the plot is on screen —
+ * and the popup stays the default.
+ */
+export type BoardNoteView = 'popup' | 'panel'
+
 export interface RecentProject {
   name: string
   /** Absolute path to the project folder. */
@@ -26,6 +38,14 @@ export interface AppSettings {
   cardFontSize: number
   /** Side the preview pane sits on in the dedicated editor. */
   previewPosition: PreviewPosition
+  /** Popup over the board, or panel beside it, when a note is opened (#83). */
+  boardNoteView: BoardNoteView
+  /**
+   * Share of the boards page the note side panel takes (Issue #83) — a fraction
+   * rather than pixels, so the split someone dragged still means the same thing
+   * on the next screen they open the project on. Ignored by the popup.
+   */
+  notePanelFraction: number
   /** Colours/sizes for the markdown preview. */
   editorStyles: EditorStyles
 
@@ -47,6 +67,24 @@ export interface AppSettings {
 /** Clamp range for the card font size, shared by UI and rendering. */
 export const CARD_FONT_MIN = 9
 export const CARD_FONT_MAX = 24
+
+/** The note panel's share of the boards page: default, and the drag limits (#83). */
+export const NOTE_PANEL_FRACTION_DEFAULT = 0.5
+export const NOTE_PANEL_FRACTION_MIN = 0.25
+export const NOTE_PANEL_FRACTION_MAX = 0.75
+
+/**
+ * Clamp a dragged (or hand-edited) panel fraction into the usable range.
+ *
+ * The floor keeps the note wide enough to read prose in; the ceiling keeps a
+ * quarter of the window on the board, so the panel can never swallow the plot
+ * you opened it from. A missing or nonsense value falls back to the default
+ * rather than collapsing the panel to nothing.
+ */
+export function clampNotePanelFraction(raw: unknown): number {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return NOTE_PANEL_FRACTION_DEFAULT
+  return Math.min(NOTE_PANEL_FRACTION_MAX, Math.max(NOTE_PANEL_FRACTION_MIN, raw))
+}
 
 export type PreviewFont = 'sans' | 'serif' | 'mono'
 
@@ -191,6 +229,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
   cardFontSize: 13,
   previewPosition: 'left',
+  // The view the app has always had. Someone who prefers the side panel says so
+  // in Settings; nobody is moved off what they are used to by an update.
+  boardNoteView: 'popup',
+  notePanelFraction: NOTE_PANEL_FRACTION_DEFAULT,
   editorStyles: DEFAULT_EDITOR_STYLES,
   nodeWidth: 180,
   nodeHeight: 64,
