@@ -1,5 +1,8 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
+/** What the side panel is showing: a card's note, or a row's character note. */
+export type PanelTarget = { kind: 'note'; id: string } | { kind: 'character'; id: string }
+
 /**
  * Ephemeral, per-session board view state shared between the board grid and the
  * tab-bar toolbar — which cards are expanded, and revision mode (Issue #67).
@@ -23,6 +26,16 @@ interface BoardUiValue {
    */
   isRowExpanded: (charId: string) => boolean
   toggleRow: (charId: string) => void
+
+  // ── Note side panel (Issue #83) ──
+  /**
+   * The note open beside the board, or null. Lives here rather than in the grid
+   * because the panel is laid out *next to* the grid, by `BoardsView`, while the
+   * click that opens it happens on a card or a row header inside it.
+   */
+  panel: PanelTarget | null
+  openPanel: (target: PanelTarget) => void
+  closePanel: () => void
 
   // ── Revision mode (Issue #67) ──
   /**
@@ -49,6 +62,10 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
   const [cardIds, setCardIds] = useState<string[]>([])
   const [revising, setRevisingState] = useState(false)
   const [revealed, setRevealed] = useState<Set<string>>(new Set())
+  const [panel, setPanel] = useState<PanelTarget | null>(null)
+
+  const openPanel = useCallback((target: PanelTarget) => setPanel(target), [])
+  const closePanel = useCallback(() => setPanel(null), [])
 
   const isExpanded = useCallback((id: string) => expanded.has(id), [expanded])
 
@@ -120,6 +137,9 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
       setAll,
       isRowExpanded,
       toggleRow,
+      panel,
+      openPanel,
+      closePanel,
       revising,
       setRevising,
       isRevealed,
@@ -136,6 +156,9 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
       setAll,
       isRowExpanded,
       toggleRow,
+      panel,
+      openPanel,
+      closePanel,
       revising,
       setRevising,
       isRevealed,

@@ -1,12 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Board } from '@shared/types'
+import { clampNotePanelFraction, NOTE_PANEL_FRACTION_DEFAULT } from '@shared/config'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
 import { moveAfter, moveBefore } from '../../lib/reorder'
 import { Modal } from '../Modal'
 import { CharacterForm } from '../CharacterForm'
 import { TimelineForm } from '../TimelineForm'
+import { NotePopup } from '../NotePopup'
+import { CharacterNotePopup } from '../CharacterNotePopup'
 import { BoardGrid } from './BoardGrid'
+import { NoteSidePanel } from './NoteSidePanel'
+import { useBoardUi } from './BoardUiContext'
 import { addBoardMember, nonMembers } from './grid-utils'
 import { rowLabel, timelineLabel } from '@shared/project'
 
@@ -23,9 +28,12 @@ export function BoardsView(): JSX.Element {
     renameBoard,
     deleteBoard,
     reorderBoards,
-    saveBoard
+    saveBoard,
+    config,
+    updateSettings
   } = useStore()
   const ask = usePrompt()
+  const { panel, openPanel, closePanel } = useBoardUi()
   const characters = activeBoard?.characters ?? []
   const timeline = activeBoard?.timeline ?? []
   const board = activeBoard?.board ?? null
@@ -36,6 +44,60 @@ export function BoardsView(): JSX.Element {
   const [tabMenu, setTabMenu] = useState<{ boardId: string; x: number; y: number } | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [addModal, setAddModal] = useState<null | 'row' | 'column'>(null)
+  // Live share of the page while the panel divider is being dragged; null when
+  // it isn't, and the saved setting applies.
+  const [panelDrag, setPanelDrag] = useState<number | null>(null)
+  const mainRef = useRef<HTMLDivElement>(null)
+  const panelFraction = panelDrag ?? clampNotePanelFraction(config?.settings.notePanelFraction)
+  // Which of the two views a note opens in (#83) — the reader's choice, made in
+  // Settings, defaulting to the popup this app has always had.
+  const asPanel = config?.settings.boardNoteView === 'panel'
+  const openNote = panel?.kind === 'note' ? (activeBoard?.notes.find((n) => n.id === panel.id) ?? null) : null
+  const openChar =
+    panel?.kind === 'character'
+      ? (activeBoard?.characters.find((c) => c.id === panel.id) ?? null)
+      : null
+
+  // A note belongs to the board it was opened from — carrying it across to the
+  // next tab would show a note that board does not have.
+  useEffect(() => {
+    closePanel()
+  }, [activeBoardId, closePanel])
+
+  /**
+   * Drag the divider to change the split (#83). Only the final fraction is
+   * saved; the drag itself just previews, the same way the row-header rail
+   * works (#80).
+   */
+  const beginPanelResize = (e: React.PointerEvent): void => {
+    e.preventDefault()
+    const el = mainRef.current
+    const settings = config?.settings
+    if (!el || !settings) return
+    const rect = el.getBoundingClientRect()
+    const onMove = (ev: PointerEvent): void => {
+      setPanelDrag(clampNotePanelFraction((rect.right - ev.clientX) / rect.width))
+    }
+    const onUp = (): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      setPanelDrag((f) => {
+        if (f != null && f !== settings.notePanelFraction) {
+          void updateSettings({ ...settings, notePanelFraction: f })
+        }
+        return null
+      })
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  const resetPanelWidth = (): void => {
+    const settings = config?.settings
+    if (settings && settings.notePanelFraction !== NOTE_PANEL_FRACTION_DEFAULT) {
+      void updateSettings({ ...settings, notePanelFraction: NOTE_PANEL_FRACTION_DEFAULT })
+    }
+  }
 
   const onTabDrop = (draggedId: string, targetId: string, e: React.DragEvent): void => {
     setDragId(null)
@@ -238,7 +300,41 @@ export function BoardsView(): JSX.Element {
             )}
           </div>
 
-          {activeBoard && <BoardGrid data={activeBoard} />}
+          {/* In panel mode (#83) the note is a sibling of the board rather than
+              a modal over it, so the plot stays readable while a note is open —
+              and the board keeps scrolling under its own width. */}
+          <div className="board-main" ref={mainRef}>
+            {activeBoard && <BoardGrid data={activeBoard} />}
+
+            {panel && asPanel && (
+              <>
+                <div
+                  className="note-panel-rail"
+                  title="Drag to resize the note · double-click to reset"
+                  onPointerDown={beginPanelResize}
+                  onDoubleClick={resetPanelWidth}
+                />
+                <NoteSidePanel
+                  key={`${panel.kind}:${panel.id}`}
+                  target={panel}
+                  onClose={closePanel}
+                  onOpenNote={(id) => openPanel({ kind: 'note', id })}
+                  style={{ flexBasis: `${panelFraction * 100}%` }}
+                />
+              </>
+            )}
+          </div>
+
+          {/* The original popup, still the default. Rendered here rather than in
+              the grid so both views are chosen in one place. */}
+          {!asPanel && openNote && (
+            <NotePopup
+              note={openNote}
+              onClose={closePanel}
+              onOpenNote={(id) => openPanel({ kind: 'note', id })}
+            />
+          )}
+          {!asPanel && openChar && <CharacterNotePopup character={openChar} onClose={closePanel} />}
         </>
       )}
 

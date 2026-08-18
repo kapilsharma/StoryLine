@@ -28,7 +28,9 @@ boards/<boardId>/
 
 - **Shared contract:** `src/shared/{types,config,ipc,changes,dates,graph,families,selection}.ts`.
 - **Main process:** `src/main/{index,ipc,appConfig,projectService}.ts` + `src/main/data/{repository,mappers,frontmatter,fsutil,slug,uid,watcher,migrate}.ts`.
-- **Renderer:** `src/renderer/src/{App,store,api}.tsx`, `components/*`, `lib/{markdown,reorder,text}.ts`; family tree under `components/tree/*` with a pure layout engine in `components/tree/layout/*`.
+- **Renderer:** `src/renderer/src/{App,store,api}.tsx`, `components/*`, `lib/{markdown,mdFormat,mdBlocks,reorder,text}.ts`; family tree under `components/tree/*` with a pure layout engine in `components/tree/layout/*`.
+- **Three ways a note is shown, and the two the board offers are a setting.** `boardNoteView` in `AppSettings` (issue #83) decides what a click on a card or row header opens: `popup` — the default, and what the app has always done — is the read-only `NotePopup`/`CharacterNotePopup` modal whose **Edit** goes to the fullscreen `EditorPage` (source textarea beside a preview); `panel` is `components/board/NoteSidePanel.tsx`, a resizable share of the boards page (`notePanelFraction`) that is edited in place. Both are rendered by `BoardsView` off one piece of state (`panel` in `BoardUiContext`), so the grid just says "open this note" and does not care which view wins. Keep both working: neither is deprecated.
+- **The live-preview editor** (`LiveMarkdownEditor.tsx`) is the panel's Obsidian-style surface: each block renders through the same `renderMarkdown` as every other preview, and the clicked block is swapped for its source. Block boundaries and the click→caret mapping are pure functions in `lib/mdBlocks.ts` — put logic there, not in the component.
 - **Store** = React context. Snapshot shape `{ root, project, boards: BoardData[] }`; mutations return a fresh `ProjectSnapshot`. Live-reload via a chokidar watcher — `classify` in `watcher.ts` must match the per-board paths.
 
 ## User-facing docs live in `examples/sl-docs`

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type {
+  BoardNoteView,
   EditorColorKey,
   EditorStyles,
   PreviewFont,
@@ -175,6 +176,24 @@ export function Settings(): JSX.Element {
             onChange={(e) => updateSettings({ ...settings, cardFontSize: Number(e.target.value) })}
           />
           <span className="muted small">Base text size on board cards (scales with zoom).</span>
+        </div>
+        <div className="form-row">
+          <label htmlFor="board-note-view">Note opened from a board</label>
+          <select
+            id="board-note-view"
+            value={settings.boardNoteView}
+            onChange={(e) =>
+              updateSettings({ ...settings, boardNoteView: e.target.value as BoardNoteView })
+            }
+          >
+            <option value="popup">Popup over the board</option>
+            <option value="panel">Panel beside the board</option>
+          </select>
+          <span className="muted small">
+            The popup is a read-only preview with an <strong>Edit</strong> button. The panel takes a
+            draggable half of the boards page, keeps the plot visible, and is edited in place —
+            click any line to write.
+          </span>
         </div>
         <div className="form-row">
           <label>Editor preview position</label>

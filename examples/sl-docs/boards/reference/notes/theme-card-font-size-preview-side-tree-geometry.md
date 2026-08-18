@@ -7,6 +7,6 @@ tags:
   - settings
 created: '2026-08-17'
 ---
-These are app preferences, stored outside any project, so they follow you between projects rather than travelling with one.
+These are app preferences, stored outside any project, so they follow you between projects rather than travelling with one — including whether a board note opens as a popup or in a side panel.
 
 The Family tree section sets node width and height, generation, sibling and partner gaps, and node font size.

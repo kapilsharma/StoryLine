@@ -10,4 +10,4 @@ created: '2026-08-17'
 ---
 Six heading sizes and colours, colours for bold, italic, bold-italic, strikethrough and links, backgrounds for highlight, inline code, code blocks and blockquotes, plus body font and line height.
 
-It applies everywhere a note is rendered — the editor preview and the note popup.
+It applies everywhere a note is rendered — the editor preview, the board's note panel, and the Notes tab.
