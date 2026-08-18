@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0](https://github.com/kapilsharma/StoryLine/compare/1.3.0...1.4.0) (2026-08-18)
+
+
+### Features
+
+* **#83:** Editable note at right ([67fbf71](https://github.com/kapilsharma/StoryLine/commit/67fbf71bfdde36f4ec8c7bb94990b6bd675512d9))
+* **#83:** Editable note at right ([c34f031](https://github.com/kapilsharma/StoryLine/commit/c34f031d9146037bad260f6b7c99f8e9015a3dee)), closes [#83](https://github.com/kapilsharma/StoryLine/issues/83)
+* **#83:** Merge pull request [#84](https://github.com/kapilsharma/StoryLine/issues/84) from kapilsharma/issue-83-editable-note-at-right ([67fbf71](https://github.com/kapilsharma/StoryLine/commit/67fbf71bfdde36f4ec8c7bb94990b6bd675512d9))
+
 ## [1.3.0](https://github.com/kapilsharma/StoryLine/compare/1.2.0...1.3.0) (2026-08-17)
 
 
