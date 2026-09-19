@@ -16,12 +16,17 @@
  *   tsx --tsconfig tsconfig.node.json scripts/export-static.mts
  */
 import { promises as fs } from 'fs'
-import { basename, isAbsolute, join, resolve } from 'path'
+import { basename, dirname, isAbsolute, join, resolve } from 'path'
 import { spawn } from 'child_process'
 import { SNAPSHOT_GLOBAL } from '@shared/export'
 import { ASSETS_DIR } from '@shared/assets'
 import type { Theme } from '@shared/config'
 import { applyThemeToHtml, buildExportBundle, UnknownBoardError } from '../src/main/data/exportBundle'
+import {
+  applyGroupScriptToHtml,
+  groupManifestSource,
+  resolveProjectGroup
+} from '../src/main/data/projectGroup'
 import { readLocalSettings } from './appSettingsPath'
 
 /** Written into the output folder so a re-export knows it may clean it. */
@@ -204,6 +209,25 @@ async function main(): Promise<void> {
 
   const pkg = JSON.parse(await fs.readFile(resolve('package.json'), 'utf8')) as { version: string }
 
+  // Resolve a project group before spending time on a build — a bad
+  // projectgroup.json (issue #86) should fail exactly as fast as a bad
+  // --project/--boards. Absent parent folder file: this project just isn't
+  // grouped, and nothing below behaves any differently than it does today.
+  const group = await resolveProjectGroup(projectRoot)
+  if (group) {
+    console.log(
+      `Project group    ${group.manifest.name} — ${group.manifest.members.length} member(s): ` +
+        `${group.manifest.members.map((m) => m.folder).join(', ')}`
+    )
+    if (basename(outDir) !== basename(projectRoot)) {
+      console.warn(
+        `  warning: --out folder "${basename(outDir)}" doesn't match the project folder name ` +
+          `"${basename(projectRoot)}" — sibling dropdown links assume every member's output ` +
+          `lands under one shared parent, using the same folder name as its source project.`
+      )
+    }
+  }
+
   // Read the project first: a bad path or board id should fail before spending a
   // minute on a Vite build.
   console.log(`Reading project  ${projectRoot}`)
@@ -256,6 +280,20 @@ async function main(): Promise<void> {
   // `staticAssetResolver` produces.
   const assetCount = await copyAssets(projectRoot, outDir, bundle.project.boards)
   if (assetCount > 0) console.log(`  copied ${assetCount} asset(s)`)
+
+  if (group) {
+    // One shared file in the output parent, not a copy per member (issue #86)
+    // — every grouped sibling's page links to the same ../group.js, so the
+    // dropdown can never drift out of sync between them.
+    const groupJsPath = join(dirname(outDir), 'group.js')
+    await fs.writeFile(groupJsPath, groupManifestSource(group.manifest), 'utf8')
+    await fs.writeFile(
+      indexPath,
+      applyGroupScriptToHtml(await fs.readFile(indexPath, 'utf8')),
+      'utf8'
+    )
+    console.log(`  wrote group.js   ${groupJsPath}`)
+  }
 
   await fs.writeFile(
     join(outDir, MARKER),

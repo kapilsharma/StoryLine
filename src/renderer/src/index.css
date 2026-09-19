@@ -1529,6 +1529,23 @@ textarea {
   color: var(--fg);
 }
 
+/* Cross-project dropdown for a published site that's part of a group (issue #86). */
+.group-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 0.75rem;
+  font-size: 0.85rem;
+}
+.group-switcher select {
+  padding: 1px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+}
+
 /* Fixed, so a failed save is reported without shifting whatever you're looking
    at — including over the fullscreen editor. */
 .toast {
