@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.0](https://github.com/kapilsharma/StoryLine/compare/1.4.0...1.5.0) (2026-09-19)
+
+
+### Features
+
+* **86:** Merge pull request [#87](https://github.com/kapilsharma/StoryLine/issues/87) from kapilsharma/issue-86-static-site-project ([9455f14](https://github.com/kapilsharma/StoryLine/commit/9455f14a37a50c22be84fdb797c13343ddf04d20))
+* **86:** Project groups ([9455f14](https://github.com/kapilsharma/StoryLine/commit/9455f14a37a50c22be84fdb797c13343ddf04d20))
+* **86:** Project groups ([81c94f7](https://github.com/kapilsharma/StoryLine/commit/81c94f753631beada5867a31e778ba77a4ffd683))
+
 ## [1.4.0](https://github.com/kapilsharma/StoryLine/compare/1.3.0...1.4.0) (2026-08-18)
 
 
