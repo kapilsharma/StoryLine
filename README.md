@@ -100,6 +100,27 @@ npm run dev      # launch the app in development
 
 Want to see it with real data? Open the sample project in [`examples/thettana`](./examples/thettana) (**Open project** → pick that folder). See [`examples/`](./examples) for details, including how to try the Family tab.
 
+## Publishing a static site
+
+A project can be exported as a self-contained, read-only static site — a
+folder you upload anywhere, no server or database required. It's a two-step
+process: build the app shell once, then export your project's data into it.
+
+```bash
+npm run build:web                                                # once
+npm run export:static -- --project examples/thettana --out dist-site
+```
+
+Open `dist-site/index.html` in a browser to check it, then upload the
+**contents** of `dist-site/` to any static host (Netlify, GitHub Pages, S3,
+plain FTP, …). Re-run `export:static` whenever the project changes — it's a
+snapshot, not a sync.
+
+See [`docs/publishing.md`](./docs/publishing.md) for the full picture:
+publishing a subset of boards, choosing the light/dark theme, uploading to
+WordPress, and linking several published projects together with a
+cross-project dropdown.
+
 ## Scripts
 
 | Command | Description |

@@ -127,6 +127,51 @@ No plugin needed. Two options:
 > loads but shows "Couldn't load this story board", that's the cause — put the
 > folder somewhere else (e.g. a `/storyline/` directory at the web root) instead.
 
+## Linking several published sites together
+
+If you publish more than one project, a visitor on one of the published sites
+can jump to the others through a dropdown — useful when several stories share
+a universe, or you just want one hub linking all of them.
+
+Put the projects as direct subfolders of one root folder, alongside a
+hand-written `projectgroup.json` listing them:
+
+```text
+group-root/
+  projectgroup.json
+  thettana/            # a project folder — has its own project.json
+  dracula/
+```
+
+```json
+{
+  "schemaVersion": 1,
+  "name": "My Story Universe",
+  "projects": ["thettana", "dracula"]
+}
+```
+
+`projects` lists every member's folder name, including whichever one you're
+about to export. Export each member exactly as usual, with `--out` pointing
+at a same-named subfolder of one shared output folder:
+
+```bash
+npm run export:static -- --project group-root/thettana --out published/thettana
+npm run export:static -- --project group-root/dracula  --out published/dracula
+```
+
+Because `thettana`'s parent folder has a `projectgroup.json`, the export
+notices it, reads `dracula`'s `project.json` for its display name, and writes
+one shared `published/group.js` that both sites' pages link to — that's what
+draws the dropdown. Upload the whole `published/` folder (not just one
+member's subfolder) so `group.js` travels with them.
+
+A typo in `projectgroup.json` — a folder that doesn't exist, or forgetting to
+list the project you're exporting — fails the export with a specific message
+rather than silently publishing a broken dropdown. A project you export on
+its own, with no `projectgroup.json` next to it, publishes exactly as
+described above — nothing about a solo export changes.
+
 ## How it works
 
 Two phases, because a packaged desktop app can't run Vite:

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ProjectSnapshot } from '@shared/ipc'
 import { SCHEMA_VERSION } from '@shared/types'
+import { GROUP_GLOBAL, type GroupManifest } from '@shared/projectGroup'
 import App from '@renderer/App'
 import { makeApi } from './test-utils'
 
@@ -73,6 +74,66 @@ describe('published (read-only) build', () => {
     await screen.findByText('My Novel')
     expect(screen.queryByText(/Read-only preview/)).not.toBeInTheDocument()
     expect(screen.getByTitle('Back to dashboard')).toBeInTheDocument()
+  })
+})
+
+describe('project group dropdown (issue #86)', () => {
+  afterEach(() => {
+    delete (window as unknown as Record<string, unknown>)[GROUP_GLOBAL]
+  })
+
+  function setGroup(manifest: GroupManifest): void {
+    ;(window as unknown as Record<string, unknown>)[GROUP_GLOBAL] = manifest
+  }
+
+  it('is absent for an ungrouped export', async () => {
+    makeApi({ openProject: vi.fn().mockResolvedValue(snapshot) })
+    render(<App readOnly bootRoot="/" />)
+
+    await screen.findByText('My Novel')
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
+  it('is absent for a single-member group', async () => {
+    setGroup({ name: 'Solo', members: [{ name: 'My Novel', folder: 'my-novel' }] })
+    makeApi({ openProject: vi.fn().mockResolvedValue(snapshot) })
+    render(<App readOnly bootRoot="/" />)
+
+    await screen.findByText('My Novel')
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
+  it('lists every member and marks the current one selected', async () => {
+    setGroup({
+      name: 'My Story Universe',
+      members: [
+        { name: 'My Novel', folder: 'my-novel' },
+        { name: 'Dracula', folder: 'dracula' }
+      ]
+    })
+    makeApi({ openProject: vi.fn().mockResolvedValue(snapshot) })
+    render(<App readOnly bootRoot="/" />)
+
+    await screen.findByRole('heading', { name: 'My Novel' })
+    expect(screen.getByText('My Story Universe')).toBeInTheDocument()
+    const select = screen.getByRole('combobox') as HTMLSelectElement
+    expect(select.value).toBe('my-novel')
+    expect(screen.getByRole('option', { name: 'Dracula' })).toBeInTheDocument()
+  })
+
+  it('never appears on the desktop build', async () => {
+    setGroup({
+      name: 'My Story Universe',
+      members: [
+        { name: 'My Novel', folder: 'my-novel' },
+        { name: 'Dracula', folder: 'dracula' }
+      ]
+    })
+    makeApi({ openProject: vi.fn().mockResolvedValue(snapshot) })
+    render(<App bootRoot="/" />)
+
+    await screen.findByText('My Novel')
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
   })
 })
 

@@ -8,6 +8,7 @@ import { BoardsView } from './board/BoardsView'
 import { BoardUiProvider } from './board/BoardUiContext'
 import { BoardToolbar } from './board/BoardToolbar'
 import { FamilyView } from './tree/FamilyView'
+import { GroupSwitcher } from './GroupSwitcher'
 import { pluralize } from '../lib/text'
 import { hasFamilyFeatures, rowLabel, timelineLabel } from '@shared/project'
 
@@ -60,6 +61,7 @@ export function ProjectView(): JSX.Element {
           <div className="readonly-banner" role="note">
             <strong>Read-only preview.</strong> You can explore, zoom, collapse groups and read every
             note — but nothing you change here is saved.
+            <GroupSwitcher currentName={snapshot.project.name} />
           </div>
         )}
         <header className="project-head">
