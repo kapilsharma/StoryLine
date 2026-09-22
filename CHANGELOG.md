@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.0](https://github.com/kapilsharma/StoryLine/compare/1.5.0...1.6.0) (2026-09-22)
+
+
+### Features
+
+* **89:** credit line at bottom right on generated fiels ([ba27b51](https://github.com/kapilsharma/StoryLine/commit/ba27b512c74bf3ab6bb368c34a6a65aac3199919))
+* **89:** credit line at bottom right on generated fiels ([3872421](https://github.com/kapilsharma/StoryLine/commit/387242174dd5a9dbf65307f21ad42b471919ad7c))
+
 ## [1.5.0](https://github.com/kapilsharma/StoryLine/compare/1.4.0...1.5.0) (2026-09-19)
 
 
