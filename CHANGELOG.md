@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.2](https://github.com/kapilsharma/StoryLine/compare/1.6.1...1.6.2) (2026-09-22)
+
+
+### Bug Fixes
+
+* **#95:** Add favicon in generated site ([aad7ab4](https://github.com/kapilsharma/StoryLine/commit/aad7ab4e5f2f2f9b8711dc563ee4f0079d761ebf))
+* **#95:** Add favicon in generated site ([3f83b9e](https://github.com/kapilsharma/StoryLine/commit/3f83b9ed039a3696b8a7ce2e3049501f0ba7a5a1))
+
 ## [1.6.1](https://github.com/kapilsharma/StoryLine/compare/1.6.0...1.6.1) (2026-09-22)
 
 
