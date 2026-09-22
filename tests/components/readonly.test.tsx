@@ -77,6 +77,25 @@ describe('published (read-only) build', () => {
   })
 })
 
+describe('credit footer (issue #89)', () => {
+  it('links to the ZN Story Line repo on a published build', async () => {
+    makeApi({ openProject: vi.fn().mockResolvedValue(snapshot) })
+    render(<App readOnly bootRoot="/" />)
+
+    await screen.findByText('My Novel')
+    const credit = screen.getByRole('link', { name: 'Built by Zoey Nyxx Story Line' })
+    expect(credit).toHaveAttribute('href', 'https://github.com/kapilsharma/StoryLine')
+  })
+
+  it('is absent from the desktop build', async () => {
+    makeApi({ openProject: vi.fn().mockResolvedValue(snapshot) })
+    render(<App bootRoot="/" />)
+
+    await screen.findByText('My Novel')
+    expect(screen.queryByRole('link', { name: 'Built by Zoey Nyxx Story Line' })).not.toBeInTheDocument()
+  })
+})
+
 describe('project group dropdown (issue #86)', () => {
   afterEach(() => {
     delete (window as unknown as Record<string, unknown>)[GROUP_GLOBAL]
