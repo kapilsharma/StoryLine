@@ -1,4 +1,4 @@
-# ZN Story Line
+# Zoey Nyxx Story Line
 
 A desktop app for **visual story planning**. The core interface is a structured 2D grid — **characters × timeline** — so you can see, at a glance, what happens to whom and when. It's filesystem-first: a project is just a folder of Markdown and JSON, with no database, so your writing stays portable and editable in any tool.
 
@@ -93,17 +93,28 @@ release, and [`docs/llmwiki/`](./docs/llmwiki) for AI agents.
 
 ## Getting started
 
+If you want to run form source, you will need <a href="https://nodejs.org/en" target="_blank">Node JS</a> installed locally. Once NodeJS is installed, checkout the folder or download source as zip. Go to source folder in terminal and run following commands.
+
 ```bash
 npm install      # install dependencies
-npm run dev      # launch the app in development
+npm run dev      # launch the app in development mode
 ```
 
-Want to see it with real data? Open the sample project in [`examples/thettana`](./examples/thettana) (**Open project** → pick that folder). See [`examples/`](./examples) for details, including how to try the Family tab.
+**Want to see it with real data?** Open the sample project in [`examples/thettana`](./examples/thettana) (**Open project** → pick that folder). See [`examples/`](./examples) for details, including how to try the Family tab.
+
+### About the prebuilt installers
+
+GitHub Releases includes a `.dmg` (macOS) and a `.exe` (Windows), but neither is code-signed — code signing costs $99/year on macOS, which isn't worth it for a personal open-source project with no other users yet. As a result:
+
+- **macOS**: opening the installed app shows *"Apple could not verify ... is free of malware"* with only Close / Move to Bin. Fix it by running `xattr -cr "/Applications/ZN Story Line.app"` in Terminal, then open the app normally.
+- **Windows**: SmartScreen shows a "Windows protected your PC" warning, but it has a **More info → Run anyway** button, so it can be dismissed without Terminal.
+
+If you'd rather avoid this altogether, run from source instead (see above).
 
 ## Publishing a static site
 
 A project can be exported as a self-contained, read-only static site — a
-folder you upload anywhere, no server or database required. It's a two-step
+folder you upload anywhere, no app-server or database required. It's a two-step
 process: build the app shell once, then export your project's data into it.
 
 ```bash
