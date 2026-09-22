@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.1](https://github.com/kapilsharma/StoryLine/compare/1.6.0...1.6.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **#92:** pass --repo to gh release edit so it works without a checkout ([5bdc6c7](https://github.com/kapilsharma/StoryLine/commit/5bdc6c716b12cb9679eb4787e43649ed95cb65b1))
+* **#92:** pass --repo to gh release edit so it works without a checkout ([bd19de1](https://github.com/kapilsharma/StoryLine/commit/bd19de1fcfa3ef31a7b0fef10f0c5e410863e10e))
+
 ## [1.6.0](https://github.com/kapilsharma/StoryLine/compare/1.5.0...1.6.0) (2026-09-22)
 
 
