@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.4](https://github.com/kapilsharma/StoryLine/compare/1.6.3...1.6.4) (2026-09-23)
+
+
+### Bug Fixes
+
+* **101:** Multi project export from UI ([0437543](https://github.com/kapilsharma/StoryLine/commit/0437543a12e5c57b367c770609494735c14cedcc))
+* **101:** Multi project export from UI ([4439a5f](https://github.com/kapilsharma/StoryLine/commit/4439a5f5354de1ae843cc4ab5a2d4cb2a05e7161))
+
 ## [1.6.3](https://github.com/kapilsharma/StoryLine/compare/1.6.2...1.6.3) (2026-09-23)
 
 
