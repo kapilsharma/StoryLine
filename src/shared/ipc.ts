@@ -190,6 +190,12 @@ export interface AppApi {
    * counterpart of `npm run export:static`. Opens a native folder picker for
    * the destination; every board and the app's current appearance settings
    * are used, same as the CLI's defaults. Null if the picker was cancelled.
+   *
+   * When `root` sits next to a `projectgroup.json` listing more than one
+   * project, the user is asked (native dialog) whether to export just this
+   * project or every project in the group (Issue #101) — in the latter case
+   * each lands in its own `<outDir>/<folder>` and the result's `projects`
+   * lists what was exported.
    */
   exportStaticSite(root: string): Promise<StaticExportResult | null>
 }
@@ -199,4 +205,6 @@ export interface StaticExportResult {
   outDir: string
   files: number
   bytes: number
+  /** Present only when the user chose to export every project in the group. */
+  projects?: { folder: string; name: string }[]
 }

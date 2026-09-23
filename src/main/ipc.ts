@@ -18,6 +18,7 @@ import { readConfig, removeRecent, touchRecent, writeConfig } from './appConfig'
 import { createProject, defaultBoard, loadSnapshot } from './projectService'
 import { assembleStaticSite, buildExportBundle } from './data/exportBundle'
 import { ProjectNotInGroupError, resolveProjectGroup, type ResolvedProjectGroup } from './data/projectGroup'
+import { needsMigration } from './data/migrate'
 import { uniqueSlug } from './data/slug'
 import { applyChildren, clearReferencesTo, retargetReferences, syncSpouses } from './data/relations'
 import {
@@ -635,7 +636,7 @@ export function registerIpc(window: BrowserWindow): void {
     return writeAsset(root, boardId, { name: basename(source), data: data.toString('base64') })
   })
 
-  // ── Static site export (Issue #48) ──
+  // ── Static site export (Issue #48; multi-project groups: Issue #101) ──
   ipcMain.handle('static:export', async (_e, root: string) => {
     // Resolved before the folder picker: a "not part of this group" warning
     // that leads to Cancel shouldn't first make the user pick a destination.
@@ -659,8 +660,62 @@ export function registerIpc(window: BrowserWindow): void {
       group = null
     }
 
+    // A group of just this one project is the same as no group, mirroring the
+    // dropdown's own "1 member = nothing to switch to" rule (issue #86) — no
+    // point asking Current vs All when there's nothing else to export.
+    const currentFolder = basename(root)
+    let members = [currentFolder]
+    let allGroup: ResolvedProjectGroup | null = null
+    if (group && group.file.projects.length > 1) {
+      const choice = await dialog.showMessageBox(window, {
+        type: 'question',
+        buttons: ['Cancel', 'Current project only', `All ${group.file.projects.length} projects`],
+        defaultId: 1,
+        cancelId: 0,
+        message: `"${group.file.name}" lists ${group.file.projects.length} projects`,
+        detail:
+          `Export just "${currentFolder}", or every project in the group ` +
+          `(${group.file.projects.join(', ')})?`
+      })
+      if (choice.response === 0) return null
+      if (choice.response === 2) {
+        members = group.file.projects
+        allGroup = group
+      }
+    }
+
+    // Building a sibling's export bundle reuses `loadSnapshot`, which migrates
+    // it in place (with its own backup) exactly like opening it in the app
+    // would — but here that could happen to a project the user never opened
+    // themselves. Surface that before it happens rather than after.
+    if (allGroup) {
+      const activeGroup = allGroup
+      const stale = await Promise.all(
+        members.map(async (folder) => ({
+          folder,
+          stale: await needsMigration(join(activeGroup.groupRoot, folder))
+        }))
+      )
+      const toMigrate = stale.filter((s) => s.stale).map((s) => s.folder)
+      if (toMigrate.length > 0) {
+        const choice = await dialog.showMessageBox(window, {
+          type: 'warning',
+          buttons: ['Cancel export', 'Migrate and export'],
+          defaultId: 0,
+          cancelId: 0,
+          message: 'Some projects in this group are on an older file format',
+          detail:
+            `Exporting will upgrade these in place first, same as opening them in the app would ` +
+            `(each gets its own backup folder first): ${toMigrate.join(', ')}.`
+        })
+        if (choice.response !== 1) return null
+      }
+    }
+
     const result = await dialog.showOpenDialog(window, {
-      title: 'Choose a folder to export the static site into',
+      title: allGroup
+        ? 'Choose a folder to export all sites into'
+        : 'Choose a folder to export the static site into',
       properties: ['openDirectory', 'createDirectory']
     })
     if (result.canceled || result.filePaths.length === 0) return null
@@ -683,22 +738,60 @@ export function registerIpc(window: BrowserWindow): void {
     })
 
     const { settings } = await readConfig()
-    const bundle = await buildExportBundle(root, {
-      settings,
-      appVersion: app.getVersion(),
-      generatedAt: new Date().toISOString()
-    })
     // Refuses a non-empty folder it didn't create rather than silently wiping
     // whatever the user picked — same safety net as the CLI's default (no `--force`).
-    const assembled = await assembleStaticSite({
-      bundle,
-      projectRoot: root,
-      shellDir,
-      outDir,
-      theme: settings.theme,
-      group
-    })
-    return { outDir, files: assembled.files, bytes: assembled.bytes }
+    const exportOne = async (
+      projectRoot: string,
+      memberOutDir: string
+    ): Promise<{ files: number; bytes: number }> => {
+      const bundle = await buildExportBundle(projectRoot, {
+        settings,
+        appVersion: app.getVersion(),
+        generatedAt: new Date().toISOString()
+      })
+      const assembled = await assembleStaticSite({
+        bundle,
+        projectRoot,
+        shellDir,
+        outDir: memberOutDir,
+        theme: settings.theme,
+        group
+      })
+      return { files: assembled.files, bytes: assembled.bytes }
+    }
+
+    if (!allGroup) {
+      const { files, bytes } = await exportOne(root, outDir)
+      return { outDir, files, bytes }
+    }
+
+    // `buildExportBundle` reuses `loadSnapshot`, which stamps its argument as
+    // the app's "currently open project" (for `zn-asset://` resolution) as a
+    // side effect. Exporting every sibling in turn would otherwise leave that
+    // pointed at whichever member exported last — restore it once the whole
+    // group is done, success or failure.
+    try {
+      let totalFiles = 0
+      let totalBytes = 0
+      const exported: { folder: string; name: string }[] = []
+      for (const folder of members) {
+        const projectRoot = join(allGroup.groupRoot, folder)
+        try {
+          const { files, bytes } = await exportOne(projectRoot, join(outDir, folder))
+          totalFiles += files
+          totalBytes += bytes
+          const name = allGroup.manifest.members.find((m) => m.folder === folder)?.name ?? folder
+          exported.push({ folder, name })
+        } catch (err) {
+          // Abort the whole group rather than ship a partially-refreshed
+          // dropdown — same posture as projectgroup.json's own validation.
+          throw new Error(`Failed exporting "${folder}": ${(err as Error).message}`)
+        }
+      }
+      return { outDir, files: totalFiles, bytes: totalBytes, projects: exported }
+    } finally {
+      await loadSnapshot(root).catch(() => {})
+    }
   })
 }
 

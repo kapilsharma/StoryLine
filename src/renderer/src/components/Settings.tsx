@@ -24,7 +24,12 @@ export function Settings(): JSX.Element {
     try {
       const result = await exportStaticSite()
       if (result) {
-        setExportStatus(`Exported ${result.files} files (${(result.bytes / 1024).toFixed(0)} KB) to ${result.outDir}`)
+        const size = `${result.files} files (${(result.bytes / 1024).toFixed(0)} KB)`
+        setExportStatus(
+          result.projects
+            ? `Exported ${result.projects.length} projects — ${size} total — to ${result.outDir}`
+            : `Exported ${size} to ${result.outDir}`
+        )
       }
     } catch (err) {
       setExportStatus(err instanceof Error ? err.message : String(err))
