@@ -70,7 +70,9 @@ const api: AppApi = {
     const handler = (_e: unknown, change: ProjectChange): void => listener(change)
     ipcRenderer.on('project:change', handler)
     return () => ipcRenderer.removeListener('project:change', handler)
-  }
+  },
+
+  exportStaticSite: (root) => ipcRenderer.invoke('static:export', root)
 }
 
 export type Api = AppApi

@@ -18,19 +18,11 @@
 import { promises as fs } from 'fs'
 import { basename, dirname, isAbsolute, join, resolve } from 'path'
 import { spawn } from 'child_process'
-import { SNAPSHOT_GLOBAL } from '@shared/export'
-import { ASSETS_DIR } from '@shared/assets'
 import type { Theme } from '@shared/config'
-import { applyThemeToHtml, buildExportBundle, UnknownBoardError } from '../src/main/data/exportBundle'
-import {
-  applyGroupScriptToHtml,
-  groupManifestSource,
-  resolveProjectGroup
-} from '../src/main/data/projectGroup'
+import { assembleStaticSite, buildExportBundle, UnknownBoardError } from '../src/main/data/exportBundle'
+import { resolveProjectGroup } from '../src/main/data/projectGroup'
 import { readLocalSettings } from './appSettingsPath'
 
-/** Written into the output folder so a re-export knows it may clean it. */
-const MARKER = '.zn-story-line-export'
 const SHELL_DIR = resolve('out/web')
 
 interface Args {
@@ -129,77 +121,6 @@ function buildShell(): Promise<void> {
   })
 }
 
-/**
- * Make `dir` an empty, writable output folder.
- *
- * Refuses to clean a non-empty folder it didn't create, so a mistyped `--out`
- * can't wipe something else. `--force` overrides.
- */
-async function prepareOutDir(dir: string, force: boolean): Promise<void> {
-  let entries: string[]
-  try {
-    entries = await fs.readdir(dir)
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
-    await fs.mkdir(dir, { recursive: true })
-    return
-  }
-
-  if (entries.length === 0) return
-
-  const ours = entries.includes(MARKER)
-  if (!ours && !force) {
-    throw new Error(
-      `Refusing to overwrite ${dir}: it is not empty and wasn't created by this exporter.\n` +
-        `Choose an empty folder, or pass --force if you're sure.`
-    )
-  }
-  // Clean stale hashed assets from the previous export rather than layering on top.
-  await Promise.all(entries.map((e) => fs.rm(join(dir, e), { recursive: true, force: true })))
-}
-
-/**
- * Copy each exported board's `assets/` folder into `<out>/assets/<boardId>/`,
- * the layout `staticAssetResolver` expects. Returns how many files were copied.
- */
-async function copyAssets(projectRoot: string, outDir: string, boardIds: string[]): Promise<number> {
-  let copied = 0
-  for (const boardId of boardIds) {
-    const from = join(projectRoot, 'boards', boardId, ASSETS_DIR)
-    let names: string[]
-    try {
-      names = await fs.readdir(from)
-    } catch {
-      continue // no assets on this board
-    }
-    const to = join(outDir, ASSETS_DIR, boardId)
-    await fs.mkdir(to, { recursive: true })
-    for (const name of names.filter((n) => !n.startsWith('.'))) {
-      await fs.cp(join(from, name), join(to, name), { recursive: true })
-      copied++
-    }
-  }
-  return copied
-}
-
-/** Total bytes and file count under a folder, for the summary line. */
-async function measure(dir: string): Promise<{ files: number; bytes: number }> {
-  let files = 0
-  let bytes = 0
-  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-    const path = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      const sub = await measure(path)
-      files += sub.files
-      bytes += sub.bytes
-    } else {
-      files++
-      bytes += (await fs.stat(path)).size
-    }
-  }
-  return { files, bytes }
-}
-
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
   const projectRoot = isAbsolute(args.project) ? args.project : resolve(args.project)
@@ -256,63 +177,21 @@ async function main(): Promise<void> {
     await buildShell()
   }
 
-  await prepareOutDir(outDir, args.force)
-  await fs.cp(SHELL_DIR, outDir, { recursive: true })
+  const result = await assembleStaticSite({
+    bundle,
+    projectRoot,
+    shellDir: SHELL_DIR,
+    outDir,
+    theme: args.theme,
+    force: args.force,
+    group
+  })
 
-  // Stamp the theme into the copied html, not the shell, so the shell stays
-  // data-independent and reusable across exports with different themes.
-  const indexPath = join(outDir, 'index.html')
-  await fs.writeFile(
-    indexPath,
-    applyThemeToHtml(await fs.readFile(indexPath, 'utf8'), args.theme),
-    'utf8'
-  )
+  if (result.assetCount > 0) console.log(`  copied ${result.assetCount} asset(s)`)
+  if (result.group) console.log(`  wrote group.js   ${join(dirname(outDir), 'group.js')}`)
 
-  // A script assignment rather than JSON, so the folder also opens over file://.
-  const snapshot =
-    `/* ZN Story Line ${bundle.appVersion} — generated ${bundle.generatedAt}. Do not edit. */\n` +
-    `window.${SNAPSHOT_GLOBAL} = ${JSON.stringify(bundle)};\n`
-  await fs.writeFile(join(outDir, 'snapshot.js'), snapshot, 'utf8')
-
-  // Images and other files a note references (Issue #61). They are copied rather
-  // than inlined so the page stays small and the CSP's `img-src 'self'` is
-  // satisfied by a plain relative URL — which is exactly what
-  // `staticAssetResolver` produces.
-  const assetCount = await copyAssets(projectRoot, outDir, bundle.project.boards)
-  if (assetCount > 0) console.log(`  copied ${assetCount} asset(s)`)
-
-  if (group) {
-    // One shared file in the output parent, not a copy per member (issue #86)
-    // — every grouped sibling's page links to the same ../group.js, so the
-    // dropdown can never drift out of sync between them.
-    const groupJsPath = join(dirname(outDir), 'group.js')
-    await fs.writeFile(groupJsPath, groupManifestSource(group.manifest), 'utf8')
-    await fs.writeFile(
-      indexPath,
-      applyGroupScriptToHtml(await fs.readFile(indexPath, 'utf8')),
-      'utf8'
-    )
-    console.log(`  wrote group.js   ${groupJsPath}`)
-  }
-
-  await fs.writeFile(
-    join(outDir, MARKER),
-    JSON.stringify(
-      {
-        generatedAt: bundle.generatedAt,
-        appVersion: bundle.appVersion,
-        project: bundle.project.name,
-        boards: bundle.project.boards
-      },
-      null,
-      2
-    ) + '\n',
-    'utf8'
-  )
-
-  const { files, bytes } = await measure(outDir)
   console.log(`\nExported to      ${outDir}`)
-  console.log(`  ${files} files, ${(bytes / 1024).toFixed(0)} KB`)
+  console.log(`  ${result.files} files, ${(result.bytes / 1024).toFixed(0)} KB`)
   console.log(`\nUpload the contents of ${basename(outDir)}/ to your web host.`)
   console.log(`Or open ${join(outDir, 'index.html')} in a browser to check it first.`)
 }

@@ -19,6 +19,12 @@ files:
   - '!{release-please-config.json,.release-please-manifest.json}'
 
 asar: true
+# The static-export shell (Issue #48) is read out of the install directory at
+# runtime and copied file-by-file into wherever the user exports to — keep it
+# as plain files on disk rather than packed into app.asar, which `fs.cp` can't
+# reliably read out of.
+asarUnpack:
+  - out/web/**/*
 
 # --- macOS: unsigned .dmg (arm64 + Intel). Signing is a later issue. ---
 mac:

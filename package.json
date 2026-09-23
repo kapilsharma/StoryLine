@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "build:app": "electron-vite build && electron-builder",
+    "build:app": "npm run build:web && electron-vite build && electron-builder",
     "build:web": "vite build --config vite.web.config.ts",
     "export:static": "tsx --tsconfig tsconfig.node.json scripts/export-static.mts",
     "preview": "electron-vite preview",
