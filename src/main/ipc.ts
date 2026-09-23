@@ -1,7 +1,7 @@
-import { BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { randomUUID } from 'crypto'
 import { promises as fsp } from 'fs'
-import { basename } from 'path'
+import { basename, join } from 'path'
 import type { Card, Character, Note, TimelineUnit, View } from '@shared/types'
 import { defaultView } from '@shared/types'
 import type { AppSettings } from '@shared/config'
@@ -16,6 +16,8 @@ import { buildGraph } from '@shared/graph'
 import { filterSelection } from '@shared/selection'
 import { readConfig, removeRecent, touchRecent, writeConfig } from './appConfig'
 import { createProject, defaultBoard, loadSnapshot } from './projectService'
+import { assembleStaticSite, buildExportBundle } from './data/exportBundle'
+import { ProjectNotInGroupError, resolveProjectGroup, type ResolvedProjectGroup } from './data/projectGroup'
 import { uniqueSlug } from './data/slug'
 import { applyChildren, clearReferencesTo, retargetReferences, syncSpouses } from './data/relations'
 import {
@@ -631,6 +633,72 @@ export function registerIpc(window: BrowserWindow): void {
     const source = result.filePaths[0]
     const data = await fsp.readFile(source)
     return writeAsset(root, boardId, { name: basename(source), data: data.toString('base64') })
+  })
+
+  // ── Static site export (Issue #48) ──
+  ipcMain.handle('static:export', async (_e, root: string) => {
+    // Resolved before the folder picker: a "not part of this group" warning
+    // that leads to Cancel shouldn't first make the user pick a destination.
+    let group: ResolvedProjectGroup | null
+    try {
+      group = await resolveProjectGroup(root)
+    } catch (err) {
+      if (!(err instanceof ProjectNotInGroupError)) throw err
+      // A sibling folder can perfectly well hold unrelated projects the
+      // group was never meant to include — unlike the CLI (no one to ask),
+      // offer to export standalone instead of aborting outright.
+      const choice = await dialog.showMessageBox(window, {
+        type: 'warning',
+        buttons: ['Cancel export', 'Export without the group'],
+        defaultId: 0,
+        cancelId: 0,
+        message: "This project isn't listed in a nearby project group",
+        detail: `${err.message}\n\nExporting without the group skips the sibling-project dropdown for this site.`
+      })
+      if (choice.response !== 1) return null
+      group = null
+    }
+
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Choose a folder to export the static site into',
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    const outDir = result.filePaths[0]
+
+    // The packaged app ships a prebuilt shell at this path (see `build:app` and
+    // `electron-builder.yml`'s `out/**` inclusion, unpacked from app.asar so `fs.cp`
+    // can read it as plain files); in a dev checkout it's whatever
+    // `npm run build:web` last produced.
+    const appPath = app.getAppPath()
+    const shellDir = join(
+      app.isPackaged ? appPath.replace(/app\.asar$/, 'app.asar.unpacked') : appPath,
+      'out',
+      'web'
+    )
+    await fsp.access(join(shellDir, 'index.html')).catch(() => {
+      throw new Error(
+        `No exportable web shell found at ${shellDir}. Run "npm run build:web" once, then try again.`
+      )
+    })
+
+    const { settings } = await readConfig()
+    const bundle = await buildExportBundle(root, {
+      settings,
+      appVersion: app.getVersion(),
+      generatedAt: new Date().toISOString()
+    })
+    // Refuses a non-empty folder it didn't create rather than silently wiping
+    // whatever the user picked — same safety net as the CLI's default (no `--force`).
+    const assembled = await assembleStaticSite({
+      bundle,
+      projectRoot: root,
+      shellDir,
+      outDir,
+      theme: settings.theme,
+      group
+    })
+    return { outDir, files: assembled.files, bytes: assembled.bytes }
   })
 }
 

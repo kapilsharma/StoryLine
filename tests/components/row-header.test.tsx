@@ -75,8 +75,15 @@ describe('board row headers', () => {
     fakeOverflow(true)
     const head = await renderBoard()
 
-    const button = head.querySelector('.row-expand') as HTMLElement
-    expect(button).not.toBeNull()
+    // The button only appears once RowHeadName's own effect measures
+    // `scrollHeight` and flips `clipped` — a second render past the one
+    // `findByText` resolved on, so it needs its own wait rather than being
+    // assumed present immediately.
+    const button = await waitFor(() => {
+      const el = head.querySelector('.row-expand')
+      expect(el).not.toBeNull()
+      return el as HTMLElement
+    })
     expect(head.className).not.toContain('expanded')
 
     fireEvent.click(button)

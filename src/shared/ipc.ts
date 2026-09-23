@@ -183,4 +183,20 @@ export interface AppApi {
 
   // ── Live reload ──
   onProjectChange(listener: (change: ProjectChange) => void): () => void
+
+  // ── Static site export (Issue #48) ──
+  /**
+   * Export the project as a self-contained static site — the in-app
+   * counterpart of `npm run export:static`. Opens a native folder picker for
+   * the destination; every board and the app's current appearance settings
+   * are used, same as the CLI's defaults. Null if the picker was cancelled.
+   */
+  exportStaticSite(root: string): Promise<StaticExportResult | null>
+}
+
+/** Summary returned after a successful in-app static export. */
+export interface StaticExportResult {
+  outDir: string
+  files: number
+  bytes: number
 }
