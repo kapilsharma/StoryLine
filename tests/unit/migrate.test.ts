@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { migrateIfNeeded } from '@main/data/migrate'
-import { loadSnapshot } from '@main/projectService'
+import { migrateIfNeeded, needsMigration } from '@main/data/migrate'
+import { createProject, loadSnapshot } from '@main/projectService'
 
 let root: string
 const exists = (p: string): Promise<boolean> => fs.access(p).then(() => true).catch(() => false)
@@ -89,5 +89,24 @@ describe('v1 → v2 migration', () => {
     const main = snap.boards.find((b) => b.board.id === 'main')!
     expect(main.characters.map((c) => c.id).sort()).toEqual(['lonely', 'wolf'])
     expect(main.board.cards).toHaveLength(1)
+  })
+})
+
+describe('needsMigration', () => {
+  it('is false for a project already on the current schema', async () => {
+    await createProject(root)
+    expect(await needsMigration(root)).toBe(false)
+  })
+
+  it('is true for a project stamped with an older schema version, without migrating it', async () => {
+    await writeV1Project()
+    expect(await needsMigration(root)).toBe(true)
+    // Read-only: the on-disk layout is untouched.
+    expect(await exists(join(root, 'boards', 'main.json'))).toBe(true)
+    expect(await exists(join(root, 'boards', 'main'))).toBe(false)
+  })
+
+  it('is false when project.json is missing or unreadable — a different failure to surface elsewhere', async () => {
+    expect(await needsMigration(root)).toBe(false)
   })
 })

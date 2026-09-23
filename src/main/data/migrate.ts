@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs'
 import { basename, join } from 'path'
-import type { Board, Card } from '@shared/types'
+import { SCHEMA_VERSION, type Board, type Card } from '@shared/types'
 import { exists } from './fsutil'
 import { parseFrontmatter, serializeFrontmatter } from './frontmatter'
 import { uniqueNoteUid } from './uid'
@@ -39,6 +39,24 @@ async function mdStems(dir: string): Promise<string[]> {
   } catch {
     return []
   }
+}
+
+/**
+ * Whether `root`'s stamped `schemaVersion` is behind the app's, without
+ * running any migration. Used to warn before a bulk operation (grouped
+ * "export all") would silently migrate a sibling project the user hasn't
+ * opened themselves. `false` for an unreadable `project.json` — that's a
+ * different failure `loadSnapshot` will surface on its own.
+ */
+export async function needsMigration(root: string): Promise<boolean> {
+  let project: Record<string, unknown>
+  try {
+    project = await readJson(join(root, 'project.json'))
+  } catch {
+    return false
+  }
+  const version = typeof project.schemaVersion === 'number' ? (project.schemaVersion as number) : 1
+  return version < SCHEMA_VERSION
 }
 
 export async function migrateIfNeeded(root: string): Promise<void> {
