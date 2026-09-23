@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.3](https://github.com/kapilsharma/StoryLine/compare/1.6.2...1.6.3) (2026-09-23)
+
+
+### Bug Fixes
+
+* **#48:** export from app ([3704ee9](https://github.com/kapilsharma/StoryLine/commit/3704ee9bdf46afc504494e987adc5d36fd2c93ba))
+* **#48:** export from app ([a86ee32](https://github.com/kapilsharma/StoryLine/commit/a86ee3250333f5c5f8577c0de176145fefda7d96))
+* **48:** fixed failing test case ([086980e](https://github.com/kapilsharma/StoryLine/commit/086980e367a7bf0de1d73bd4266b5c42b1bde4f4))
+
 ## [1.6.2](https://github.com/kapilsharma/StoryLine/compare/1.6.1...1.6.2) (2026-09-22)
 
 
