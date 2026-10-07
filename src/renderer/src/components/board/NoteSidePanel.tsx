@@ -49,6 +49,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
 
   const [title, setTitle] = useState('')
   const [tags, setTags] = useState('')
+  const [hover, setHover] = useState('')
   const [body, setBody] = useState('')
   const [status, setStatus] = useState<string | undefined>(undefined)
   const [loaded, setLoaded] = useState(false)
@@ -77,6 +78,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
           noteRef.current = n
           setTitle(n.title)
           setTags((n.tags ?? []).join(', '))
+          setHover(n.hover ?? '')
           setBody(n.body)
           setStatus(n.status)
           setLoaded(true)
@@ -104,6 +106,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
           ...noteRef.current,
           title: title.trim() || noteRef.current.title,
           tags: parseTags(tags),
+          hover: hover.trim() || undefined,
           body
         })
       } else if (target.kind !== 'note') {
@@ -112,7 +115,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
     }, 900)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, tags, body])
+  }, [title, tags, hover, body])
 
   // Escape closes the panel — but only once no block is open for editing, since
   // the editor's own Escape (leave this block) stops the event getting here.
@@ -135,6 +138,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
       ...noteRef.current,
       title: title.trim() || noteRef.current.title,
       tags: parseTags(tags),
+      hover: hover.trim() || undefined,
       body
     })
   }
@@ -225,26 +229,46 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
 
       {target.kind === 'note' ? (
         readOnly ? (
-          (noteRef.current?.tags ?? []).length > 0 && (
-            <div className="tag-row">
-              {(noteRef.current?.tags ?? []).map((t) => (
-                <span key={t} className="tag">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )
+          <>
+            {(noteRef.current?.tags ?? []).length > 0 && (
+              <div className="tag-row">
+                {(noteRef.current?.tags ?? []).map((t) => (
+                  <span key={t} className="tag">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
+            {hover.trim() && (
+              <p className="note-hover-text">
+                <span className="muted">Hover text</span> {hover.trim()}
+              </p>
+            )}
+          </>
         ) : (
-          <input
-            className="note-tags-input"
-            value={tags}
-            placeholder="tags, comma separated"
-            aria-label="Tags"
-            onChange={(e) => {
-              dirty.current = true
-              setTags(e.target.value)
-            }}
-          />
+          <>
+            <input
+              className="note-tags-input"
+              value={tags}
+              placeholder="tags, comma separated"
+              aria-label="Tags"
+              onChange={(e) => {
+                dirty.current = true
+                setTags(e.target.value)
+              }}
+            />
+            <textarea
+              className="note-hover-input"
+              value={hover}
+              rows={2}
+              placeholder="hover text — shown when the mouse rests on the card (optional)"
+              aria-label="Hover text"
+              onChange={(e) => {
+                dirty.current = true
+                setHover(e.target.value)
+              }}
+            />
+          </>
         )
       ) : target.kind === 'character' ? (
         <p className="muted small note-panel-hint">

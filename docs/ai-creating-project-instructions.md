@@ -219,7 +219,9 @@ The beat in detail: what happens, why it matters, what changes.
 - `status` — optional; an id from the project's card statuses (built-in: `idea`,
   `doc`, `draft`, `stuck`, `done`). For a freshly plotted story, `idea` is apt.
 - `boards` — `[<boardId>]`. `created` — today, quoted.
-- Optional: `tags` (list), `related` (list of `{ file: other-note.md, comment: … }`).
+- Optional: `tags` (list), `related` (list of `{ file: other-note.md, comment: … }`),
+  `hover` (plain text, a sentence or two — shown as a tooltip when the mouse rests
+  on the card; good for a one-line reminder of what the scene is for).
 - Body — the detail. `[[other-note-id]]` links to another note on the same board.
 - **Only use the keys above** — the app drops unknown note keys when it saves.
 

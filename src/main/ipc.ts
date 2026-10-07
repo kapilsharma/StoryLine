@@ -24,7 +24,7 @@ import {
   type ColumnPlacement,
   type ColumnRef
 } from '@shared/columns'
-import { readConfig, removeRecent, touchRecent, writeConfig } from './appConfig'
+import { readConfig, removeRecent, touchRecent, updateConfig } from './appConfig'
 import { createProject, defaultBoard, loadSnapshot } from './projectService'
 import { assembleStaticSite, buildExportBundle } from './data/exportBundle'
 import { ProjectNotInGroupError, resolveProjectGroup, type ResolvedProjectGroup } from './data/projectGroup'
@@ -271,8 +271,7 @@ export function registerIpc(window: BrowserWindow): void {
   // ── App config ──
   ipcMain.handle('config:get', () => readConfig())
   ipcMain.handle('config:updateSettings', async (_e, settings: AppSettings) => {
-    const config = await readConfig()
-    return writeConfig({ ...config, settings })
+    return updateConfig((config) => ({ ...config, settings }))
   })
 
   // ── Project lifecycle ──

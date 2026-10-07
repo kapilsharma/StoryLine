@@ -108,6 +108,12 @@ export function NotePopup({ note, onClose, onOpenNote }: Props): JSX.Element {
           </div>
         )}
 
+        {note.hover && (
+          <p className="note-hover-text">
+            <span className="muted">Hover text</span> {note.hover}
+          </p>
+        )}
+
         <MarkdownPreview markdown={body} className="note-body" onOpenNote={onOpenNote} />
 
         {related.length > 0 && (

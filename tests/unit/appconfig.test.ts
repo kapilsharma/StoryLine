@@ -15,7 +15,7 @@ vi.mock('electron', () => ({
   app: { getPath: (k: string) => (k === 'userData' ? paths.userData : paths.appData) }
 }))
 
-import { readConfig, writeConfig } from '@main/appConfig'
+import { readConfig, touchRecent, updateConfig, writeConfig } from '@main/appConfig'
 
 let base: string
 
@@ -60,5 +60,34 @@ describe('appConfig rename migration', () => {
   it('writeConfig lands at the new userData location', async () => {
     await writeConfig({ recents: [], settings: (await readConfig()).settings })
     await expect(fs.access(join(paths.userData, 'zn-story-line-config.json'))).resolves.toBeUndefined()
+  })
+})
+
+describe('overlapping config saves', () => {
+  it('never reads a half-written file, and keeps every change', async () => {
+    await writeConfig({ recents: [], settings: (await readConfig()).settings })
+    // A burst like a slider drag, with reads interleaved — the old truncating
+    // write threw "Unexpected end of JSON input" here.
+    const ops: Promise<unknown>[] = []
+    for (let i = 0; i < 20; i++) {
+      ops.push(touchRecent({ name: `P${i}`, path: `/p${i}`, lastOpened: '2026-10-07' }))
+      ops.push(readConfig())
+    }
+    await Promise.all(ops)
+    const { recents } = await readConfig()
+    expect(recents).toHaveLength(15)
+    expect(recents[0].path).toBe('/p19')
+    expect((await fs.readdir(paths.userData)).filter((f) => f.endsWith('.tmp'))).toEqual([])
+  })
+
+  it('a failed change does not block the ones after it', async () => {
+    await expect(
+      updateConfig(() => {
+        throw new Error('boom')
+      })
+    ).rejects.toThrow('boom')
+    const saved = await updateConfig((c) => ({ ...c, settings: { ...c.settings, cardFontSize: 17 } }))
+    expect(saved.settings.cardFontSize).toBe(17)
+    expect((await readConfig()).settings.cardFontSize).toBe(17)
   })
 })

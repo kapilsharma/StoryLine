@@ -177,6 +177,12 @@ export interface Note {
    * and simply shows no icon, so deleting a status never rewrites a note.
    */
   status?: string
+  /**
+   * Hover text (Issue #111): a short reminder shown when the mouse rests on the
+   * card on the board, so the author need not open the note. Plain text; line
+   * breaks are kept. Absent = no tooltip.
+   */
+  hover?: string
   /** Raw markdown body, preserved verbatim on write. May be omitted in list views (lazy). */
   body: string
 
