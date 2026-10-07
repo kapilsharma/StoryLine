@@ -13,7 +13,17 @@ import type { ProjectMeta } from '@shared/project'
 import type { SearchHit, SearchScope } from '@shared/search'
 import type { AssetImport, AssetRef } from '@shared/assets'
 import type { BoardData, EntityBodyKind, NewCardInput, ProjectSnapshot } from '@shared/ipc'
-import type { Board, Card, Character, Note, TimelineUnit, View, ViewMode } from '@shared/types'
+import type {
+  Board,
+  Card,
+  Character,
+  ColumnGroup,
+  Note,
+  TimelineUnit,
+  View,
+  ViewMode
+} from '@shared/types'
+import type { ColumnRef } from '@shared/columns'
 import { buildGraph, type FamilyGraph } from '@shared/graph'
 import { api } from './api'
 import { editorStyleVars } from './lib/markdown'
@@ -92,7 +102,13 @@ interface StoreValue {
   setChildren: (parentId: string, childIds: string[]) => Promise<void>
   saveTimelineUnit: (unit: TimelineUnit) => Promise<void>
   deleteTimelineUnit: (id: string) => Promise<void>
-  reorderTimeline: (orderedIds: string[]) => Promise<void>
+  // Column hierarchy (Issue #104)
+  saveColumnGroup: (group: ColumnGroup) => Promise<void>
+  /** Deletes the group and everything under it. Ask the author first. */
+  deleteColumnGroup: (id: string) => Promise<void>
+  reorderColumns: (parentId: string | null, order: ColumnRef[]) => Promise<void>
+  moveColumn: (ref: ColumnRef, newParentId: string | null, index?: number) => Promise<void>
+  wrapColumnInGroup: (unitId: string, label: string, moveNote: boolean) => Promise<void>
   saveNote: (note: Note) => Promise<void>
   deleteNote: (id: string) => Promise<void>
   /** Fetch a note's full content (body is lazy-loaded) from the active board. */
@@ -412,7 +428,14 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
         mutateBoard((root, b) => api.setChildren(root, b, parentId, childIds)),
       saveTimelineUnit: (u) => mutateBoard((root, b) => api.saveTimelineUnit(root, b, u)),
       deleteTimelineUnit: (id) => mutateBoard((root, b) => api.deleteTimelineUnit(root, b, id)),
-      reorderTimeline: (ids) => mutateBoard((root, b) => api.reorderTimeline(root, b, ids)),
+      saveColumnGroup: (g) => mutateBoard((root, b) => api.saveColumnGroup(root, b, g)),
+      deleteColumnGroup: (id) => mutateBoard((root, b) => api.deleteColumnGroup(root, b, id)),
+      reorderColumns: (parentId, order) =>
+        mutateBoard((root, b) => api.reorderColumns(root, b, parentId, order)),
+      moveColumn: (ref, newParentId, index) =>
+        mutateBoard((root, b) => api.moveColumn(root, b, ref, newParentId, index)),
+      wrapColumnInGroup: (unitId, label, moveNote) =>
+        mutateBoard((root, b) => api.wrapColumnInGroup(root, b, unitId, label, moveNote)),
       saveNote: (n) => mutateBoard((root, b) => api.saveNote(root, b, n)),
       deleteNote: (id) => mutateBoard((root, b) => api.deleteNote(root, b, id)),
       getNote,

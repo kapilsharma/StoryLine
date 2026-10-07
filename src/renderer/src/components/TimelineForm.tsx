@@ -1,23 +1,24 @@
 import { useId, useState } from 'react'
 import type { TimelineUnit } from '@shared/types'
 import { useStore } from '../store'
+import { ColumnParentPicker } from './ColumnParentPicker'
 
 interface FormState {
   id: string
   label: string
   summary: string
-  group: string
+  parent: string | null
   tags: string
 }
 
-const BLANK: FormState = { id: '', label: '', summary: '', group: '', tags: '' }
+const BLANK: FormState = { id: '', label: '', summary: '', parent: null, tags: '' }
 
 function toForm(u: TimelineUnit): FormState {
   return {
     id: u.id,
     label: u.label,
     summary: u.summary ?? '',
-    group: u.group ?? '',
+    parent: u.parent ?? null,
     tags: (u.tags ?? []).join(', ')
   }
 }
@@ -28,20 +29,30 @@ function toForm(u: TimelineUnit): FormState {
  */
 export function TimelineForm({
   initial,
+  defaultParent = null,
   onSaved,
   onCancel,
   onDelete,
-  onOpenInEditor
+  onOpenInEditor,
+  onBreakUp,
+  breakUpLabel
 }: {
   /** The unit being edited, or null to create a new one. */
   initial: TimelineUnit | null
+  /** The group a new unit starts out inside; ignored when editing (Issue #104). */
+  defaultParent?: string | null
   onSaved: () => void
   onCancel?: () => void
   onDelete?: () => void
   onOpenInEditor?: () => void
+  /** "Break this into smaller parts" — turns the column into a group's first child. */
+  onBreakUp?: () => void
+  breakUpLabel?: string
 }): JSX.Element {
   const { saveTimelineUnit } = useStore()
-  const [form, setForm] = useState<FormState>(() => (initial ? toForm(initial) : BLANK))
+  const [form, setForm] = useState<FormState>(() =>
+    initial ? toForm(initial) : { ...BLANK, parent: defaultParent }
+  )
   // The form renders in two places (the Timeline tab and the board's "+ Column"
   // modal), so the label/field ids have to be unique per instance.
   const uid = useId()
@@ -60,7 +71,7 @@ export function TimelineForm({
       label: form.label.trim(),
       order: initial?.order ?? 0,
       ...(form.summary.trim() ? { summary: form.summary.trim() } : {}),
-      ...(form.group.trim() ? { group: form.group.trim() } : {}),
+      ...(form.parent ? { parent: form.parent } : {}),
       ...(tags.length ? { tags } : {})
     }
     await saveTimelineUnit(unit)
@@ -87,15 +98,11 @@ export function TimelineForm({
           onChange={(e) => set('summary', e.target.value)}
         />
       </div>
-      <div className="form-row">
-        <label htmlFor={`${uid}-group`}>Group</label>
-        <input
-          id={`${uid}-group`}
-          value={form.group}
-          placeholder="e.g. Chapter 1, Act 1 (groups columns on the board)"
-          onChange={(e) => set('group', e.target.value)}
-        />
-      </div>
+      <ColumnParentPicker
+        id={`${uid}-parent`}
+        value={form.parent}
+        onChange={(parent) => set('parent', parent)}
+      />
       <div className="form-row">
         <label htmlFor={`${uid}-tags`}>Tags</label>
         <input
@@ -112,6 +119,11 @@ export function TimelineForm({
         {onOpenInEditor && (
           <button className="btn" onClick={onOpenInEditor}>
             Open in editor
+          </button>
+        )}
+        {onBreakUp && (
+          <button className="btn" onClick={onBreakUp}>
+            {breakUpLabel ?? 'Break up…'}
           </button>
         )}
         {onDelete && (

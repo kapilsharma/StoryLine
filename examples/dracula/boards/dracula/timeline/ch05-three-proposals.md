@@ -1,9 +1,9 @@
 ---
 id: ch05-three-proposals
-label: '5 — Three Proposals'
-order: 5
-group: 'Part Two: The Voyage'
-summary: '9–26 May · Letters between Mina and Lucy'
+label: 5 — Three Proposals
+order: 1
+summary: 9–26 May · Letters between Mina and Lucy
+parent: part-two-the-voyage
 ---
 
 The book cuts away to England and a completely different register:

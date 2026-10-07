@@ -34,6 +34,7 @@ const board: BoardData = {
   timeline: [],
   notes: [],
   views: [],
+  colGroups: [],
   problems: []
 }
 

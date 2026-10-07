@@ -2,7 +2,7 @@
 id: recovery
 label: 9 - Recovery
 order: 9
-group: 'Act 1: Findings'
+parent: act-1-findings
 ---
 
 ## Notes

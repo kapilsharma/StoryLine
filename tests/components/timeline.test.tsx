@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { TimelineUnit } from '@shared/types'
+import type { ColumnGroup, TimelineUnit } from '@shared/types'
 import { TimelineForm } from '@renderer/components/TimelineForm'
 import { TimelineEditor } from '@renderer/components/TimelineEditor'
 import { makeApi, makeSnapshot, renderWithProviders } from './test-utils'
@@ -15,12 +15,13 @@ import { makeApi, makeSnapshot, renderWithProviders } from './test-utils'
  * file grows keys nobody set.
  */
 
+const colGroups: ColumnGroup[] = [{ id: 'act-1', type: 'colgroup', label: 'Act 1', order: 1 }]
 const timeline: TimelineUnit[] = [
-  { id: 'ch1', label: 'Chapter 1', order: 1, group: 'Act 1' },
+  { id: 'ch1', label: 'Chapter 1', order: 1, parent: 'act-1' },
   { id: 'ch2', label: 'Chapter 2', order: 2 }
 ]
 
-const snapshot = makeSnapshot({ timeline, project: { timelineLabel: 'Chapter' } })
+const snapshot = makeSnapshot({ timeline, colGroups, project: { timelineLabel: 'Chapter' } })
 
 async function renderForm(initial: TimelineUnit | null, handlers = {}) {
   const api = makeApi({ openProject: vi.fn().mockResolvedValue(snapshot) })
@@ -48,15 +49,15 @@ describe('TimelineForm — creating', () => {
     expect(unit).toEqual({ id: '', label: 'Chapter 3', order: 0 })
     // Empty optional fields must not be written as empty strings.
     expect('summary' in unit).toBe(false)
-    expect('group' in unit).toBe(false)
+    expect('parent' in unit).toBe(false)
     expect('tags' in unit).toBe(false)
   })
 
-  it('carries summary, group and tags through when given', async () => {
+  it('carries summary, parent and tags through when given', async () => {
     const api = await renderForm(null)
     await userEvent.type(screen.getByLabelText('Label'), 'Chapter 3')
     await userEvent.type(screen.getByLabelText('Summary'), 'The fault appears.')
-    await userEvent.type(screen.getByLabelText('Group'), 'Act 2')
+    await userEvent.selectOptions(screen.getByLabelText('Inside'), 'act-1')
     await userEvent.type(screen.getByLabelText('Tags'), ' a , b ,, ')
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
 
@@ -64,7 +65,7 @@ describe('TimelineForm — creating', () => {
     expect((api.saveTimelineUnit as ReturnType<typeof vi.fn>).mock.calls[0][2]).toMatchObject({
       label: 'Chapter 3',
       summary: 'The fault appears.',
-      group: 'Act 2',
+      parent: 'act-1',
       tags: ['a', 'b'] // trimmed, blanks dropped
     })
   })
@@ -80,7 +81,7 @@ describe('TimelineForm — editing', () => {
   it('populates from the unit being edited', async () => {
     await renderForm(timeline[0])
     expect(screen.getByLabelText<HTMLInputElement>('Label').value).toBe('Chapter 1')
-    expect(screen.getByLabelText<HTMLInputElement>('Group').value).toBe('Act 1')
+    expect(screen.getByLabelText<HTMLSelectElement>('Inside').value).toBe('act-1')
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
 
@@ -95,12 +96,29 @@ describe('TimelineForm — editing', () => {
     })
   })
 
-  it('clearing an optional field removes it rather than writing an empty string', async () => {
+  it('moving a column back to the top level removes its parent rather than writing an empty string', async () => {
     const api = await renderForm(timeline[0])
-    await userEvent.clear(screen.getByLabelText('Group'))
+    await userEvent.selectOptions(screen.getByLabelText('Inside'), '')
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(api.saveTimelineUnit).toHaveBeenCalled())
-    expect('group' in (api.saveTimelineUnit as ReturnType<typeof vi.fn>).mock.calls[0][2]).toBe(false)
+    expect('parent' in (api.saveTimelineUnit as ReturnType<typeof vi.fn>).mock.calls[0][2]).toBe(false)
+  })
+
+  it('offers no "Inside" choice on a board with no groups — there is nothing to choose', async () => {
+    const flat = makeSnapshot({ timeline: [{ id: 'a', label: 'A', order: 1 }] })
+    const api = makeApi({ openProject: vi.fn().mockResolvedValue(flat) })
+    renderWithProviders(<TimelineForm initial={null} onSaved={vi.fn()} />, { bootRoot: '/project' })
+    await waitFor(() => expect(api.openProject).toHaveBeenCalled())
+    expect(screen.queryByLabelText('Inside')).not.toBeInTheDocument()
+  })
+
+  it('starts a new column inside the group it is created from', async () => {
+    const api = await renderForm(null, { defaultParent: 'act-1' })
+    expect(screen.getByLabelText<HTMLSelectElement>('Inside').value).toBe('act-1')
+    await userEvent.type(screen.getByLabelText('Label'), 'New')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    await waitFor(() => expect(api.saveTimelineUnit).toHaveBeenCalled())
+    expect((api.saveTimelineUnit as ReturnType<typeof vi.fn>).mock.calls[0][2]).toMatchObject({ parent: 'act-1' })
   })
 
   it('shows the optional actions only when their handlers are given', async () => {
@@ -133,9 +151,10 @@ describe('TimelineEditor tab', () => {
     return api
   }
 
-  it('lists the units in order', async () => {
+  it('lists the units in order, with their group', async () => {
     await renderTab()
     const list = document.querySelector('.entity-list, ul') as HTMLElement
+    expect(within(list).getByText('Act 1')).toBeInTheDocument()
     expect(within(list).getByText('Chapter 1')).toBeInTheDocument()
     expect(within(list).getByText('Chapter 2')).toBeInTheDocument()
   })

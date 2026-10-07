@@ -2,7 +2,7 @@
 id: 2-status-report
 label: 2 - Status Report
 order: 2
-group: 'Act 1: Findings'
+parent: act-1-findings
 ---
 
 ## Notes

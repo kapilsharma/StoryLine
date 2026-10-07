@@ -7,6 +7,7 @@ import {
   isProject,
   listBoardIds,
   listCharacters,
+  listColumnGroups,
   listNoteMetas,
   listTimeline,
   listViews,
@@ -89,10 +90,11 @@ export async function createProject(dir: string): Promise<ProjectSnapshot> {
 
 /** Read a single board plus the entities it owns. */
 async function loadBoardData(root: string, boardId: string): Promise<BoardData> {
-  const [{ value: board }, characters, timeline, notes] = await Promise.all([
+  const [{ value: board }, characters, timeline, colGroups, notes] = await Promise.all([
     readBoard(root, boardId),
     listCharacters(root, boardId),
     listTimeline(root, boardId),
+    listColumnGroups(root, boardId),
     listNoteMetas(root, boardId)
   ])
   const views = await listViews(root, boardId, board.views)
@@ -100,7 +102,7 @@ async function loadBoardData(root: string, boardId: string): Promise<BoardData> 
   // computed here rather than in the renderer so the same list is available to a
   // static export, which never runs the loader.
   const { problems } = buildGraph(characters)
-  return { board, characters, timeline, notes, views, problems }
+  return { board, characters, timeline, colGroups, notes, views, problems }
 }
 
 /**

@@ -41,6 +41,7 @@ const snapshot: ProjectSnapshot = {
       timeline: [{ id: 'ch1', label: 'Chapter 1', order: 1 }],
       notes: [],
       views: [],
+      colGroups: [],
       problems: []
     }
   ]

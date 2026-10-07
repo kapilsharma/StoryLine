@@ -90,18 +90,58 @@ export interface Problem {
   message: string
 }
 
-/** A timeline unit — one `timeline/<id>.md` file. Becomes a board column. */
+/**
+ * A timeline unit — one `timeline/<id>.md` file. Becomes a board column: the
+ * leaf of the column hierarchy, and the only thing a card can sit on.
+ */
 export interface TimelineUnit {
   /** Unique slug; also the filename stem. Used as `colStart`/`colEnd`. */
   id: string
   label: string
-  /** Integer display order across the board columns. */
+  /**
+   * Display order among its siblings — the units and {@link ColumnGroup}s sharing
+   * the same `parent`. Since schema v4 this is *not* global: the board's column
+   * sequence is a depth-first walk of the tree (see `src/shared/columns.ts`).
+   */
   order: number
   summary?: string
   tags?: string[]
-  /** Optional group label; columns sharing a value are grouped on the board. */
-  group?: string
+  /**
+   * Id of the {@link ColumnGroup} this column sits under; absent = top level. A
+   * leaf may attach at any depth, so a chapter with no scenes can sit beside a
+   * part that has them.
+   */
+  parent?: string
   custom?: Record<string, unknown>
+
+  /**
+   * True when the file's markdown body holds a note (Issue #104). Derived on read
+   * so the board can show a 📝 on the column header without loading bodies —
+   * the same arrangement as {@link Character.hasNote}. Never written to disk.
+   */
+  hasNote?: boolean
+}
+
+/**
+ * A node in a board's column hierarchy — a Part, a Novel, a Chapter that has
+ * scenes under it (Issue #104). One `boards/<boardId>/colgroups/<id>.md` file.
+ *
+ * It exists as an entity, with a frozen id, so that renaming it never detaches
+ * its note: the note is the file's markdown body, reached through the
+ * entity-body API (`kind: 'colgroup'`), and everything points at the id.
+ * A group never holds a card — it holds children and a note.
+ */
+export interface ColumnGroup {
+  /** Unique slug; also the filename stem. Frozen at creation, like a character's. */
+  id: string
+  type: 'colgroup'
+  label: string
+  /** Id of the parent group; absent = top level. */
+  parent?: string
+  /** Display order among its siblings (see {@link TimelineUnit.order}). */
+  order: number
+  /** True when the file's markdown body holds a note. Derived on read; never written. */
+  hasNote?: boolean
 }
 
 /** A `related` entry on a note (Requirements §11). */
@@ -195,7 +235,7 @@ export interface Board {
   colOrder: string[]
   /** Collapsed row-group labels (view state, per board). */
   collapsedRowGroups: string[]
-  /** Collapsed column-group labels (view state, per board). */
+  /** Ids of collapsed {@link ColumnGroup}s (view state, per board). Labels before v4. */
   collapsedColGroups: string[]
   /** Persisted zoom level for this board. */
   zoom: number
@@ -322,7 +362,7 @@ export interface View {
  * migration step). Additive/optional changes do NOT bump this — they're handled
  * by lenient parsing + the `normalize*` defaults.
  */
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 /**
  * What sort of project this is (Issue #63).
@@ -341,8 +381,19 @@ export interface Project {
   /** On-disk schema version (see SCHEMA_VERSION). */
   schemaVersion: number
   name: string
-  /** Label for timeline units, e.g. "Chapter". */
+  /**
+   * Label for the deepest column level — the units cards sit on, e.g. "Chapter".
+   * When {@link timelineLevelLabels} is set this mirrors its last entry, so a
+   * reader that predates levels still names the Timeline tab sensibly.
+   */
   timelineLabel: string
+  /**
+   * One label per column level, top → deepest: `["Novel", "Part", "Chapter",
+   * "Scene"]` (Issue #104). Whatever sits at depth `d` — a group or a leaf — is
+   * called `timelineLevelLabels[d]`. Absent means a single level named by
+   * `timelineLabel`, which is what every project written before v4 is.
+   */
+  timelineLevelLabels?: string[]
   /**
    * Label for board rows, e.g. "Character", "Topic", "Phase" (Issue #62).
    * Optional and additive: absent means "Character", which is what every

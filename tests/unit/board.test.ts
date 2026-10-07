@@ -1,25 +1,37 @@
 import { describe, it, expect } from 'vitest'
-import type { Board, Character, Note, TimelineUnit } from '@shared/types'
+import type { Board, Character, ColumnGroup, Note, TimelineUnit } from '@shared/types'
 import {
-  visibleColumns,
+  visibleColumns as visibleColumnsOf,
   visibleRows,
-  timelinePositions,
+  timelinePositions as timelinePositionsOf,
   resolveSpan,
-  buildColumnLayout,
+  buildColumnLayout as buildColumnLayoutOf,
   buildRowLayout,
-  buildBoardLayout,
+  buildBoardLayout as buildBoardLayoutOf,
   markerKey,
   reorderRowMember,
   reorderRowBlocks,
   orderedRowBlockKeys
 } from '@renderer/components/board/grid-utils'
 
-const timeline: TimelineUnit[] = [
-  { id: 'ch1', label: 'S1', order: 1, group: 'Chapter 1' },
-  { id: 'ch2', label: 'S2', order: 2, group: 'Chapter 1' },
-  { id: 'ch3', label: 'S3', order: 3 },
-  { id: 'ch4', label: 'S4', order: 4, group: 'Chapter 2' }
+// Chapter 1 holds S1–S2, S3 sits loose between the two chapters, Chapter 2 holds S4:
+// the same board these tests described when a group was a string on each unit.
+const colGroups: ColumnGroup[] = [
+  { id: 'c1', type: 'colgroup', label: 'Chapter 1', order: 1 },
+  { id: 'c2', type: 'colgroup', label: 'Chapter 2', order: 3 }
 ]
+const timeline: TimelineUnit[] = [
+  { id: 'ch1', label: 'S1', order: 1, parent: 'c1' },
+  { id: 'ch2', label: 'S2', order: 2, parent: 'c1' },
+  { id: 'ch3', label: 'S3', order: 2 },
+  { id: 'ch4', label: 'S4', order: 1, parent: 'c2' }
+]
+// The layout functions take the groups last; every test here uses these ones.
+const visibleColumns = (b: Board, t: TimelineUnit[]) => visibleColumnsOf(b, t, colGroups)
+const timelinePositions = (t: TimelineUnit[]) => timelinePositionsOf(t, colGroups)
+const buildColumnLayout = (b: Board, t: TimelineUnit[]) => buildColumnLayoutOf(b, t, colGroups)
+const buildBoardLayout = (b: Board, c: Character[], t: TimelineUnit[], n: Note[]) =>
+  buildBoardLayoutOf(b, c, t, n, colGroups)
 const chars: Character[] = [
   { id: 'a', type: 'character', name: 'Aria', colour: '#111', group: 'Fae' },
   { id: 'b', type: 'character', name: 'Bob', colour: '#222', group: 'Human' },
@@ -78,12 +90,13 @@ describe('column grouping', () => {
   it('builds spanning group headers when expanded', () => {
     const layout = buildColumnLayout(board({}), timeline)
     expect(layout.slots).toHaveLength(4)
-    expect(layout.headers[0]).toMatchObject({ group: 'Chapter 1', startIndex: 0, span: 2 })
-    expect(layout.headers[1]).toMatchObject({ group: 'Chapter 2', startIndex: 3 })
+    expect(layout.depth).toBe(1)
+    expect(layout.headersByDepth[0][0]).toMatchObject({ node: { label: 'Chapter 1' }, startIndex: 0, span: 2 })
+    expect(layout.headersByDepth[0][1]).toMatchObject({ node: { label: 'Chapter 2' }, startIndex: 3 })
   })
 
   it('collapses a group into one slot', () => {
-    const layout = buildColumnLayout(board({ collapsedColGroups: ['Chapter 1'] }), timeline)
+    const layout = buildColumnLayout(board({ collapsedColGroups: ['c1'] }), timeline)
     expect(layout.slots).toHaveLength(3)
     expect(layout.slots[0].kind).toBe('colGroup')
     expect(layout.slotOfUnit.get('ch1')).toBe(0)
@@ -172,7 +185,7 @@ describe('card placement + markers', () => {
   it('shows a marker when the column group is collapsed', () => {
     const card2 = { id: 'card2', noteUid: 'n_1111', rowId: 'b', colStart: 'ch1', colEnd: 'ch1' }
     const layout = buildBoardLayout(
-      board({ cards: [card2], collapsedColGroups: ['Chapter 1'] }),
+      board({ cards: [card2], collapsedColGroups: ['c1'] }),
       chars,
       timeline,
       notes

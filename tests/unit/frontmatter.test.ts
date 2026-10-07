@@ -55,10 +55,17 @@ describe('character mapper', () => {
 })
 
 describe('timeline mapper', () => {
-  it('keeps group and order', () => {
-    const u = frontmatterToTimelineUnit({ label: 'X', order: 2, group: 'Act 1' }, 'x')
-    expect(u.group).toBe('Act 1')
+  it('keeps parent and order', () => {
+    const u = frontmatterToTimelineUnit({ label: 'X', order: 2, parent: 'act-1' }, 'x')
+    expect(u.parent).toBe('act-1')
     expect(u.order).toBe(2)
+  })
+
+  it('ignores the retired `group` field — dropped on write, not kept as custom (schema v4)', () => {
+    const u = frontmatterToTimelineUnit({ label: 'X', order: 2, group: 'Act 1' }, 'x')
+    expect('group' in u).toBe(false)
+    expect(u.custom).toBeUndefined()
+    expect('group' in timelineUnitToFrontmatter(u)).toBe(false)
   })
 
   it('ignores the retired `type` field — not read, not preserved as custom, dropped on write', () => {

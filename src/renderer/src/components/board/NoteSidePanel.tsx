@@ -55,6 +55,13 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
     target.kind === 'character'
       ? (activeBoard?.characters.find((c) => c.id === target.id) ?? null)
       : null
+  // A column or group header's note is titled by its label.
+  const columnLabel =
+    target.kind === 'timeline'
+      ? (activeBoard?.timeline.find((t) => t.id === target.id)?.label ?? target.id)
+      : target.kind === 'colgroup'
+        ? (activeBoard?.colGroups.find((g) => g.id === target.id)?.label ?? target.id)
+        : null
 
   // The panel is keyed on its target by the caller, so this runs once per open.
   useEffect(() => {
@@ -71,7 +78,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
         })
         .catch(() => !cancelled && setLoaded(true))
     } else {
-      getEntityBody('character', target.id)
+      getEntityBody(target.kind, target.id)
         .then((b) => !cancelled && (setBody(b), setLoaded(true)))
         .catch(() => !cancelled && setLoaded(true))
     }
@@ -94,8 +101,8 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
           tags: parseTags(tags),
           body
         })
-      } else if (target.kind === 'character') {
-        saveEntityBody('character', target.id, body)
+      } else if (target.kind !== 'note') {
+        saveEntityBody(target.kind, target.id, body)
       }
     }, 900)
     return () => clearTimeout(timer)
@@ -137,7 +144,10 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
     }
   }
 
-  const filePath = target.kind === 'note' ? `${target.id}.md` : `characters/${target.id}.md`
+  const filePath =
+    target.kind === 'note'
+      ? `${target.id}.md`
+      : `${target.kind === 'character' ? 'characters' : target.kind === 'timeline' ? 'timeline' : 'colgroups'}/${target.id}.md`
 
   return (
     <aside className="note-panel" aria-label="Note" style={style}>
@@ -147,6 +157,8 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
             <span className="swatch" style={{ background: character?.colour }} />{' '}
             {character?.name ?? target.id}
           </h2>
+        ) : columnLabel !== null ? (
+          <h2 className="note-panel-title">{columnLabel}</h2>
         ) : readOnly ? (
           <h2 className="note-panel-title">{title}</h2>
         ) : (
@@ -164,7 +176,14 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
         <div className="note-popup-head-actions">
           <button
             className="btn small"
-            onClick={() => openEditor(target.kind, target.id)}
+            onClick={() => {
+              openEditor(target.kind, target.id)
+              // The board stays mounted under the fullscreen editor, so a panel left
+              // open would come back showing the body from before the edit — and
+              // typing into it would autosave that stale text over the new one. Close
+              // it, as the popup does when you press Edit.
+              onClose()
+            }}
             title="Open the fullscreen editor"
           >
             ⤢ Editor
@@ -198,7 +217,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
             }}
           />
         )
-      ) : (
+      ) : target.kind === 'character' ? (
         <p className="muted small note-panel-hint">
           {/* The note only. Name, colour and dates are the character form's job,
               and repeating them here would make the panel a second, worse one. */}
@@ -207,6 +226,10 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
             Characters tab
           </button>
           .
+        </p>
+      ) : (
+        <p className="muted small note-panel-hint">
+          Editing the note. Name and place in the structure are set on the Timeline tab.
         </p>
       )}
 

@@ -48,6 +48,7 @@ const bundle: ExportBundle = {
       board,
       characters: [{ id: 'aeri', type: 'character', name: 'Aeri', colour: '#22c55e' }],
       timeline: [{ id: 'ch1', label: 'Chapter 1', order: 1 }],
+      colGroups: [],
       notes: [
         {
           id: 'the-discovery',
@@ -161,11 +162,13 @@ describe('static api — allowed in-session changes', () => {
 
 describe('static api — bundles from before v0.6.0', () => {
   it('loads a board with no views or problems rather than crashing', async () => {
-    const { views: _views, problems: _problems, ...legacyBoard } = bundle.boards[0]
+    const { views: _views, problems: _problems, colGroups: _groups, ...legacyBoard } = bundle.boards[0]
     const legacy = { ...bundle, boards: [legacyBoard] } as ExportBundle
     const snap = await createStaticApi(legacy).openProject(STATIC_ROOT)
     expect(snap.boards[0].views).toEqual([])
     expect(snap.boards[0].problems).toEqual([])
+    // Before schema v4 there were no column groups, and a flat board is right.
+    expect(snap.boards[0].colGroups).toEqual([])
   })
 })
 
@@ -178,7 +181,7 @@ describe('static api — refused writes', () => {
   const writes: Array<[string, () => Promise<unknown>]> = [
     ['createProject', () => api.createProject()],
     ['pickProject', () => api.pickProject()],
-    ['saveProjectMeta', () => api.saveProjectMeta(STATIC_ROOT, { name: 'Nope', timelineLabel: 'Chapter', rowLabel: 'Character', kind: 'story' })],
+    ['saveProjectMeta', () => api.saveProjectMeta(STATIC_ROOT, { name: 'Nope', timelineLevelLabels: ['Chapter'], rowLabel: 'Character', kind: 'story' })],
     ['saveFamilyColours', () => api.saveFamilyColours(STATIC_ROOT, { Aeri: '#000000' })],
     ['saveCharacter', () => api.saveCharacter(STATIC_ROOT, 'main', bundle.boards[0].characters[0])],
     ['deleteCharacter', () => api.deleteCharacter(STATIC_ROOT, 'main', 'aeri')],
@@ -186,7 +189,11 @@ describe('static api — refused writes', () => {
     ['setChildren', () => api.setChildren(STATIC_ROOT, 'main', 'aeri', [])],
     ['saveTimelineUnit', () => api.saveTimelineUnit(STATIC_ROOT, 'main', bundle.boards[0].timeline[0])],
     ['deleteTimelineUnit', () => api.deleteTimelineUnit(STATIC_ROOT, 'main', 'ch1')],
-    ['reorderTimeline', () => api.reorderTimeline(STATIC_ROOT, 'main', ['ch1'])],
+    ['saveColumnGroup', () => api.saveColumnGroup(STATIC_ROOT, 'main', { id: 'g', type: 'colgroup', label: 'G', order: 1 })],
+    ['deleteColumnGroup', () => api.deleteColumnGroup(STATIC_ROOT, 'main', 'g')],
+    ['reorderColumns', () => api.reorderColumns(STATIC_ROOT, 'main', null, [{ kind: 'unit', id: 'ch1' }])],
+    ['moveColumn', () => api.moveColumn(STATIC_ROOT, 'main', { kind: 'unit', id: 'ch1' }, null)],
+    ['wrapColumnInGroup', () => api.wrapColumnInGroup(STATIC_ROOT, 'main', 'ch1', 'G', false)],
     ['saveNote', () => api.saveNote(STATIC_ROOT, 'main', note)],
     ['deleteNote', () => api.deleteNote(STATIC_ROOT, 'main', note.id)],
     ['renameNote', () => api.renameNote(STATIC_ROOT, 'main', note.id, 'renamed')],

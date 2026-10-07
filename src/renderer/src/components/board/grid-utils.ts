@@ -1,20 +1,31 @@
-import type { Board, Card, Character, Note, TimelineUnit } from '@shared/types'
+import type { Board, Card, Character, ColumnGroup, Note, TimelineUnit } from '@shared/types'
+import { buildColumnTree, orderedLeaves } from '@shared/columns'
 
-/** Columns visible on a board: timeline ordered by `order`, minus hidden. */
-export function visibleColumns(board: Board, timeline: TimelineUnit[]): TimelineUnit[] {
-  const ordered = [...timeline].sort((a, b) => a.order - b.order)
-  return ordered.filter((u) => !board.hiddenCols.includes(u.id))
+// Every column function takes the board's `colGroups` last, defaulting to none: a
+// flat board (no groups) is the common case and is the same walk with nothing to
+// descend into. The column order is the tree's depth-first walk (Issue #104), not
+// a sort on `order` — that number is only meaningful among siblings.
+
+/** Columns visible on a board, in display order, minus hidden. */
+export function visibleColumns(
+  board: Board,
+  timeline: TimelineUnit[],
+  colGroups: ColumnGroup[] = []
+): TimelineUnit[] {
+  return orderedLeaves(colGroups, timeline).filter((u) => !board.hiddenCols.includes(u.id))
 }
 
-/** Full timeline order as id→position, used to resolve spans across hidden cols. */
-export function timelinePositions(timeline: TimelineUnit[]): Map<string, number> {
-  const ordered = [...timeline].sort((a, b) => a.order - b.order)
-  return new Map(ordered.map((u, i) => [u.id, i]))
+/** Full column order as id→position, used to resolve spans across hidden cols. */
+export function timelinePositions(
+  timeline: TimelineUnit[],
+  colGroups: ColumnGroup[] = []
+): Map<string, number> {
+  return new Map(orderedLeaves(colGroups, timeline).map((u, i) => [u.id, i]))
 }
 
-/** Ordered timeline ids (low→high), for width-preserving moves/resizes. */
-export function orderedColumnIds(timeline: TimelineUnit[]): string[] {
-  return [...timeline].sort((a, b) => a.order - b.order).map((u) => u.id)
+/** Ordered column ids (low→high), for width-preserving moves/resizes. */
+export function orderedColumnIds(timeline: TimelineUnit[], colGroups: ColumnGroup[] = []): string[] {
+  return orderedLeaves(colGroups, timeline).map((u) => u.id)
 }
 
 /**
@@ -159,11 +170,20 @@ function gatherBlocks<T>(items: T[], groupOf: (t: T) => string | undefined): Arr
 }
 
 export type ColSlot =
-  | { kind: 'col'; index: number; unit: TimelineUnit; group: string | null }
-  | { kind: 'colGroup'; index: number; group: string; members: TimelineUnit[] }
+  | {
+      kind: 'col'
+      index: number
+      unit: TimelineUnit
+      /** How many groups sit above this column (0 = top level). */
+      depth: number
+    }
+  /** A whole collapsed group, drawn as one narrow column. */
+  | { kind: 'colGroup'; index: number; node: ColumnGroup; members: TimelineUnit[] }
 
 export interface ColHeader {
-  group: string
+  node: ColumnGroup
+  /** The header row this sits on: 0 = topmost. Equal to the group's depth in the tree. */
+  depth: number
   startIndex: number
   span: number
   collapsed: boolean
@@ -171,47 +191,79 @@ export interface ColHeader {
 
 export interface ColumnLayout {
   slots: ColSlot[]
-  headers: ColHeader[]
-  /** Visible unit id → slot index (collapsed members map to their group slot). */
+  /**
+   * Header cells by row — index 0 is the topmost row. Its length is how many header
+   * rows the board needs above the column labels: 0 for a flat board, so a project
+   * that uses one level never gives up any space to the others.
+   */
+  headersByDepth: ColHeader[][]
+  /** Visible unit id → slot index (collapsed members map to their group's slot). */
   slotOfUnit: Map<string, number>
-  hasGroups: boolean
+  /** Number of header rows above the column labels (0 = flat). */
+  depth: number
 }
 
-export function buildColumnLayout(board: Board, timeline: TimelineUnit[]): ColumnLayout {
-  const visible = visibleColumns(board, timeline)
-  const blocks = gatherBlocks(visible, (u) => u.group)
-  const slots: ColSlot[] = []
-  const headers: ColHeader[] = []
-  const slotOfUnit = new Map<string, number>()
-  let hasGroups = false
+export function buildColumnLayout(
+  board: Board,
+  timeline: TimelineUnit[],
+  colGroups: ColumnGroup[] = []
+): ColumnLayout {
+  const tree = buildColumnTree(colGroups, timeline)
+  const hidden = new Set(board.hiddenCols)
+  const collapsed = new Set(board.collapsedColGroups)
 
-  for (const block of blocks) {
-    if (block.group != null) {
-      hasGroups = true
-      const collapsed = board.collapsedColGroups.includes(block.group)
-      if (collapsed) {
-        const index = slots.length
-        slots.push({ kind: 'colGroup', index, group: block.group, members: block.members })
-        block.members.forEach((m) => slotOfUnit.set(m.id, index))
-        headers.push({ group: block.group, startIndex: index, span: 1, collapsed: true })
+  // The visible columns under each group, so a group whose columns are all hidden
+  // can drop out entirely instead of leaving an empty header.
+  const leaves = new Map<string, TimelineUnit[]>()
+  const leavesUnder = (nodeId: string): TimelineUnit[] => {
+    const known = leaves.get(nodeId)
+    if (known) return known
+    const out: TimelineUnit[] = []
+    for (const item of tree.childrenOf(nodeId)) {
+      if (item.kind === 'unit') {
+        if (!hidden.has(item.unit.id)) out.push(item.unit)
       } else {
-        const startIndex = slots.length
-        for (const unit of block.members) {
-          const index = slots.length
-          slots.push({ kind: 'col', index, unit, group: block.group })
-          slotOfUnit.set(unit.id, index)
-        }
-        headers.push({ group: block.group, startIndex, span: block.members.length, collapsed: false })
+        out.push(...leavesUnder(item.node.id))
       }
-    } else {
-      const unit = block.members[0]
-      const index = slots.length
-      slots.push({ kind: 'col', index, unit, group: null })
-      slotOfUnit.set(unit.id, index)
     }
+    leaves.set(nodeId, out)
+    return out
   }
 
-  return { slots, headers, slotOfUnit, hasGroups }
+  const slots: ColSlot[] = []
+  const headersByDepth: ColHeader[][] = []
+  const slotOfUnit = new Map<string, number>()
+  const addHeader = (h: ColHeader): void => {
+    while (headersByDepth.length <= h.depth) headersByDepth.push([])
+    headersByDepth[h.depth].push(h)
+  }
+
+  const walk = (parentId: string | null, depth: number): void => {
+    for (const item of tree.childrenOf(parentId)) {
+      if (item.kind === 'unit') {
+        if (hidden.has(item.unit.id)) continue
+        const index = slots.length
+        slots.push({ kind: 'col', index, unit: item.unit, depth })
+        slotOfUnit.set(item.unit.id, index)
+        continue
+      }
+      const members = leavesUnder(item.node.id)
+      if (members.length === 0) continue
+      const startIndex = slots.length
+      if (collapsed.has(item.node.id)) {
+        // A collapsed group is one slot whatever is inside it, nested groups included.
+        slots.push({ kind: 'colGroup', index: startIndex, node: item.node, members })
+        members.forEach((m) => slotOfUnit.set(m.id, startIndex))
+        addHeader({ node: item.node, depth, startIndex, span: 1, collapsed: true })
+      } else {
+        walk(item.node.id, depth + 1)
+        addHeader({ node: item.node, depth, startIndex, span: slots.length - startIndex, collapsed: false })
+      }
+    }
+  }
+  walk(null, 0)
+
+  return { slots, headersByDepth, slotOfUnit, depth: headersByDepth.length }
 }
 
 export type RowLine =
@@ -359,12 +411,13 @@ export function buildBoardLayout(
   board: Board,
   characters: Character[],
   timeline: TimelineUnit[],
-  notes: Note[]
+  notes: Note[],
+  colGroups: ColumnGroup[] = []
 ): BoardLayout {
-  const cols = buildColumnLayout(board, timeline)
+  const cols = buildColumnLayout(board, timeline, colGroups)
   const rows = buildRowLayout(board, characters)
-  const positions = timelinePositions(timeline)
-  const visible = visibleColumns(board, timeline)
+  const positions = timelinePositions(timeline, colGroups)
+  const visible = visibleColumns(board, timeline, colGroups)
   const charById = new Map(characters.map((c) => [c.id, c]))
   const collapsedColSlot = new Set(
     cols.slots.filter((s) => s.kind === 'colGroup').map((s) => s.index)

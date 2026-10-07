@@ -3,7 +3,7 @@ import type { ReactElement } from 'react'
 import { vi } from 'vitest'
 import type { AppApi, BoardData, ProjectSnapshot } from '@shared/ipc'
 import type { AppConfig } from '@shared/config'
-import type { Board, Character, Note, Project, TimelineUnit } from '@shared/types'
+import type { Board, Character, ColumnGroup, Note, Project, TimelineUnit } from '@shared/types'
 import { SCHEMA_VERSION } from '@shared/types'
 import { DEFAULT_SETTINGS } from '@shared/config'
 import { StoreProvider } from '@renderer/store'
@@ -29,7 +29,11 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     setChildren: vi.fn(),
     saveTimelineUnit: vi.fn(),
     deleteTimelineUnit: vi.fn(),
-    reorderTimeline: vi.fn(),
+    saveColumnGroup: vi.fn(),
+    deleteColumnGroup: vi.fn(),
+    reorderColumns: vi.fn(),
+    moveColumn: vi.fn(),
+    wrapColumnInGroup: vi.fn(),
     saveNote: vi.fn(),
     deleteNote: vi.fn(),
     getNote: vi.fn(),
@@ -73,6 +77,7 @@ export function makeSnapshot(
     board?: Partial<Board>
     characters?: Character[]
     timeline?: TimelineUnit[]
+    colGroups?: ColumnGroup[]
     notes?: Note[]
     boards?: BoardData[]
   } = {}
@@ -112,6 +117,7 @@ export function makeSnapshot(
         board,
         characters: over.characters ?? [],
         timeline: over.timeline ?? [],
+        colGroups: over.colGroups ?? [],
         notes: over.notes ?? [],
         views: [],
         problems: []
@@ -123,7 +129,13 @@ export function makeSnapshot(
 /** A board-data block, for a multi-board snapshot. */
 export function makeBoardData(
   id: string,
-  over: { name?: string; characters?: Character[]; timeline?: TimelineUnit[]; notes?: Note[] } = {}
+  over: {
+    name?: string
+    characters?: Character[]
+    timeline?: TimelineUnit[]
+    colGroups?: ColumnGroup[]
+    notes?: Note[]
+  } = {}
 ): BoardData {
   return {
     board: {
@@ -144,6 +156,7 @@ export function makeBoardData(
     },
     characters: over.characters ?? [],
     timeline: over.timeline ?? [],
+    colGroups: over.colGroups ?? [],
     notes: over.notes ?? [],
     views: [],
     problems: []

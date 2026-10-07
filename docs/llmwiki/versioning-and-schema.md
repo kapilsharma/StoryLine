@@ -35,12 +35,13 @@ Which conventional-commit type drives which bump: `fix:` → patch, `feat:` → 
 
 ## On-disk schema
 
-`project.json` carries a numeric `schemaVersion` (constant `SCHEMA_VERSION` in `src/shared/types.ts`, currently **3**). Old projects without the stamp are backfilled to 1 by `normalizeProject`.
+`project.json` carries a numeric `schemaVersion` (constant `SCHEMA_VERSION` in `src/shared/types.ts`, currently **4**). Old projects without the stamp are backfilled to 1 by `normalizeProject`.
 
 Migrations run on open via `migrateIfNeeded` in `src/main/data/migrate.ts` (called from `loadSnapshot`); each step backs up first (`.zn-story-line-backup-vN/`).
 
 - **v1→v2:** moved characters/timeline/notes from project-global folders into per-board folders — "fully independent boards."
 - **v2→v3:** stamped a stable `uid` into every note and switched card links from filename (`noteFile`) to `noteUid` — rename-safe notes.
+- **v3→v4 (issue #104):** a column's `group` string became a real `ColumnGroup` file (`colgroups/<id>.md`) that units point at with `parent`, and a unit's `order` became sibling-relative. The migration reproduces the old layout exactly (the old layout gathered every unit sharing a label into one block at its first appearance, so the migration does too), converts `collapsedColGroups` from labels to ids, and names the two resulting levels `["Group", <timelineLabel>]`. Breaking because old files load wrong without it — see "When is a change breaking?" below.
 
 ## When is a change "breaking"? (read before editing the data model)
 

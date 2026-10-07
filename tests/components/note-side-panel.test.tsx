@@ -112,6 +112,19 @@ describe('the board’s note side panel', () => {
     )
   })
 
+  it('closes when the fullscreen editor opens, so it cannot come back showing a stale body', async () => {
+    // The board stays mounted under the editor, so a panel left open would return
+    // with the text from before the edit — and autosave it over the new text.
+    await boot()
+    await openCardNote()
+    await userEvent.click(within(panel()).getByRole('button', { name: /Editor/ }))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('complementary', { name: 'Note' })).not.toBeInTheDocument()
+    )
+    expect(await screen.findByPlaceholderText('Write in Markdown…')).toBeInTheDocument()
+  })
+
   it('turns the clicked block into its source and renders the rest', async () => {
     await boot()
     await openCardNote()

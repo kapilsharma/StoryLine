@@ -108,6 +108,15 @@ export async function buildExportBundle(root: string, options: ExportOptions): P
         unit.id
       )
     }
+    // A tier's note opens from its board header, so the published site needs it too.
+    for (const group of boardData.colGroups) {
+      entityBodies[entityBodyKey(boardId, 'colgroup', group.id)] = await readEntityBody(
+        root,
+        boardId,
+        'colgroup',
+        group.id
+      )
+    }
   }
 
   return {

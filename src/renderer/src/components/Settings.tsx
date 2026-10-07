@@ -10,26 +10,35 @@ import type {
 } from '@shared/config'
 import { CARD_FONT_MIN, CARD_FONT_MAX, DEFAULT_EDITOR_STYLES } from '@shared/config'
 import type { ProjectKind } from '@shared/types'
-import { DEFAULT_ROW_LABEL, readMeta, type ProjectMeta } from '@shared/project'
+import {
+  DEFAULT_ROW_LABEL,
+  DEFAULT_TIMELINE_LABEL,
+  readMeta,
+  timelineLevelLabels,
+  type ProjectMeta
+} from '@shared/project'
 import { useStore } from '../store'
 
 export function Settings(): JSX.Element {
   const { snapshot, config, saveProjectMeta, updateSettings, readOnly } = useStore()
 
   // Project-level form. One piece of state for the whole editable metadata set —
-  // name, both axis labels (#62) and the project kind (#63).
+  // name, the column levels (#104), the row label (#62) and the project kind (#63).
   const [meta, setMeta] = useState<ProjectMeta>({
     name: '',
-    timelineLabel: '',
+    timelineLevelLabels: [''],
     rowLabel: '',
     kind: 'story'
   })
 
+  // The levels are an array, so the effect depends on a string of them rather than
+  // on the array's identity, which changes with every snapshot.
+  const savedLevels = snapshot ? JSON.stringify(timelineLevelLabels(snapshot.project)) : ''
   useEffect(() => {
     if (snapshot) setMeta(readMeta(snapshot.project))
   }, [
     snapshot?.project.name,
-    snapshot?.project.timelineLabel,
+    savedLevels,
     snapshot?.project.rowLabel,
     snapshot?.project.kind
   ])
@@ -40,11 +49,19 @@ export function Settings(): JSX.Element {
   const saved = readMeta(snapshot.project)
   const projectDirty =
     meta.name !== saved.name ||
-    meta.timelineLabel !== saved.timelineLabel ||
+    JSON.stringify(meta.timelineLevelLabels) !== JSON.stringify(saved.timelineLevelLabels) ||
     meta.rowLabel !== saved.rowLabel ||
     meta.kind !== saved.kind
   const setField = <K extends keyof ProjectMeta>(key: K, value: ProjectMeta[K]): void =>
     setMeta((m) => ({ ...m, [key]: value }))
+
+  /** Levels are named by depth, so editing one is replacing it at its index. */
+  const setLevel = (i: number, label: string): void =>
+    setField(
+      'timelineLevelLabels',
+      meta.timelineLevelLabels.map((l, idx) => (idx === i ? label : l))
+    )
+  const levels = meta.timelineLevelLabels
 
   const es: EditorStyles = settings.editorStyles ?? DEFAULT_EDITOR_STYLES
   const updateStyles = (partial: Partial<EditorStyles>): void => {
@@ -97,14 +114,52 @@ export function Settings(): JSX.Element {
           />
         </div>
         <div className="form-row">
-          <label htmlFor="project-column-label">Column label</label>
-          <input
-            id="project-column-label"
-            value={meta.timelineLabel}
-            placeholder="Chapter"
-            onChange={(e) => setField('timelineLabel', e.target.value)}
-          />
-          <span className="muted small">Names the Timeline tab — "Chapters", "Scenes", "Sections".</span>
+          <label id="project-levels-label">Column levels</label>
+          <ol className="level-list" aria-labelledby="project-levels-label">
+            {levels.map((label, i) => (
+              <li key={i} className="level-row">
+                <input
+                  aria-label={`Level ${i + 1} name`}
+                  value={label}
+                  placeholder={i === levels.length - 1 ? DEFAULT_TIMELINE_LABEL : `Level ${i + 1}`}
+                  onChange={(e) => setLevel(i, e.target.value)}
+                />
+                <button
+                  className="icon-btn"
+                  title="Remove this level"
+                  aria-label={`Remove level ${i + 1}`}
+                  disabled={levels.length === 1}
+                  onClick={() =>
+                    setField(
+                      'timelineLevelLabels',
+                      levels.filter((_, idx) => idx !== i)
+                    )
+                  }
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ol>
+          <div className="level-actions">
+            <button
+              className="btn small"
+              onClick={() => setField('timelineLevelLabels', ['', ...levels])}
+            >
+              + Level above
+            </button>
+            <button
+              className="btn small"
+              onClick={() => setField('timelineLevelLabels', [...levels, ''])}
+            >
+              + Level below
+            </button>
+          </div>
+          <span className="muted small">
+            Outermost first — "Novel", "Part", "Chapter", "Scene". The last level is what cards sit
+            on; the others group it and can each carry a note. One level is a plain list. A level is
+            named by its depth, so adding one above renames what is already at the top.
+          </span>
         </div>
         <div className="form-row">
           <label htmlFor="project-row-label">Row label</label>

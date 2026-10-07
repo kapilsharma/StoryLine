@@ -20,6 +20,9 @@ async function renderSettings(project = {}) {
   renderWithProviders(<Settings />, { bootRoot: '/project' })
   await waitFor(() => expect(api.openProject).toHaveBeenCalled())
   await screen.findByText('Project')
+  // The form fills from the project in an effect, a tick after the heading appears —
+  // so wait for it, or a test that reads a field straight away races it.
+  await waitFor(() => expect(screen.getByLabelText<HTMLInputElement>('Project name').value).not.toBe(''))
   return api
 }
 
@@ -34,7 +37,7 @@ describe('Settings — project metadata', () => {
   it('shows the defaults for a project that sets neither field', async () => {
     await renderSettings()
     expect(screen.getByLabelText<HTMLInputElement>('Row label').value).toBe('Character')
-    expect(screen.getByLabelText<HTMLInputElement>('Column label').value).toBe('Chapter')
+    expect(screen.getByLabelText<HTMLInputElement>('Level 1 name').value).toBe('Chapter')
     expect(screen.getByLabelText<HTMLSelectElement>('Project kind').value).toBe('story')
   })
 
@@ -63,11 +66,67 @@ describe('Settings — project metadata', () => {
     await waitFor(() =>
       expect(api.saveProjectMeta).toHaveBeenCalledWith('/project', {
         name: 'My Novel',
-        timelineLabel: 'Chapter',
+        timelineLevelLabels: ['Chapter'],
         rowLabel: 'Topic',
         kind: 'general'
       })
     )
+  })
+
+  describe('column levels (Issue #104)', () => {
+    it('starts as one level — a plain list, like every project before levels', async () => {
+      await renderSettings()
+      expect(screen.getAllByLabelText(/^Level \d+ name$/)).toHaveLength(1)
+      // The only level can't be removed: there has to be something to put cards on.
+      expect(screen.getByRole('button', { name: 'Remove level 1' })).toBeDisabled()
+    })
+
+    it('shows every level a project has, outermost first', async () => {
+      await renderSettings({ timelineLevelLabels: ['Novel', 'Part', 'Chapter'], timelineLabel: 'Chapter' })
+      expect(screen.getAllByLabelText(/^Level \d+ name$/).map((i) => (i as HTMLInputElement).value)).toEqual([
+        'Novel',
+        'Part',
+        'Chapter'
+      ])
+    })
+
+    it('adds a level below, and a level above', async () => {
+      await renderSettings()
+      await userEvent.click(screen.getByRole('button', { name: '+ Level below' }))
+      await userEvent.click(screen.getByRole('button', { name: '+ Level above' }))
+      const inputs = screen.getAllByLabelText(/^Level \d+ name$/) as HTMLInputElement[]
+      expect(inputs.map((i) => i.value)).toEqual(['', 'Chapter', ''])
+    })
+
+    it('saves the levels it was given, trimmed and in order', async () => {
+      const api = await renderSettings()
+      await userEvent.click(screen.getByRole('button', { name: '+ Level above' }))
+      await userEvent.type(screen.getByLabelText('Level 1 name'), 'Part')
+      await userEvent.click(screen.getByRole('button', { name: 'Save project settings' }))
+
+      await waitFor(() =>
+        expect(api.saveProjectMeta).toHaveBeenCalledWith('/project', {
+          name: 'My Novel',
+          timelineLevelLabels: ['Part', 'Chapter'],
+          rowLabel: 'Character',
+          kind: 'story'
+        })
+      )
+    })
+
+    it('removes a level', async () => {
+      await renderSettings({ timelineLevelLabels: ['Part', 'Chapter'], timelineLabel: 'Chapter' })
+      await userEvent.click(screen.getByRole('button', { name: 'Remove level 1' }))
+      expect((screen.getByLabelText('Level 1 name') as HTMLInputElement).value).toBe('Chapter')
+    })
+
+    it('counts a changed level as a change worth saving', async () => {
+      await renderSettings()
+      const save = screen.getByRole('button', { name: 'Save project settings' })
+      expect(save).toBeDisabled()
+      await userEvent.type(screen.getByLabelText('Level 1 name'), 's')
+      expect(save).toBeEnabled()
+    })
   })
 
   it('will not save an empty project name', async () => {
@@ -90,6 +149,11 @@ describe('the rest of the UI honours the labels (#62)', () => {
     await renderProjectView()
     expect(await screen.findByRole('button', { name: 'Characters' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Chapters' })).toBeInTheDocument()
+  })
+
+  it('names the Timeline tab after the deepest level', async () => {
+    await renderProjectView({ timelineLevelLabels: ['Novel', 'Part', 'Scene'], timelineLabel: 'Scene' })
+    expect(await screen.findByRole('button', { name: 'Scenes' })).toBeInTheDocument()
   })
 
   it('names the tabs from the project’s own labels', async () => {

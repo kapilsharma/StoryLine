@@ -4,7 +4,7 @@
 
 > History: the app was originally prototyped under the name **"Plottr"** and renamed to ZN Story Line before going public. Any remaining "Plottr" mentions in prose refer to the *separate, external* app that inspired this one — do not "fix" those.
 
-## On-disk data model (schema v3)
+## On-disk data model (schema v4)
 
 `project.json` (holds `schemaVersion`) plus, per board:
 
@@ -13,7 +13,8 @@ project.json
 boards/<boardId>/
   board.json            # cards, row/col order, presets, zoom
   characters/<id>.md    # one Markdown file per character (frontmatter + body)
-  timeline/<id>.md      # one per timeline unit
+  timeline/<id>.md      # one per timeline unit — a column, the only thing a card sits on
+  colgroups/<id>.md     # one per column group (a Part, a Novel…); body = that group's note
   notes/<id>.md         # note bodies (Markdown + frontmatter)
   views/<id>.json       # family-tree views (membership, camera, overrides)
 ```
@@ -21,12 +22,14 @@ boards/<boardId>/
 - **Boards are fully independent** (each owns its characters/timeline/notes) since v0.2.0.
 - **Notes carry a stable `uid`** in frontmatter; cards reference `noteUid` (rename-safe, v0.3.0). `related:` links stay filename-based. Note bodies are lazy-loaded — `listNoteMetas` drops the body but sets the derived `Note.hasBody`, which is what puts a 📝 on a board card that holds more than its title (issue #46). Never written to disk.
 - **A character's markdown body is its note** (Characters tab, issue #33). An empty body — or one holding nothing but empty `## Notes` / `## Research` headings, the skeleton files were seeded with before #33 — means "no note yet"; see `src/shared/entityBody.ts`. New characters are created with no body, and a skeleton-only body is dropped the next time the file is written. Timeline units keep the seed template. The board marks the rows whose character has one and previews it read-only on click (issue #41) — `Character.hasNote` is derived when the file is read and never written to disk.
+- **Columns form a tree** (issue #104, schema v4). A `TimelineUnit` is the leaf; `ColumnGroup`s (`colgroups/<id>.md`) are the nodes above it, to any depth. Both carry `parent` (a group id; absent = top level) and a **sibling-relative** `order` — the board's column sequence is a depth-first walk, not a sort on one number. All the tree logic is pure and lives in `src/shared/columns.ts` (`buildColumnTree`, `orderedLeaves`, `planMove`, `planDrop`, `collectColumnDescendants`…); `grid-utils.ts` (`buildColumnLayout`), the IPC handlers and the delete dialog all use it. A hand-edited file with a dangling `parent` or a cycle is **repaired to top level**, never hidden. A group has an id, a label and a note, so **renaming it never detaches the note** — that is why it is an entity and not the old `group` string. A group's note is its markdown body, reached through the entity-body API as `kind: 'colgroup'` (so panel, popup and fullscreen editor need no group-specific code), with `ColumnGroup.hasNote` / `TimelineUnit.hasNote` derived on read and never written — which is what puts a 📝 on a board header. Cards still sit only on units; deleting a group deletes everything under it (the UI lists it first). Board view-state `collapsedColGroups` holds group **ids**.
+- **Column levels** are `project.timelineLevelLabels` (outermost first; absent = one level named by `timelineLabel`, which mirrors the deepest). A thing at depth `d` is called `levels[d]`, group or leaf alike. The count of levels is only an authoring control — the board draws whatever tree exists, one header row per depth in use, so a one-level project has none.
 - **Migrations** live in `src/main/data/migrate.ts` (`migrateIfNeeded` runs on open and backs up to `.zn-story-line-backup-vN/` first). See [versioning-and-schema.md](./versioning-and-schema.md).
 - Dates (`birthday`/`died`) are opaque partial-ISO strings (`YYYY[-MM[-DD]]`), never JS `Date` — see `src/shared/dates.ts`.
 
 ## Key files
 
-- **Shared contract:** `src/shared/{types,config,ipc,changes,dates,graph,families,selection}.ts`.
+- **Shared contract:** `src/shared/{types,config,ipc,changes,dates,graph,families,selection,columns,project}.ts`.
 - **Main process:** `src/main/{index,ipc,appConfig,projectService}.ts` + `src/main/data/{repository,mappers,frontmatter,fsutil,slug,uid,watcher,migrate}.ts`.
 - **Renderer:** `src/renderer/src/{App,store,api}.tsx`, `components/*`, `lib/{markdown,mdFormat,mdBlocks,reorder,text}.ts`; family tree under `components/tree/*` with a pure layout engine in `components/tree/layout/*`.
 - **Three ways a note is shown, and the two the board offers are a setting.** `boardNoteView` in `AppSettings` (issue #83) decides what a click on a card or row header opens: `popup` — the default, and what the app has always done — is the read-only `NotePopup`/`CharacterNotePopup` modal whose **Edit** goes to the fullscreen `EditorPage` (source textarea beside a preview); `panel` is `components/board/NoteSidePanel.tsx`, a resizable share of the boards page (`notePanelFraction`) that is edited in place. Both are rendered by `BoardsView` off one piece of state (`panel` in `BoardUiContext`), so the grid just says "open this note" and does not care which view wins. Keep both working: neither is deprecated.
