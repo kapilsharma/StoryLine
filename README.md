@@ -146,6 +146,18 @@ cross-project dropdown.
 | `npm run test:coverage` | Run tests with a coverage report (`coverage/`). |
 | `npm run test:e2e` | Run end-to-end tests (Playwright). |
 
+## Using ZN Story Line with an AI assistant
+
+A project is just JSON and Markdown, so any AI that can read files can work with
+it. Give your assistant one of these files and it will know the format:
+
+- [`docs/ai-reading-project-instructions.md`](./docs/ai-reading-project-instructions.md)
+  — read an existing project, understand the plot it lays out, and make small
+  edits safely. Handy alongside an Obsidian (or similar) vault of novel notes:
+  point the AI at both, and it reads the plot from the board.
+- [`docs/ai-creating-project-instructions.md`](./docs/ai-creating-project-instructions.md)
+  — generate a brand-new project that opens in the app as-is.
+
 ## Instructions for AI agents
 
 If you are an AI coding agent (Claude, Copilot, or otherwise) working in this repo, **read [`docs/llmwiki/`](./docs/llmwiki/) before making changes** — start with [`docs/llmwiki/README.md`](./docs/llmwiki/README.md). It's the project's portable knowledge base for AI agents (architecture, data model, versioning/schema policy, issue workflow, and environment gotchas), so context carries across machines and accounts. The most important rule: **never run `git` commit/push — hand off changes for the maintainer to commit.**
