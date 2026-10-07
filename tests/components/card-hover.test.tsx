@@ -130,6 +130,31 @@ describe('hover tooltip on the board', () => {
   })
 })
 
+describe('hover text indicator (#116)', () => {
+  it('marks a card that has hover text with ℹ️, and only that card', async () => {
+    await boot()
+    await screen.findByText('The Hunt', { exact: false })
+    const icon = cardFor('The Hunt').querySelector('.card-hover-icon')
+    expect(icon).toHaveTextContent('ℹ️')
+    expect(icon).toHaveAttribute('aria-label', 'Has hover text')
+    expect(cardFor('No Hint').querySelector('.card-hover-icon')).toBeNull()
+  })
+
+  it('keeps the title free of it — the title still reads as before', async () => {
+    await boot()
+    await screen.findByText('The Hunt', { exact: false })
+    expect(cardFor('The Hunt').querySelector('.card-title')?.textContent).not.toContain('ℹ️')
+  })
+
+  it('is hidden on a masked card in revision mode', async () => {
+    await boot()
+    await screen.findByText('The Hunt', { exact: false })
+    await userEvent.click(screen.getByTitle(/revision mode/i))
+    await waitFor(() => expect(document.querySelectorAll('.board-card.masked')).toHaveLength(2))
+    expect(document.querySelector('.card-hover-icon')).toBeNull()
+  })
+})
+
 describe('hover text field', () => {
   it('popup: shows the hover text read-only', async () => {
     await boot()
