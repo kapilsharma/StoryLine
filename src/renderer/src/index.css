@@ -1066,6 +1066,21 @@ textarea {
 .board-card:hover .card-note-icon {
   opacity: 1;
 }
+/* The card's status (issue #108). Full strength, unlike the 📝: it is the
+   thing an author scans the board for. */
+.card-status-icon {
+  font-size: 0.9em;
+}
+.card-status-select {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+}
+.status-icon-input {
+  width: 3.2rem;
+  text-align: center;
+}
 .resize-handle {
   position: absolute;
   top: 0;

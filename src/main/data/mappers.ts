@@ -252,6 +252,7 @@ export function frontmatterToNote(data: Record<string, unknown>, id: string, bod
   const related = normalizeRelated(data.related)
   if (related) note.related = related
   if (typeof data.created === 'string') note.created = data.created
+  if (typeof data.status === 'string' && data.status.trim()) note.status = data.status.trim()
   return note
 }
 
@@ -259,6 +260,7 @@ export function noteToFrontmatter(n: Note): Record<string, unknown> {
   return {
     ...(n.uid ? { uid: n.uid } : {}),
     title: n.title,
+    ...(n.status ? { status: n.status } : {}),
     ...(n.tags?.length ? { tags: n.tags } : {}),
     ...(n.boards?.length ? { boards: n.boards } : {}),
     ...(n.related?.length

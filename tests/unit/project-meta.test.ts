@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { SCHEMA_VERSION, type Project } from '@shared/types'
+import { DEFAULT_CARD_STATUSES } from '@shared/cardStatus'
 import {
   DEFAULT_ROW_LABEL,
   applyMeta,
@@ -70,7 +71,8 @@ describe('readMeta / applyMeta', () => {
       name: 'Thettana',
       timelineLevelLabels: ['Chapter'],
       rowLabel: 'Character',
-      kind: 'story'
+      kind: 'story',
+      cardStatuses: DEFAULT_CARD_STATUSES
     })
   })
 
@@ -81,6 +83,7 @@ describe('readMeta / applyMeta', () => {
     expect(JSON.parse(JSON.stringify(after))).toEqual(JSON.parse(JSON.stringify(before)))
     expect('rowLabel' in JSON.parse(JSON.stringify(after))).toBe(false)
     expect('kind' in JSON.parse(JSON.stringify(after))).toBe(false)
+    expect('cardStatuses' in JSON.parse(JSON.stringify(after))).toBe(false)
   })
 
   it('writes the fields once they differ from the defaults', () => {
@@ -88,7 +91,8 @@ describe('readMeta / applyMeta', () => {
       name: 'TOGAF',
       timelineLevelLabels: ['Section'],
       rowLabel: 'Phase',
-      kind: 'general'
+      kind: 'general',
+      cardStatuses: DEFAULT_CARD_STATUSES
     })
     expect(after.rowLabel).toBe('Phase')
     expect(after.kind).toBe('general')

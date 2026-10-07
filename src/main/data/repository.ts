@@ -3,6 +3,7 @@ import { basename, join } from 'path'
 import type { Board, Character, ColumnGroup, Note, Project, TimelineUnit, View } from '@shared/types'
 import { normalizeRowHeaderWidth } from '@shared/types'
 import { isEmptyEntityBody, normalizeEntityBody } from '@shared/entityBody'
+import { normalizeCardStatuses } from '@shared/cardStatus'
 import {
   ASSETS_DIR,
   MAX_ASSET_BYTES,
@@ -128,7 +129,11 @@ function normalizeProject(raw: Partial<Project>): Project {
     boards: raw.boards ?? [],
     created: raw.created ?? '',
     lastOpened: raw.lastOpened ?? '',
-    families: raw.families && typeof raw.families === 'object' ? raw.families : {}
+    families: raw.families && typeof raw.families === 'object' ? raw.families : {},
+    // Additive (#108): absent means the built-in set; `[]` stays an explicit none.
+    ...(Array.isArray(raw.cardStatuses)
+      ? { cardStatuses: normalizeCardStatuses(raw.cardStatuses) }
+      : {})
   }
 }
 

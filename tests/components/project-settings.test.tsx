@@ -4,6 +4,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Settings } from '@renderer/components/Settings'
 import { ProjectView } from '@renderer/components/ProjectView'
+import { DEFAULT_CARD_STATUSES } from '@shared/cardStatus'
 import { makeApi, makeSnapshot, renderWithProviders } from './test-utils'
 
 /**
@@ -68,7 +69,8 @@ describe('Settings — project metadata', () => {
         name: 'My Novel',
         timelineLevelLabels: ['Chapter'],
         rowLabel: 'Topic',
-        kind: 'general'
+        kind: 'general',
+        cardStatuses: DEFAULT_CARD_STATUSES
       })
     )
   })
@@ -109,7 +111,8 @@ describe('Settings — project metadata', () => {
           name: 'My Novel',
           timelineLevelLabels: ['Part', 'Chapter'],
           rowLabel: 'Character',
-          kind: 'story'
+          kind: 'story',
+          cardStatuses: DEFAULT_CARD_STATUSES
         })
       )
     })
@@ -126,6 +129,40 @@ describe('Settings — project metadata', () => {
       expect(save).toBeDisabled()
       await userEvent.type(screen.getByLabelText('Level 1 name'), 's')
       expect(save).toBeEnabled()
+    })
+  })
+
+  describe('card statuses (Issue #108)', () => {
+    const icons = (): string[] =>
+      (screen.getAllByLabelText(/^Status \d+ icon$/) as HTMLInputElement[]).map((i) => i.value)
+
+    it('starts with the built-in set', async () => {
+      await renderSettings()
+      expect(icons()).toEqual(DEFAULT_CARD_STATUSES.map((s) => s.icon))
+      expect(screen.getByRole('button', { name: 'Reset to defaults' })).toBeDisabled()
+    })
+
+    it('shows a project’s own statuses', async () => {
+      await renderSettings({ cardStatuses: [{ id: 'todo', icon: '⬜', label: 'To do' }] })
+      expect(icons()).toEqual(['⬜'])
+      expect((screen.getByLabelText('Status 1 meaning') as HTMLInputElement).value).toBe('To do')
+    })
+
+    it('reorders, removes and adds, then saves the list in order', async () => {
+      const api = await renderSettings()
+      await userEvent.click(screen.getByRole('button', { name: 'Move status 2 up' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Remove status 5' }))
+      await userEvent.click(screen.getByRole('button', { name: '+ Status' }))
+      await userEvent.type(screen.getByLabelText('Status 5 icon'), 'E')
+      await userEvent.type(screen.getByLabelText('Status 5 meaning'), 'Edited')
+      expect(icons()).toEqual(['⚡', '💡', '🌓', '🚩', 'E'])
+
+      await userEvent.click(screen.getByRole('button', { name: 'Save project settings' }))
+      await waitFor(() => expect(api.saveProjectMeta).toHaveBeenCalled())
+      const [, meta] = vi.mocked(api.saveProjectMeta).mock.calls[0]
+      expect(meta.cardStatuses.map((s) => s.id)).toEqual(['doc', 'idea', 'draft', 'stuck', ''])
+      // The new row's id is given on save, by applyMeta — see tests/unit/card-status.test.ts.
+      expect(meta.cardStatuses[4]).toEqual({ id: '', icon: 'E', label: 'Edited' })
     })
   })
 

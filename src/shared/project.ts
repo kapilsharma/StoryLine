@@ -6,7 +6,13 @@
  * exactly as it did. Every read goes through these accessors so that default
  * lives in one place rather than being re-guessed at each call site.
  */
-import type { Project, ProjectKind } from './types'
+import type { CardStatus, Project, ProjectKind } from './types'
+import {
+  DEFAULT_CARD_STATUSES,
+  cardStatuses,
+  finalizeCardStatuses,
+  sameCardStatuses
+} from './cardStatus'
 
 export const DEFAULT_ROW_LABEL = 'Character'
 export const DEFAULT_TIMELINE_LABEL = 'Chapter'
@@ -21,6 +27,8 @@ export interface ProjectMeta {
   timelineLevelLabels: string[]
   rowLabel: string
   kind: ProjectKind
+  /** Card statuses in display order (Issue #108). A new row has an empty id. */
+  cardStatuses: CardStatus[]
 }
 
 /** What a board row is called here — "Character", "Topic", "Phase"… */
@@ -82,7 +90,8 @@ export function readMeta(project: Project): ProjectMeta {
     name: project.name,
     timelineLevelLabels: timelineLevelLabels(project),
     rowLabel: rowLabel(project),
-    kind: projectKind(project)
+    kind: projectKind(project),
+    cardStatuses: cardStatuses(project)
   }
 }
 
@@ -98,6 +107,7 @@ export function applyMeta(project: Project, meta: ProjectMeta): Project {
   const levels = (meta.timelineLevelLabels.length > 0 ? meta.timelineLevelLabels : [''])
     .map((l) => l.trim())
     .map((l, i, all) => l || (i === all.length - 1 ? DEFAULT_TIMELINE_LABEL : `Level ${i + 1}`))
+  const statuses = finalizeCardStatuses(meta.cardStatuses)
   return {
     ...project,
     name: meta.name.trim() || project.name,
@@ -105,6 +115,8 @@ export function applyMeta(project: Project, meta: ProjectMeta): Project {
     timelineLabel: levels[levels.length - 1],
     timelineLevelLabels: levels.length > 1 ? levels : undefined,
     rowLabel: meta.rowLabel.trim() && meta.rowLabel.trim() !== DEFAULT_ROW_LABEL ? meta.rowLabel.trim() : undefined,
-    kind: meta.kind === 'general' ? 'general' : undefined
+    kind: meta.kind === 'general' ? 'general' : undefined,
+    // The built-in set is the absent key; anything else — including none — is written.
+    cardStatuses: sameCardStatuses(statuses, DEFAULT_CARD_STATUSES) ? undefined : statuses
   }
 }

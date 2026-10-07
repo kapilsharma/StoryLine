@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Note } from '@shared/types'
+import { cardStatuses } from '@shared/cardStatus'
 import { useStore } from '../store'
+import { CardStatusSelect } from './CardStatusSelect'
 import { usePrompt } from './PromptModal'
 import { MarkdownPreview } from './MarkdownPreview'
 
@@ -16,11 +18,25 @@ interface Props {
  * fullscreen editor, opened via the Edit button.
  */
 export function NotePopup({ note, onClose, onOpenNote }: Props): JSX.Element {
-  const { activeBoard, getNote, renameNote, openEditor } = useStore()
+  const { snapshot, activeBoard, getNote, saveNote, renameNote, openEditor, readOnly } = useStore()
   const ask = usePrompt()
   const notes = activeBoard?.notes ?? []
+  const statuses = snapshot ? cardStatuses(snapshot.project) : []
 
   const [body, setBody] = useState(note.body)
+  const [status, setStatus] = useState(note.status)
+  // Not remounted when a related link swaps the note, and the file can change
+  // underneath (watcher), so follow the prop.
+  useEffect(() => setStatus(note.status), [note.id, note.status])
+
+  // The popup is otherwise read-only, but a status is one click, not an edit
+  // session — so it saves at once. `note` is the body-less meta, so the save
+  // starts from the full note or it would empty the body.
+  const changeStatus = async (next: string | undefined): Promise<void> => {
+    setStatus(next)
+    const full = await getNote(note.id)
+    await saveNote({ ...full, status: next })
+  }
 
   // Body is lazy-loaded; fetch the full note for the preview.
   useEffect(() => {
@@ -74,6 +90,13 @@ export function NotePopup({ note, onClose, onOpenNote }: Props): JSX.Element {
             </button>
           </div>
         </header>
+
+        <CardStatusSelect
+          statuses={statuses}
+          value={status}
+          disabled={readOnly}
+          onChange={(next) => void changeStatus(next)}
+        />
 
         {note.tags && note.tags.length > 0 && (
           <div className="tag-row">
