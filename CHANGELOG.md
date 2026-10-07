@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.0](https://github.com/kapilsharma/StoryLine/compare/2.1.1...2.2.0) (2026-10-07)
+
+
+### Features
+
+* **#111:** Card hover ([954a6af](https://github.com/kapilsharma/StoryLine/commit/954a6afaf51bb832caca8d7438b3d49a29f66f15))
+* **#111:** Card hover ([0eb8ae6](https://github.com/kapilsharma/StoryLine/commit/0eb8ae6faad78e99697b053ee19db2e286bde523))
+
 ## [2.1.1](https://github.com/kapilsharma/StoryLine/compare/2.1.0...2.1.1) (2026-10-07)
 
 
