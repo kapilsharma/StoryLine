@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/kapilsharma/StoryLine/compare/2.0.0...2.1.0) (2026-10-07)
+
+
+### Features
+
+* **108:** Card status icon on board ([d6a6b1d](https://github.com/kapilsharma/StoryLine/commit/d6a6b1d1d7ab53286d8eeeded0520aa376a10928))
+* **108:** Card status icon on board ([ad5491a](https://github.com/kapilsharma/StoryLine/commit/ad5491ac0767393f19ef767a181d9a87628720ec))
+
 ## [2.0.0](https://github.com/kapilsharma/StoryLine/compare/1.6.4...2.0.0) (2026-10-07)
 
 
