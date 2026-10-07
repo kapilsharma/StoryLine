@@ -11,6 +11,11 @@
   --danger: #e24b4a;
   --card-bg: #ffffff;
   --card-bg-expanded: #e7ecf2;
+  /* Card hover text (issue #111): dark on a light board, light on a dark one,
+     so it reads as a layer above the cards rather than another card. */
+  --tip-bg: #2c2d31;
+  --tip-fg: #f2f2f4;
+  --tip-border: transparent;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   font-size: 14px;
@@ -26,6 +31,9 @@
   --danger: #f06462;
   --card-bg: #2c2d31;
   --card-bg-expanded: #3b3d44;
+  --tip-bg: #f2f2f4;
+  --tip-fg: #1c1c1e;
+  --tip-border: #c9c9ce;
 }
 
 * {
@@ -1066,6 +1074,25 @@ textarea {
 .board-card:hover .card-note-icon {
   opacity: 1;
 }
+/* A card's hover text (issue #111). Fixed and portalled to the body, so the
+   board's scroll box cannot clip it; pointer-events off so it never steals the
+   mouse from the card it describes. */
+.card-hover-tip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 320px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--tip-border);
+  border-radius: 6px;
+  background: var(--tip-bg);
+  color: var(--tip-fg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
 /* The card's status (issue #108). Full strength, unlike the 📝: it is the
    thing an author scans the board for. */
 .card-status-icon {
@@ -1315,7 +1342,8 @@ textarea {
   outline: none;
   border-bottom-color: var(--accent);
 }
-.note-tags-input {
+.note-tags-input,
+.note-hover-input {
   width: 100%;
   margin: 0.6rem 0;
   padding: 0.4rem 0.6rem;
@@ -1489,7 +1517,8 @@ textarea {
   margin: 0;
   font-size: 1.2rem;
 }
-.editor-tags-input {
+.editor-tags-input,
+.editor-hover-input {
   margin: 0.6rem 1rem 0;
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--border);
@@ -1497,6 +1526,24 @@ textarea {
   background: var(--bg);
   color: var(--fg);
   font-size: 0.85rem;
+}
+/* The hover text, read-only, in the popup and a read-only panel. */
+.note-hover-text {
+  margin: 0.4rem 0 0.6rem;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.note-panel .note-hover-text {
+  margin: 0.5rem 0.9rem 0;
+}
+/* Hover text is a sentence or two: a short textarea that the author may pull
+   taller, in the same font as the tags field above it. */
+.note-hover-input,
+.editor-hover-input {
+  font-family: inherit;
+  resize: vertical;
+  min-height: 2.6rem;
 }
 .editor-frontmatter-hint {
   margin: 0.6rem 1rem 0;
@@ -2036,6 +2083,7 @@ ol.footnotes li {
   overflow-wrap: break-word;
 }
 .note-panel .note-tags-input,
+.note-panel .note-hover-input,
 .note-panel-hint {
   margin: 0.5rem 0.9rem 0;
 }

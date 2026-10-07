@@ -10,6 +10,8 @@ import { cardStatuses, findCardStatus } from '@shared/cardStatus'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
 import { useBoardUi } from './BoardUiContext'
+import { CardHoverTip } from './CardHoverTip'
+import type { Rect } from '../../lib/tooltip'
 import {
   buildBoardLayout,
   markerKey,
@@ -30,6 +32,8 @@ const COMPACT_ROW_H = 66
 const GROUPHEAD_LINE_H = 30
 const GROUP_H = 26
 const COLHEAD_H = 44
+/** How long the mouse rests on a card before its hover text shows (#111). */
+const HOVER_TIP_DELAY = 400
 
 /** Stable empty list, so a board without groups doesn't re-run the layout memo every render. */
 const NO_GROUPS: ColumnGroup[] = []
@@ -46,6 +50,11 @@ interface RowMenu {
   name: string
   x: number
   y: number
+}
+
+interface HoverTip {
+  text: string
+  anchor: Rect
 }
 
 interface Preview {
@@ -157,6 +166,31 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const openNote = (id: string): void => openPanel({ kind: 'note', id })
   const openCharacterNote = (id: string): void => openPanel({ kind: 'character', id })
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // A card's hover text (#111). Shown after a short rest, so sweeping the mouse
+  // across the board does not flash a tip on every card it crosses; hidden the
+  // moment the card is left, pressed, dragged or scrolled away.
+  const [hoverTip, setHoverTip] = useState<HoverTip | null>(null)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hideHoverTip = (): void => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    hoverTimer.current = null
+    setHoverTip(null)
+  }
+  const showHoverTipSoon = (el: HTMLElement, text: string): void => {
+    hideHoverTip()
+    hoverTimer.current = setTimeout(() => {
+      hoverTimer.current = null
+      const r = el.getBoundingClientRect()
+      setHoverTip({ text, anchor: { left: r.left, top: r.top, width: r.width, height: r.height } })
+    }, HOVER_TIP_DELAY)
+  }
+  useEffect(
+    () => () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    },
+    []
+  )
 
   const zoom = board.zoom || 1
   // The header column keeps the width the user dragged (#80). Unlike the data
@@ -291,6 +325,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
 
   // ── Zoom ──
   const onWheel = (e: React.WheelEvent): void => {
+    // A zoom resizes the card under the tip, so the tip would point at nothing.
+    hideHoverTip()
     if (!e.ctrlKey && !e.metaKey) return
     e.preventDefault()
     const next = Math.min(2, Math.max(0.5, zoom * (1 - e.deltaY * 0.0015)))
@@ -421,7 +457,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const empty = cols.slots.length === 0 || rows.lines.length === 0
 
   return (
-    <div className="board-scroll" ref={scrollRef} onWheel={onWheel}>
+    <div className="board-scroll" ref={scrollRef} onWheel={onWheel} onScroll={hideHoverTip}>
       {empty ? (
         <p className="muted placeholder">
           Add at least one column (timeline unit) and one row (character) to start plotting.
@@ -692,6 +728,9 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                     const note = pc.note
                     const status = findCardStatus(statuses, note?.status)
                     const isExp = isExpanded(pc.card.id)
+                    // A hidden card keeps its hint to itself too — it would
+                    // give the answer away just as opening it would (#67).
+                    const hoverText = masked ? undefined : note?.hover
                     // Board cards show the title only (quick view); the full note
                     // lives in the popup. Expand reveals a long title in full.
                     const expandable = (note?.title?.length ?? 0) > 36
@@ -700,7 +739,17 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                         key={pc.card.id}
                         className={`board-card${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}`}
                         draggable
-                        onDragStart={(e) => onCardDragStart(e, pc.card)}
+                        onDragStart={(e) => {
+                          hideHoverTip()
+                          onCardDragStart(e, pc.card)
+                        }}
+                        onMouseEnter={
+                          hoverText
+                            ? (e) => showHoverTipSoon(e.currentTarget, hoverText)
+                            : undefined
+                        }
+                        onMouseLeave={hoverText ? hideHoverTip : undefined}
+                        onPointerDown={hoverText ? hideHoverTip : undefined}
                         style={{
                           gridColumn: `${pc.startSlot + 2} / ${pc.endSlot + 3}`,
                           gridRow,
@@ -726,6 +775,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                         }}
                         onContextMenu={(e) => {
                           e.preventDefault()
+                          hideHoverTip()
                           setMenu({ cardId: pc.card.id, x: e.clientX, y: e.clientY })
                         }}
                       >
@@ -787,6 +837,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
           })}
         </div>
       )}
+
+      {hoverTip && <CardHoverTip text={hoverTip.text} anchor={hoverTip.anchor} />}
 
       {menu && (
         <div className="context-menu" style={{ left: menu.x, top: menu.y }}>

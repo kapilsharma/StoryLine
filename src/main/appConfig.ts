@@ -52,22 +52,52 @@ export async function readConfig(): Promise<AppConfig> {
   }
 }
 
+/**
+ * Written to a temp file and renamed over the real one, so a read never sees
+ * the file half-written. A plain `writeFile` truncates first: a read landing in
+ * that gap got an empty file and "Unexpected end of JSON input".
+ */
 export async function writeConfig(config: AppConfig): Promise<AppConfig> {
   await fs.mkdir(app.getPath('userData'), { recursive: true })
-  await fs.writeFile(configPath(), JSON.stringify(config, null, 2) + '\n', 'utf8')
+  const text = JSON.stringify(config, null, 2) + '\n'
+  const tmp = `${configPath()}.${process.pid}.tmp`
+  await fs.writeFile(tmp, text, 'utf8')
+  try {
+    await fs.rename(tmp, configPath())
+  } catch {
+    // Windows can refuse the rename while something (an AV scan) holds the
+    // target. Fall back to a direct write rather than lose the change.
+    await fs.writeFile(configPath(), text, 'utf8')
+    await fs.rm(tmp, { force: true })
+  }
   return config
 }
 
-/** Insert/update a recent project at the top of the list (most-recent-first). */
-export async function touchRecent(entry: RecentProject): Promise<AppConfig> {
-  const config = await readConfig()
-  const others = config.recents.filter((r) => r.path !== entry.path)
-  config.recents = [entry, ...others].slice(0, MAX_RECENTS)
-  return writeConfig(config)
+/** Tail of the queue every read-modify-write of the config goes through. */
+let pending: Promise<unknown> = Promise.resolve()
+
+/**
+ * Read the config, change it, write it back — one call at a time. Saves can
+ * arrive back to back (a slider drag; StrictMode running an updater twice), and
+ * two overlapping read-modify-writes would each drop the other's change.
+ */
+export function updateConfig(change: (config: AppConfig) => AppConfig): Promise<AppConfig> {
+  const next = pending.then(async () => writeConfig(change(await readConfig())))
+  pending = next.catch(() => undefined)
+  return next
 }
 
-export async function removeRecent(path: string): Promise<AppConfig> {
-  const config = await readConfig()
-  config.recents = config.recents.filter((r) => r.path !== path)
-  return writeConfig(config)
+/** Insert/update a recent project at the top of the list (most-recent-first). */
+export function touchRecent(entry: RecentProject): Promise<AppConfig> {
+  return updateConfig((config) => {
+    const others = config.recents.filter((r) => r.path !== entry.path)
+    return { ...config, recents: [entry, ...others].slice(0, MAX_RECENTS) }
+  })
+}
+
+export function removeRecent(path: string): Promise<AppConfig> {
+  return updateConfig((config) => ({
+    ...config,
+    recents: config.recents.filter((r) => r.path !== path)
+  }))
 }

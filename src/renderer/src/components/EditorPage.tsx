@@ -39,6 +39,7 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
 
   const [title, setTitle] = useState('')
   const [tags, setTags] = useState('')
+  const [hover, setHover] = useState('')
   const [body, setBody] = useState('')
   const [loaded, setLoaded] = useState(false)
   // Caret position, mirrored into state only so the heading dropdown can show
@@ -60,6 +61,7 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
           noteRef.current = n
           setTitle(n.title)
           setTags((n.tags ?? []).join(', '))
+          setHover(n.hover ?? '')
           setBody(n.body)
           setLoaded(true)
         })
@@ -82,14 +84,20 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
     if (readOnly || !dirty.current || !loaded) return
     const timer = setTimeout(() => {
       if (kind === 'note' && noteRef.current) {
-        saveNote({ ...noteRef.current, title: title.trim() || noteRef.current.title, tags: parseTags(tags), body })
+        saveNote({
+          ...noteRef.current,
+          title: title.trim() || noteRef.current.title,
+          tags: parseTags(tags),
+          hover: hover.trim() || undefined,
+          body
+        })
       } else if (kind !== 'note') {
         saveEntityBody(kind as EntityBodyKind, id, body)
       }
     }, 900)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, tags, body])
+  }, [title, tags, hover, body])
 
 
   const displayName =
@@ -240,15 +248,28 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
       </header>
 
       {kind === 'note' ? (
-        <input
-          className="editor-tags-input"
-          value={tags}
-          placeholder="tags, comma separated"
-          onChange={(e) => {
-            dirty.current = true
-            setTags(e.target.value)
-          }}
-        />
+        <>
+          <input
+            className="editor-tags-input"
+            value={tags}
+            placeholder="tags, comma separated"
+            onChange={(e) => {
+              dirty.current = true
+              setTags(e.target.value)
+            }}
+          />
+          <textarea
+            className="editor-hover-input"
+            value={hover}
+            rows={2}
+            placeholder="hover text — a reminder shown when the mouse rests on the card (optional)"
+            aria-label="Hover text"
+            onChange={(e) => {
+              dirty.current = true
+              setHover(e.target.value)
+            }}
+          />
+        </>
       ) : (
         <p className="muted small editor-frontmatter-hint">
           Editing the notes/research body. Fields (name, colour, etc.) are edited in the{' '}

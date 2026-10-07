@@ -84,18 +84,20 @@ export function BoardsView(): JSX.Element {
     const settings = config?.settings
     if (!el || !settings) return
     const rect = el.getBoundingClientRect()
+    // Tracked here, not read back through a state updater: StrictMode runs an
+    // updater twice, which saved the settings twice per drag.
+    let latest: number | null = null
     const onMove = (ev: PointerEvent): void => {
-      setPanelDrag(clampNotePanelFraction((rect.right - ev.clientX) / rect.width))
+      latest = clampNotePanelFraction((rect.right - ev.clientX) / rect.width)
+      setPanelDrag(latest)
     }
     const onUp = (): void => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
-      setPanelDrag((f) => {
-        if (f != null && f !== settings.notePanelFraction) {
-          void updateSettings({ ...settings, notePanelFraction: f })
-        }
-        return null
-      })
+      setPanelDrag(null)
+      if (latest != null && latest !== settings.notePanelFraction) {
+        void updateSettings({ ...settings, notePanelFraction: latest })
+      }
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
