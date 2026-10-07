@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Note } from '@shared/types'
+import { cardStatuses } from '@shared/cardStatus'
 import { useStore } from '../../store'
+import { CardStatusSelect } from '../CardStatusSelect'
 import { usePrompt } from '../PromptModal'
 import { LiveMarkdownEditor } from '../LiveMarkdownEditor'
 import type { PanelTarget } from './BoardUiContext'
@@ -32,6 +34,7 @@ const parseTags = (s: string): string[] => s.split(',').map((t) => t.trim()).fil
  */
 export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JSX.Element {
   const {
+    snapshot,
     activeBoard,
     getNote,
     saveNote,
@@ -47,6 +50,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
   const [title, setTitle] = useState('')
   const [tags, setTags] = useState('')
   const [body, setBody] = useState('')
+  const [status, setStatus] = useState<string | undefined>(undefined)
   const [loaded, setLoaded] = useState(false)
   const noteRef = useRef<Note | null>(null)
   const dirty = useRef(false)
@@ -74,6 +78,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
           setTitle(n.title)
           setTags((n.tags ?? []).join(', '))
           setBody(n.body)
+          setStatus(n.status)
           setLoaded(true)
         })
         .catch(() => !cancelled && setLoaded(true))
@@ -118,6 +123,21 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  // A status is a pick, not typing, so it saves at once rather than on the
+  // debounce — closing the panel straight after must not lose it. The ref is
+  // updated too, so the next debounced save carries it rather than undoing it.
+  const changeStatus = (next: string | undefined): void => {
+    setStatus(next)
+    if (target.kind !== 'note' || !noteRef.current) return
+    noteRef.current = { ...noteRef.current, status: next }
+    saveNote({
+      ...noteRef.current,
+      title: title.trim() || noteRef.current.title,
+      tags: parseTags(tags),
+      body
+    })
+  }
 
   const notes = activeBoard?.notes ?? []
   const related = useMemo(
@@ -193,6 +213,15 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
           </button>
         </div>
       </header>
+
+      {target.kind === 'note' && loaded && (
+        <CardStatusSelect
+          statuses={snapshot ? cardStatuses(snapshot.project) : []}
+          value={status}
+          disabled={readOnly}
+          onChange={changeStatus}
+        />
+      )}
 
       {target.kind === 'note' ? (
         readOnly ? (

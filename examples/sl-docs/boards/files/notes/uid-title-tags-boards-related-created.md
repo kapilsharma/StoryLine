@@ -12,6 +12,7 @@ created: '2026-08-17'
 ---
 uid: n_9f8e7d6c
 title: "She reads the journal at last"
+status: draft
 tags: [turning-point]
 boards: [main]
 related:
@@ -22,4 +23,4 @@ created: '2026-01-04'
 Mina types up every account and finds the shape nobody saw.
 ```
 
-`title` is what the card shows. `related` links to other notes by filename, with an optional comment, and puts a 🔗 on the card.
+`title` is what the card shows. `status` is the id of one of the project's card statuses (see `cardStatuses` in `project.json`) and puts its icon at the left of the card; leave it out for none. `related` links to other notes by filename, with an optional comment, and puts a 🔗 on the card.

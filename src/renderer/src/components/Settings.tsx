@@ -10,6 +10,7 @@ import type {
 } from '@shared/config'
 import { CARD_FONT_MIN, CARD_FONT_MAX, DEFAULT_EDITOR_STYLES } from '@shared/config'
 import type { ProjectKind } from '@shared/types'
+import { DEFAULT_CARD_STATUSES, cardStatuses } from '@shared/cardStatus'
 import {
   DEFAULT_ROW_LABEL,
   DEFAULT_TIMELINE_LABEL,
@@ -50,17 +51,20 @@ export function Settings(): JSX.Element {
     name: '',
     timelineLevelLabels: [''],
     rowLabel: '',
-    kind: 'story'
+    kind: 'story',
+    cardStatuses: []
   })
 
   // The levels are an array, so the effect depends on a string of them rather than
   // on the array's identity, which changes with every snapshot.
   const savedLevels = snapshot ? JSON.stringify(timelineLevelLabels(snapshot.project)) : ''
+  const savedStatuses = snapshot ? JSON.stringify(cardStatuses(snapshot.project)) : ''
   useEffect(() => {
     if (snapshot) setMeta(readMeta(snapshot.project))
   }, [
     snapshot?.project.name,
     savedLevels,
+    savedStatuses,
     snapshot?.project.rowLabel,
     snapshot?.project.kind
   ])
@@ -73,7 +77,8 @@ export function Settings(): JSX.Element {
     meta.name !== saved.name ||
     JSON.stringify(meta.timelineLevelLabels) !== JSON.stringify(saved.timelineLevelLabels) ||
     meta.rowLabel !== saved.rowLabel ||
-    meta.kind !== saved.kind
+    meta.kind !== saved.kind ||
+    JSON.stringify(meta.cardStatuses) !== JSON.stringify(saved.cardStatuses)
   const setField = <K extends keyof ProjectMeta>(key: K, value: ProjectMeta[K]): void =>
     setMeta((m) => ({ ...m, [key]: value }))
 
@@ -84,6 +89,19 @@ export function Settings(): JSX.Element {
       meta.timelineLevelLabels.map((l, idx) => (idx === i ? label : l))
     )
   const levels = meta.timelineLevelLabels
+
+  const statuses = meta.cardStatuses
+  const setStatusField = (i: number, key: 'icon' | 'label', value: string): void =>
+    setField(
+      'cardStatuses',
+      statuses.map((s, idx) => (idx === i ? { ...s, [key]: value } : s))
+    )
+  /** Order is position in the list, so moving is a swap with the neighbour. */
+  const moveStatus = (i: number, delta: -1 | 1): void => {
+    const next = [...statuses]
+    ;[next[i], next[i + delta]] = [next[i + delta], next[i]]
+    setField('cardStatuses', next)
+  }
 
   const es: EditorStyles = settings.editorStyles ?? DEFAULT_EDITOR_STYLES
   const updateStyles = (partial: Partial<EditorStyles>): void => {
@@ -208,6 +226,81 @@ export function Settings(): JSX.Element {
           <span className="muted small">
             A general project hides the Family tab and the family fields on a row, which have no
             meaning when rows are topics or phases.
+          </span>
+        </div>
+        <div className="form-row">
+          <label id="project-statuses-label">Card statuses</label>
+          <ol className="level-list" aria-labelledby="project-statuses-label">
+            {statuses.map((s, i) => (
+              <li key={i} className="level-row">
+                <input
+                  className="status-icon-input"
+                  aria-label={`Status ${i + 1} icon`}
+                  value={s.icon}
+                  placeholder="🙂"
+                  onChange={(e) => setStatusField(i, 'icon', e.target.value)}
+                />
+                <input
+                  aria-label={`Status ${i + 1} meaning`}
+                  value={s.label}
+                  placeholder="What this status means"
+                  onChange={(e) => setStatusField(i, 'label', e.target.value)}
+                />
+                <button
+                  className="icon-btn"
+                  title="Move up"
+                  aria-label={`Move status ${i + 1} up`}
+                  disabled={i === 0}
+                  onClick={() => moveStatus(i, -1)}
+                >
+                  ↑
+                </button>
+                <button
+                  className="icon-btn"
+                  title="Move down"
+                  aria-label={`Move status ${i + 1} down`}
+                  disabled={i === statuses.length - 1}
+                  onClick={() => moveStatus(i, 1)}
+                >
+                  ↓
+                </button>
+                <button
+                  className="icon-btn"
+                  title="Remove this status"
+                  aria-label={`Remove status ${i + 1}`}
+                  onClick={() =>
+                    setField(
+                      'cardStatuses',
+                      statuses.filter((_, idx) => idx !== i)
+                    )
+                  }
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ol>
+          <div className="level-actions">
+            <button
+              className="btn small"
+              onClick={() =>
+                setField('cardStatuses', [...statuses, { id: '', icon: '', label: '' }])
+              }
+            >
+              + Status
+            </button>
+            <button
+              className="btn small"
+              disabled={JSON.stringify(statuses) === JSON.stringify(DEFAULT_CARD_STATUSES)}
+              onClick={() => setField('cardStatuses', DEFAULT_CARD_STATUSES)}
+            >
+              Reset to defaults
+            </button>
+          </div>
+          <span className="muted small">
+            Where a scene stands. The icon shows at the left of its card; pick a status from the
+            dropdown when the note is open. The order here is the order in the dropdown. Changing an
+            icon or meaning updates every card at once; a removed status simply stops showing.
           </span>
         </div>
         {readOnly ? (

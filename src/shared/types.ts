@@ -171,6 +171,12 @@ export interface Note {
   related?: RelatedNote[]
   /** ISO date (YYYY-MM-DD). */
   created?: string
+  /**
+   * Id of the note's {@link CardStatus} (Issue #108) — where the scene stands.
+   * Absent = no status. An id the project no longer defines is kept as written
+   * and simply shows no icon, so deleting a status never rewrites a note.
+   */
+  status?: string
   /** Raw markdown body, preserved verbatim on write. May be omitted in list views (lazy). */
   body: string
 
@@ -414,6 +420,28 @@ export interface Project {
    * Added in v0.6.0; absent on older projects and defaulted to `{}`.
    */
   families: Record<string, string>
+  /**
+   * The statuses a card can carry, in display order (Issue #108). Absent means
+   * the built-in set (`DEFAULT_CARD_STATUSES` in `src/shared/cardStatus.ts`), so
+   * a project that never touched them is written back without the key; `[]` is
+   * an explicit "no statuses". Per project, not per app, so a note's status
+   * resolves wherever the folder is opened.
+   */
+  cardStatuses?: CardStatus[]
+}
+
+/**
+ * One status a card can be in — "💡 Idea", "✅ Draft done" (Issue #108). Notes
+ * point at it by `id`, so the icon and label can be changed without touching a
+ * single note.
+ */
+export interface CardStatus {
+  /** Stable slug, frozen at creation. What a note's `status:` holds. */
+  id: string
+  /** Shown at the left of the card — usually one emoji. */
+  icon: string
+  /** What the status means; the icon's tooltip and the dropdown text. */
+  label: string
 }
 
 /** A fresh family-tree view with everything defaulted. */

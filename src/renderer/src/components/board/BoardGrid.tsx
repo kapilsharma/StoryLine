@@ -6,6 +6,7 @@ import {
   ROW_HEADER_W_MIN
 } from '@shared/types'
 import type { BoardData } from '@shared/ipc'
+import { cardStatuses, findCardStatus } from '@shared/cardStatus'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
 import { useBoardUi } from './BoardUiContext'
@@ -125,7 +126,8 @@ function RowHeadName({
 }
 
 export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
-  const { config, createCard, updateCard, deleteCard, saveBoard } = useStore()
+  const { snapshot, config, createCard, updateCard, deleteCard, saveBoard } = useStore()
+  const statuses = snapshot ? cardStatuses(snapshot.project) : []
   const ask = usePrompt()
   const board = data.board
   const characters = data.characters
@@ -688,6 +690,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                     const lineDepth = stackDepth.get(line.index) ?? 1
                     const masked = revising && !isRevealed(pc.card.id)
                     const note = pc.note
+                    const status = findCardStatus(statuses, note?.status)
                     const isExp = isExpanded(pc.card.id)
                     // Board cards show the title only (quick view); the full note
                     // lives in the popup. Expand reveals a long title in full.
@@ -738,6 +741,13 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                               </span>
                             ) : (
                               <>
+                                {/* Where the scene stands, leftmost so a glance
+                                    down a row reads as a progress bar (#108). */}
+                                {status && (
+                                  <span className="card-status-icon" title={status.label}>
+                                    {status.icon}{' '}
+                                  </span>
+                                )}
                                 {/* A card whose note has a body opens onto more
                                     than its title, so it says so up front (#46). */}
                                 {note?.hasBody && (
