@@ -49,6 +49,17 @@ label is usually quickest) and edit it as an ordinary Markdown file.
 
 `docs/` stays developer-facing: publishing, build/release workflow, and this wiki.
 
+## The on-disk format is documented for outside AIs too
+
+`docs/ai-reading-project-instructions.md` (issue #105) and
+`docs/ai-creating-project-instructions.md` (issue #98) teach *any* AI — not one
+working in this repo — to read, lightly edit, or generate a project folder. They
+describe every file and field in plain terms, with no reference to the source.
+**A change to the on-disk format (a new field, a changed default, a new folder)
+must update both files in the same change**, or authors' assistants will write
+projects the app reads wrong. The minimal example at the end of the creating doc
+should still load cleanly through `loadSnapshot`.
+
 ## Verify workflow
 
 Run after any change, before handing off:
