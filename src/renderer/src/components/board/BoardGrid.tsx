@@ -813,6 +813,14 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                             )}
                           </div>
                         </div>
+                        {/* Says "rest the mouse here" (#116) — in the corner, so
+                            it sits in one place on every card and a glance down
+                            a row finds the ones with a hint. */}
+                        {hoverText && (
+                          <span className="card-hover-icon" aria-label="Has hover text">
+                            ℹ️
+                          </span>
+                        )}
                         {expandable && (
                           <button
                             className="card-expand"

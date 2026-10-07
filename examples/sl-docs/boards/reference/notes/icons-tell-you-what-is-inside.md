@@ -11,6 +11,6 @@ The first icon on a card is its **status** — where the scene stands, e.g. **�
 
 **📝** — the note has a body, not just a title. **🔗** — the note has related links. **⤢** — the title is too long for the card and can be expanded.
 
-**Hover text** — rest the mouse on a card for a moment to see its hover text, a short reminder of what the scene is for, without opening it. Write it in the **Hover text** box under the tags, in the side panel or the fullscreen editor; leave it empty for none. Cards hidden in revision mode keep it hidden too.
+**ℹ️** — the card has **hover text**: rest the mouse on it for a moment to see its hover text, a short reminder of what the scene is for, without opening it. Write it in the **Hover text** box under the tags, in the side panel or the fullscreen editor; leave it empty for none. Cards hidden in revision mode keep it hidden too.
 
 Card text size follows the **Card font size** setting and scales with the board zoom.
