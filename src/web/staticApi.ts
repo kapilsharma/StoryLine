@@ -66,6 +66,8 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     notes: bd.notes.map((n) => ({ ...n, body: '' })),
     // Bundles written before v0.6.0 carry no trees; default rather than crash.
     views: bd.views ?? [],
+    // Bundles written before v4 carry no column groups; a flat board is correct.
+    colGroups: bd.colGroups ?? [],
     problems: bd.problems ?? []
   }))
   let settings: AppSettings = bundle.settings
@@ -108,7 +110,11 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     setChildren: () => denied<ProjectSnapshot>(),
     saveTimelineUnit: () => denied<ProjectSnapshot>(),
     deleteTimelineUnit: () => denied<ProjectSnapshot>(),
-    reorderTimeline: () => denied<ProjectSnapshot>(),
+    saveColumnGroup: () => denied<ProjectSnapshot>(),
+    deleteColumnGroup: () => denied<ProjectSnapshot>(),
+    reorderColumns: () => denied<ProjectSnapshot>(),
+    moveColumn: () => denied<ProjectSnapshot>(),
+    wrapColumnInGroup: () => denied<ProjectSnapshot>(),
     saveNote: () => denied<ProjectSnapshot>(),
     deleteNote: () => denied<ProjectSnapshot>(),
     renameNote: () => denied<ProjectSnapshot>(),

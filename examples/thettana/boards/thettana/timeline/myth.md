@@ -2,7 +2,7 @@
 id: myth
 label: 5 - Myth
 order: 5
-group: 'Act 1: Findings'
+parent: act-1-findings
 ---
 
 ## Notes

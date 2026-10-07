@@ -7,15 +7,30 @@
  * renderer can replace its state in one step. The filesystem watcher remains a
  * backstop for *external* edits.
  */
-import type { Board, Card, Character, Note, Problem, Project, TimelineUnit, View, ViewMode } from './types'
+import type {
+  Board,
+  Card,
+  Character,
+  ColumnGroup,
+  Note,
+  Problem,
+  Project,
+  TimelineUnit,
+  View,
+  ViewMode
+} from './types'
 import type { AppConfig, AppSettings } from './config'
 import type { ProjectMeta } from './project'
 import type { ProjectChange } from './changes'
 import type { SearchHit, SearchScope } from './search'
 import type { AssetImport, AssetRef } from './assets'
+import type { ColumnRef } from './columns'
 
-/** Entities whose markdown body the dedicated editor can edit (notes use getNote/saveNote). */
-export type EntityBodyKind = 'character' | 'timeline'
+/**
+ * Entities whose markdown body the dedicated editor can edit (notes use
+ * getNote/saveNote). A `colgroup`'s body is the note of that tier (Issue #104).
+ */
+export type EntityBodyKind = 'character' | 'timeline' | 'colgroup'
 
 /**
  * A board and the entities it owns. Since v2 (schemaVersion 2), characters,
@@ -25,6 +40,11 @@ export interface BoardData {
   board: Board
   characters: Character[]
   timeline: TimelineUnit[]
+  /**
+   * The groups the columns hang under — Parts, Novels, Chapters-with-scenes
+   * (Issue #104). Empty for a flat board. `hasNote` is set, the bodies are not.
+   */
+  colGroups: ColumnGroup[]
   notes: Note[]
   /**
    * Saved family trees over this board's cast (v0.6.0). A board with no
@@ -112,8 +132,53 @@ export interface AppApi {
   // ── Timeline units (per board) ──
   saveTimelineUnit(root: string, boardId: string, unit: TimelineUnit): Promise<ProjectSnapshot>
   deleteTimelineUnit(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
-  /** Persist a new ordering; `orderedIds` becomes each unit's `order` index. */
-  reorderTimeline(root: string, boardId: string, orderedIds: string[]): Promise<ProjectSnapshot>
+
+  // ── Column hierarchy (per board, Issue #104) ──
+  /**
+   * Create or update a group. An empty `id` creates one; the label of an existing
+   * group can change freely because its id — and so its note — never does.
+   */
+  saveColumnGroup(root: string, boardId: string, group: ColumnGroup): Promise<ProjectSnapshot>
+  /**
+   * Delete a group **and everything under it** — child groups, their columns and
+   * those columns' cards. The renderer asks first (listing what will go); this
+   * does not.
+   */
+  deleteColumnGroup(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+  /**
+   * Put the children of `parentId` (null = top level) in the order given. Anything
+   * left out keeps its relative order after the named ones.
+   */
+  reorderColumns(
+    root: string,
+    boardId: string,
+    parentId: string | null,
+    order: ColumnRef[]
+  ): Promise<ProjectSnapshot>
+  /**
+   * Move a group or column under `newParentId` (null = top level), at `index` among
+   * its new siblings (omitted = last). Rejects a group moved into its own subtree.
+   */
+  moveColumn(
+    root: string,
+    boardId: string,
+    ref: ColumnRef,
+    newParentId: string | null,
+    index?: number
+  ): Promise<ProjectSnapshot>
+  /**
+   * "Break this chapter into scenes": insert a new group, labelled `label`, in the
+   * place of a column and put the column under it. The column keeps its id, cards
+   * and note, so nothing needs repointing; `moveNote` carries its note up to the
+   * new group instead of leaving it on the column.
+   */
+  wrapColumnInGroup(
+    root: string,
+    boardId: string,
+    unitId: string,
+    label: string,
+    moveNote: boolean
+  ): Promise<ProjectSnapshot>
 
   // ── Notes (per board) ──
   saveNote(root: string, boardId: string, note: Note): Promise<ProjectSnapshot>

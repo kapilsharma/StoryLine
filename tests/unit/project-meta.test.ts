@@ -68,7 +68,7 @@ describe('readMeta / applyMeta', () => {
   it('reads defaults out of a project that has neither field', () => {
     expect(readMeta(project())).toEqual({
       name: 'Thettana',
-      timelineLabel: 'Chapter',
+      timelineLevelLabels: ['Chapter'],
       rowLabel: 'Character',
       kind: 'story'
     })
@@ -86,7 +86,7 @@ describe('readMeta / applyMeta', () => {
   it('writes the fields once they differ from the defaults', () => {
     const after = applyMeta(project(), {
       name: 'TOGAF',
-      timelineLabel: 'Section',
+      timelineLevelLabels: ['Section'],
       rowLabel: 'Phase',
       kind: 'general'
     })
@@ -94,6 +94,36 @@ describe('readMeta / applyMeta', () => {
     expect(after.kind).toBe('general')
     expect(after.timelineLabel).toBe('Section')
     expect(after.name).toBe('TOGAF')
+  })
+
+  it('writes a single level as plain timelineLabel, so a flat project is unchanged on disk', () => {
+    const after = applyMeta(project(), { ...readMeta(project()), timelineLevelLabels: ['Scene'] })
+    expect(after.timelineLabel).toBe('Scene')
+    expect(after.timelineLevelLabels).toBeUndefined()
+  })
+
+  it('writes several levels, mirroring the deepest into timelineLabel', () => {
+    const after = applyMeta(project(), {
+      ...readMeta(project()),
+      timelineLevelLabels: ['Novel', 'Part', ' Chapter ', 'Scene']
+    })
+    expect(after.timelineLevelLabels).toEqual(['Novel', 'Part', 'Chapter', 'Scene'])
+    // An older reader that only knows timelineLabel still names the tab sensibly.
+    expect(after.timelineLabel).toBe('Scene')
+  })
+
+  it('never writes a blank level — one in the middle gets a placeholder, the last the default', () => {
+    const after = applyMeta(project(), {
+      ...readMeta(project()),
+      timelineLevelLabels: ['Part', '', '']
+    })
+    expect(after.timelineLevelLabels).toEqual(['Part', 'Level 2', 'Chapter'])
+  })
+
+  it('falls back to one default level when every level is removed', () => {
+    const after = applyMeta(project(), { ...readMeta(project()), timelineLevelLabels: [] })
+    expect(after.timelineLabel).toBe('Chapter')
+    expect(after.timelineLevelLabels).toBeUndefined()
   })
 
   it('drops rowLabel again when set back to the default', () => {

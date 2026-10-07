@@ -27,4 +27,4 @@ created: '2026-08-17'
 }
 ```
 
-`members` is the board's cast — who is a row. `rowGroupOrder` sequences group labels and ungrouped row ids together; `rowOrder` sequences rows inside a group. A card spanning one column has `colStart` equal to `colEnd`.
+`members` is the board's cast — who is a row. `rowGroupOrder` sequences group labels and ungrouped row ids together; `rowOrder` sequences rows inside a group. A card spanning one column has `colStart` equal to `colEnd`. `collapsedColGroups` lists the ids of folded column groups (`colgroups/<id>.md`); `collapsedRowGroups` lists row group names.

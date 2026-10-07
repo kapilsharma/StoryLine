@@ -31,6 +31,11 @@ describe('watcher classify (per-board layout since v0.2.0)', () => {
       kind: 'character',
       id: 'wolf'
     })
+    expect(classify(p('boards', 'b2', 'colgroups', 'part-one.md'), 'change')).toEqual({
+      kind: 'colgroup',
+      id: 'part-one',
+      type: 'change'
+    })
     expect(classify(p('boards', 'b2', 'timeline', 'ch1.md'), 'change')).toMatchObject({
       kind: 'timeline',
       id: 'ch1'

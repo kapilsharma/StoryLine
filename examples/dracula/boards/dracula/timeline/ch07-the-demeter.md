@@ -1,9 +1,9 @@
 ---
 id: ch07-the-demeter
-label: '7 — The Demeter'
-order: 7
-group: 'Part Two: The Voyage'
-summary: '8 August · A derelict runs aground with her captain lashed to the wheel'
+label: 7 — The Demeter
+order: 3
+summary: 8 August · A derelict runs aground with her captain lashed to the wheel
+parent: part-two-the-voyage
 ---
 
 Told entirely through a pasted-in newspaper report and the dead captain's

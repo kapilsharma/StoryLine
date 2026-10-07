@@ -52,6 +52,7 @@ const snapshot: ProjectSnapshot = {
         { id: 'published', uid: 'n_bare', title: 'Published the Article', body: '' }
       ],
       views: [],
+      colGroups: [],
       problems: []
     }
   ]

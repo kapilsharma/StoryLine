@@ -2,7 +2,7 @@
 id: promotion
 label: 4 - Promotion
 order: 4
-group: 'Act 1: Findings'
+parent: act-1-findings
 ---
 
 ## Notes

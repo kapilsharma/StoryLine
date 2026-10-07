@@ -2,7 +2,7 @@
 id: warning
 label: 7 - Warning
 order: 7
-group: 'Act 1: Findings'
+parent: act-1-findings
 ---
 
 ## Notes

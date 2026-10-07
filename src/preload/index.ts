@@ -28,8 +28,15 @@ const api: AppApi = {
 
   saveTimelineUnit: (root, boardId, unit) => ipcRenderer.invoke('timeline:save', root, boardId, unit),
   deleteTimelineUnit: (root, boardId, id) => ipcRenderer.invoke('timeline:delete', root, boardId, id),
-  reorderTimeline: (root, boardId, orderedIds) =>
-    ipcRenderer.invoke('timeline:reorder', root, boardId, orderedIds),
+
+  saveColumnGroup: (root, boardId, group) => ipcRenderer.invoke('colgroup:save', root, boardId, group),
+  deleteColumnGroup: (root, boardId, id) => ipcRenderer.invoke('colgroup:delete', root, boardId, id),
+  reorderColumns: (root, boardId, parentId, order) =>
+    ipcRenderer.invoke('columns:reorder', root, boardId, parentId, order),
+  moveColumn: (root, boardId, ref, newParentId, index) =>
+    ipcRenderer.invoke('columns:move', root, boardId, ref, newParentId, index),
+  wrapColumnInGroup: (root, boardId, unitId, label, moveNote) =>
+    ipcRenderer.invoke('colgroup:wrap', root, boardId, unitId, label, moveNote),
 
   saveNote: (root, boardId, note) => ipcRenderer.invoke('note:save', root, boardId, note),
   deleteNote: (root, boardId, id) => ipcRenderer.invoke('note:delete', root, boardId, id),

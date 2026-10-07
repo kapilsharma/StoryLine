@@ -9,6 +9,7 @@ import { CharacterForm } from '../CharacterForm'
 import { TimelineForm } from '../TimelineForm'
 import { NotePopup } from '../NotePopup'
 import { CharacterNotePopup } from '../CharacterNotePopup'
+import { ColumnNotePopup } from '../ColumnNotePopup'
 import { BoardGrid } from './BoardGrid'
 import { NoteSidePanel } from './NoteSidePanel'
 import { useBoardUi } from './BoardUiContext'
@@ -57,6 +58,14 @@ export function BoardsView(): JSX.Element {
     panel?.kind === 'character'
       ? (activeBoard?.characters.find((c) => c.id === panel.id) ?? null)
       : null
+
+  // A column or group header's note (#104): both are a body behind getEntityBody.
+  const openColumn =
+    panel?.kind === 'timeline'
+      ? { kind: 'timeline' as const, id: panel.id, label: activeBoard?.timeline.find((t) => t.id === panel.id)?.label }
+      : panel?.kind === 'colgroup'
+        ? { kind: 'colgroup' as const, id: panel.id, label: activeBoard?.colGroups.find((g) => g.id === panel.id)?.label }
+        : null
 
   // A note belongs to the board it was opened from — carrying it across to the
   // next tab would show a note that board does not have.
@@ -335,6 +344,14 @@ export function BoardsView(): JSX.Element {
             />
           )}
           {!asPanel && openChar && <CharacterNotePopup character={openChar} onClose={closePanel} />}
+          {!asPanel && openColumn && (
+            <ColumnNotePopup
+              kind={openColumn.kind}
+              id={openColumn.id}
+              label={openColumn.label ?? openColumn.id}
+              onClose={closePanel}
+            />
+          )}
         </>
       )}
 

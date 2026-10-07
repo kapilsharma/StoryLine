@@ -97,7 +97,9 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
       ? title
       : kind === 'character'
         ? (activeBoard?.characters.find((c) => c.id === id)?.name ?? id)
-        : (activeBoard?.timeline.find((t) => t.id === id)?.label ?? id)
+        : kind === 'colgroup'
+          ? (activeBoard?.colGroups.find((g) => g.id === id)?.label ?? id)
+          : (activeBoard?.timeline.find((t) => t.id === id)?.label ?? id)
 
   /** Where the textarea's selection is right now, falling back to the end. */
   const selection = (): MdSelection => {

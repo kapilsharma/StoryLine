@@ -1,4 +1,12 @@
-import type { Character, Gender, Note, RelatedNote, TimelineUnit, View } from '@shared/types'
+import type {
+  Character,
+  ColumnGroup,
+  Gender,
+  Note,
+  RelatedNote,
+  TimelineUnit,
+  View
+} from '@shared/types'
 import { GENDERS, SCHEMA_VERSION, defaultView } from '@shared/types'
 import { toPartialDate } from '@shared/dates'
 
@@ -37,7 +45,8 @@ const CHARACTER_KNOWN_KEYS = [
 ]
 // `type` retired in v0.6.1 — still listed so a leftover value in an old/external
 // file is ignored (dropped on next write), not preserved as a `custom` field.
-const TIMELINE_KNOWN_KEYS = ['id', 'type', 'label', 'order', 'summary', 'tags', 'group']
+// `group` retired in schema v4 (replaced by `parent`) for the same reason.
+const TIMELINE_KNOWN_KEYS = ['id', 'type', 'label', 'order', 'summary', 'tags', 'group', 'parent']
 
 function asString(v: unknown, fallback = ''): string {
   return typeof v === 'string' ? v : fallback
@@ -164,7 +173,7 @@ export function frontmatterToTimelineUnit(data: Record<string, unknown>, id: str
     order: typeof data.order === 'number' ? data.order : 0
   }
   if (typeof data.summary === 'string') unit.summary = data.summary
-  if (typeof data.group === 'string' && data.group.trim()) unit.group = data.group.trim()
+  if (typeof data.parent === 'string' && data.parent.trim()) unit.parent = data.parent.trim()
   const tags = asStringArray(data.tags)
   if (tags) unit.tags = tags
   const custom = collectCustom(data, TIMELINE_KNOWN_KEYS)
@@ -178,9 +187,33 @@ export function timelineUnitToFrontmatter(u: TimelineUnit): Record<string, unkno
     label: u.label,
     order: u.order,
     ...(u.summary !== undefined ? { summary: u.summary } : {}),
-    ...(u.group !== undefined ? { group: u.group } : {}),
+    ...(u.parent !== undefined ? { parent: u.parent } : {}),
     ...(u.tags?.length ? { tags: u.tags } : {}),
     ...(u.custom ?? {})
+  }
+}
+
+// ── Column group (Issue #104) ────────────────────────────────────────────────
+
+export function frontmatterToColumnGroup(data: Record<string, unknown>, id: string): ColumnGroup {
+  const group: ColumnGroup = {
+    id: asString(data.id, id),
+    type: 'colgroup',
+    label: asString(data.label, id),
+    order: typeof data.order === 'number' ? data.order : 0
+  }
+  if (typeof data.parent === 'string' && data.parent.trim()) group.parent = data.parent.trim()
+  return group
+}
+
+/** A group has no `custom` bag: its note is the body, which is kept verbatim. */
+export function columnGroupToFrontmatter(g: ColumnGroup): Record<string, unknown> {
+  return {
+    id: g.id,
+    type: 'colgroup',
+    label: g.label,
+    ...(g.parent !== undefined ? { parent: g.parent } : {}),
+    order: g.order
   }
 }
 

@@ -1,7 +1,16 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
-/** What the side panel is showing: a card's note, or a row's character note. */
-export type PanelTarget = { kind: 'note'; id: string } | { kind: 'character'; id: string }
+/**
+ * What the side panel is showing: a card's note, a row's character note, or the
+ * note on a column header — a single column (`timeline`) or a group of them
+ * (`colgroup`, Issue #104). The last three are all a markdown body behind
+ * `getEntityBody`, which is why the panel treats them alike.
+ */
+export type PanelTarget =
+  | { kind: 'note'; id: string }
+  | { kind: 'character'; id: string }
+  | { kind: 'timeline'; id: string }
+  | { kind: 'colgroup'; id: string }
 
 /**
  * Ephemeral, per-session board view state shared between the board grid and the

@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { randomUUID } from 'crypto'
 import { promises as fsp } from 'fs'
 import { basename, join } from 'path'
-import type { Card, Character, Note, TimelineUnit, View } from '@shared/types'
+import type { Card, Character, ColumnGroup, Note, TimelineUnit, View } from '@shared/types'
 import { defaultView } from '@shared/types'
 import type { AppSettings } from '@shared/config'
 import type { EntityBodyKind, NewCardInput, ProjectSnapshot } from '@shared/ipc'
@@ -14,6 +14,16 @@ import type { AssetImport } from '@shared/assets'
 import { assignFamilyColours, familiesIn } from '@shared/families'
 import { buildGraph } from '@shared/graph'
 import { filterSelection } from '@shared/selection'
+import {
+  buildColumnTree,
+  canMoveUnder,
+  collectColumnDescendants,
+  nextOrder,
+  planMove,
+  planReorder,
+  type ColumnPlacement,
+  type ColumnRef
+} from '@shared/columns'
 import { readConfig, removeRecent, touchRecent, writeConfig } from './appConfig'
 import { createProject, defaultBoard, loadSnapshot } from './projectService'
 import { assembleStaticSite, buildExportBundle } from './data/exportBundle'
@@ -24,12 +34,14 @@ import { applyChildren, clearReferencesTo, retargetReferences, syncSpouses } fro
 import {
   deleteBoard,
   deleteCharacter,
+  deleteColumnGroup,
   deleteNote,
   deleteTimelineUnit,
   deleteView,
   ensureBoardDirs,
   listBoardIds,
   listCharacters,
+  listColumnGroups,
   listNoteMetas,
   listTimeline,
   listViews,
@@ -42,6 +54,7 @@ import {
   renameNoteFile,
   writeBoard,
   writeCharacter,
+  writeColumnGroup,
   writeEntityBody,
   writeNote,
   writeProject,
@@ -145,15 +158,50 @@ async function retargetCharacterInViews(
   }
 }
 
-/** Remove a deleted timeline unit's columns/cards from its board. */
-async function purgeTimelineFromBoard(root: string, boardId: string, id: string): Promise<void> {
+/** Remove deleted timeline units' columns/cards, and deleted groups' collapse state, from their board. */
+async function purgeTimelineFromBoard(
+  root: string,
+  boardId: string,
+  unitIds: string[],
+  groupIds: string[] = []
+): Promise<void> {
+  const gone = new Set(unitIds)
+  const goneGroups = new Set(groupIds)
   const { value: board } = await readBoard(root, boardId)
   await writeBoard(root, {
     ...board,
-    cards: board.cards.filter((c) => c.colStart !== id && c.colEnd !== id),
-    colOrder: board.colOrder.filter((c) => c !== id),
-    hiddenCols: board.hiddenCols.filter((c) => c !== id)
+    cards: board.cards.filter((c) => !gone.has(c.colStart) && !gone.has(c.colEnd)),
+    colOrder: board.colOrder.filter((c) => !gone.has(c)),
+    hiddenCols: board.hiddenCols.filter((c) => !gone.has(c)),
+    collapsedColGroups: board.collapsedColGroups.filter((g) => !goneGroups.has(g))
   })
+}
+
+/**
+ * Apply a set of placements (from `planMove` / `planReorder`) to the files they
+ * name. Each is a read-modify-write of one group or column; the body of each file
+ * is preserved by the writers.
+ */
+async function applyPlacements(
+  root: string,
+  boardId: string,
+  placements: ColumnPlacement[]
+): Promise<void> {
+  if (placements.length === 0) return
+  const [groups, units] = await Promise.all([listColumnGroups(root, boardId), listTimeline(root, boardId)])
+  for (const { ref, parent, order } of placements) {
+    if (ref.kind === 'node') {
+      const g = groups.find((x) => x.id === ref.id)
+      if (!g) continue
+      const { parent: _old, ...rest } = g
+      await writeColumnGroup(root, boardId, { ...rest, order, ...(parent !== null ? { parent } : {}) })
+    } else {
+      const u = units.find((x) => x.id === ref.id)
+      if (!u) continue
+      const { parent: _old, ...rest } = u
+      await writeTimelineUnit(root, boardId, { ...rest, order, ...(parent !== null ? { parent } : {}) })
+    }
+  }
 }
 
 /** Remove cards referencing a deleted note (by uid) from its board. */
@@ -346,11 +394,22 @@ export function registerIpc(window: BrowserWindow): void {
 
   // ── Timeline (per board) ──
   ipcMain.handle('timeline:save', async (_e, root: string, boardId: string, unit: TimelineUnit) => {
-    let toSave = unit
+    const [units, groups] = await Promise.all([listTimeline(root, boardId), listColumnGroups(root, boardId)])
+    const tree = buildColumnTree(groups, units)
+    // A parent that does not exist is no parent; a column must never be saved
+    // pointing at nothing.
+    const parent = unit.parent && tree.node(unit.parent) ? unit.parent : null
+    const { parent: _p, ...rest } = unit
+    let toSave: TimelineUnit = { ...rest, ...(parent ? { parent } : {}) }
     if (!unit.id) {
-      const units = await listTimeline(root, boardId)
-      const order = unit.order || units.length + 1
-      toSave = { ...unit, id: uniqueSlug(unit.label || 'unit', units.map((u) => u.id)), order }
+      toSave = {
+        ...toSave,
+        id: uniqueSlug(unit.label || 'unit', units.map((u) => u.id)),
+        order: unit.order || nextOrder(tree, parent)
+      }
+    } else if (tree.parentOf({ kind: 'unit', id: unit.id }) !== parent) {
+      // Moved to another parent through the form: it lands last there.
+      toSave = { ...toSave, order: nextOrder(tree, parent) }
     }
     await writeTimelineUnit(root, boardId, toSave)
     return snap(root)
@@ -358,20 +417,107 @@ export function registerIpc(window: BrowserWindow): void {
 
   ipcMain.handle('timeline:delete', async (_e, root: string, boardId: string, id: string) => {
     await deleteTimelineUnit(root, boardId, id)
-    await purgeTimelineFromBoard(root, boardId, id)
+    await purgeTimelineFromBoard(root, boardId, [id])
     return snap(root)
   })
 
-  ipcMain.handle('timeline:reorder', async (_e, root: string, boardId: string, orderedIds: string[]) => {
-    const units = await listTimeline(root, boardId)
-    await Promise.all(
-      orderedIds.map(async (id, index) => {
-        const unit = units.find((u) => u.id === id)
-        if (unit && unit.order !== index + 1) await writeTimelineUnit(root, boardId, { ...unit, order: index + 1 })
-      })
-    )
+  // ── Column hierarchy (per board, Issue #104) ──
+  ipcMain.handle('colgroup:save', async (_e, root: string, boardId: string, group: ColumnGroup) => {
+    const label = group.label.trim()
+    if (!label) throw new Error('A group needs a name.')
+    const [groups, units] = await Promise.all([listColumnGroups(root, boardId), listTimeline(root, boardId)])
+    const tree = buildColumnTree(groups, units)
+    const parent = group.parent && tree.node(group.parent) ? group.parent : null
+    const { parent: _p, hasNote: _h, ...rest } = group
+    let toSave: ColumnGroup = { ...rest, type: 'colgroup', label, ...(parent ? { parent } : {}) }
+
+    if (!group.id) {
+      toSave = {
+        ...toSave,
+        id: uniqueSlug(label, groups.map((g) => g.id)),
+        order: group.order || nextOrder(tree, parent)
+      }
+    } else {
+      if (!canMoveUnder(tree, { kind: 'node', id: group.id }, parent)) {
+        throw new Error('A group cannot be moved inside itself.')
+      }
+      // The id never changes, so renaming here leaves the note exactly where it was.
+      if (tree.parentOf({ kind: 'node', id: group.id }) !== parent) {
+        toSave = { ...toSave, order: nextOrder(tree, parent) }
+      }
+    }
+    await writeColumnGroup(root, boardId, toSave)
     return snap(root)
   })
+
+  ipcMain.handle('colgroup:delete', async (_e, root: string, boardId: string, id: string) => {
+    const [groups, units] = await Promise.all([listColumnGroups(root, boardId), listTimeline(root, boardId)])
+    const below = collectColumnDescendants(groups, units, id)
+    const unitIds = below.flatMap((d) => (d.kind === 'unit' ? [d.unit.id] : []))
+    const groupIds = [id, ...below.flatMap((d) => (d.kind === 'node' ? [d.node.id] : []))]
+    for (const unitId of unitIds) await deleteTimelineUnit(root, boardId, unitId)
+    for (const groupId of groupIds) await deleteColumnGroup(root, boardId, groupId)
+    await purgeTimelineFromBoard(root, boardId, unitIds, groupIds)
+    return snap(root)
+  })
+
+  ipcMain.handle(
+    'columns:reorder',
+    async (_e, root: string, boardId: string, parentId: string | null, order: ColumnRef[]) => {
+      const [groups, units] = await Promise.all([listColumnGroups(root, boardId), listTimeline(root, boardId)])
+      await applyPlacements(root, boardId, planReorder(buildColumnTree(groups, units), parentId, order))
+      return snap(root)
+    }
+  )
+
+  ipcMain.handle(
+    'columns:move',
+    async (
+      _e,
+      root: string,
+      boardId: string,
+      ref: ColumnRef,
+      newParentId: string | null,
+      index?: number
+    ) => {
+      const [groups, units] = await Promise.all([listColumnGroups(root, boardId), listTimeline(root, boardId)])
+      const placements = planMove(buildColumnTree(groups, units), ref, newParentId, index)
+      if (!placements) throw new Error('That move is not allowed — a group cannot go inside itself.')
+      await applyPlacements(root, boardId, placements)
+      return snap(root)
+    }
+  )
+
+  ipcMain.handle(
+    'colgroup:wrap',
+    async (_e, root: string, boardId: string, unitId: string, label: string, moveNote: boolean) => {
+      const [groups, units] = await Promise.all([listColumnGroups(root, boardId), listTimeline(root, boardId)])
+      const unit = units.find((u) => u.id === unitId)
+      if (!unit) throw new Error(`No column "${unitId}" on board "${boardId}"`)
+      const tree = buildColumnTree(groups, units)
+      const parent = tree.parentOf({ kind: 'unit', id: unitId })
+
+      // The new group takes the column's slot, and the column becomes its first child.
+      const name = label.trim() || unit.label
+      const id = uniqueSlug(name, groups.map((g) => g.id))
+      await writeColumnGroup(root, boardId, {
+        id,
+        type: 'colgroup',
+        label: name,
+        order: unit.order,
+        ...(parent ? { parent } : {})
+      })
+      const { parent: _old, ...rest } = unit
+      await writeTimelineUnit(root, boardId, { ...rest, order: 1, parent: id })
+
+      if (moveNote && unit.hasNote) {
+        const note = await readEntityBody(root, boardId, 'timeline', unitId)
+        await writeEntityBody(root, boardId, 'colgroup', id, note)
+        await writeEntityBody(root, boardId, 'timeline', unitId, '')
+      }
+      return snap(root)
+    }
+  )
 
   // ── Notes (per board) ──
   ipcMain.handle('note:save', async (_e, root: string, boardId: string, note: Note) => {

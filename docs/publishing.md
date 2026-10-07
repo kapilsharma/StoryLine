@@ -62,7 +62,7 @@ dist-site/
 ```
 
 Included: the selected boards, their characters, timeline units, cards, and every
-note **with its full body** — plus the character/timeline markdown bodies the
+note **with its full body** — plus the character/timeline/column-group markdown bodies the
 editor shows, and each board's **family trees** with the family colour palette.
 
 Visitors can pan, zoom, fit and re-filter a published tree, and even re-arrange it

@@ -53,6 +53,7 @@ function boardData(id: string, name: string, views: View[], cast?: Character[]):
     timeline: [],
     notes: [],
     views,
+    colGroups: [],
     problems: []
   }
 }

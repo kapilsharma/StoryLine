@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import type { Board, Card, Character } from '@shared/types'
+import type { Board, Card, Character, ColumnGroup } from '@shared/types'
 import {
   ROW_HEADER_W_DEFAULT,
   ROW_HEADER_W_MAX_FRACTION,
@@ -29,6 +29,9 @@ const COMPACT_ROW_H = 66
 const GROUPHEAD_LINE_H = 30
 const GROUP_H = 26
 const COLHEAD_H = 44
+
+/** Stable empty list, so a board without groups doesn't re-run the layout memo every render. */
+const NO_GROUPS: ColumnGroup[] = []
 
 interface ContextMenu {
   cardId: string
@@ -128,6 +131,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const characters = data.characters
   const timeline = data.timeline
   const notes = data.notes
+  const colGroups = data.colGroups ?? NO_GROUPS
 
   const [menu, setMenu] = useState<ContextMenu | null>(null)
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null)
@@ -183,11 +187,11 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   }, [board, preview])
 
   const layout = useMemo(
-    () => buildBoardLayout(effectiveBoard, characters, timeline, notes),
-    [effectiveBoard, characters, timeline, notes]
+    () => buildBoardLayout(effectiveBoard, characters, timeline, notes, colGroups),
+    [effectiveBoard, characters, timeline, notes, colGroups]
   )
   const { cols, rows, fullCards, markers, stackDepth } = layout
-  const fullOrder = useMemo(() => orderedColumnIds(timeline), [timeline])
+  const fullOrder = useMemo(() => orderedColumnIds(timeline, colGroups), [timeline, colGroups])
 
   // unit id per slot (null for collapsed-group slots), for resize hit-testing.
   const unitIdBySlot = useMemo(
@@ -209,7 +213,9 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     return () => window.removeEventListener('click', close)
   }, [rowMenu])
 
-  const headerRows = cols.hasGroups ? 2 : 1
+  // One header row per level of grouping actually in use, then the column labels.
+  // A board that uses a single level has none of the former (Issue #104).
+  const headerRows = cols.depth + 1
   const colHeadRow = headerRows // 1-based grid row for the column-header line
   const dataRowBase = colHeadRow + 1
 
@@ -238,7 +244,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
 
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: `${headerW}px repeat(${cols.slots.length}, ${colW}px)`,
-    gridTemplateRows: `${cols.hasGroups ? `${GROUP_H}px ` : ''}${COLHEAD_H}px ${rowTracks}`,
+    gridTemplateRows: `${`${GROUP_H}px `.repeat(cols.depth)}${COLHEAD_H}px ${rowTracks}`,
     ['--card-font' as string]: `${cardFont}px`
   }
 
@@ -440,19 +446,45 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
             />
           </div>
 
-          {/* column group headers (row 1) */}
-          {cols.hasGroups &&
-            cols.headers.map((h) => (
+          {/* column group headers: one row per level in use (Issue #104). The
+              chevron collapses; the label opens the group's note — on a board
+              that is the plotting surface, a group's note is read from here. */}
+          {cols.headersByDepth.flatMap((row, depth) =>
+            row.map((h) => (
               <div
-                key={`gh-${h.group}`}
-                className="col-group-head"
-                style={{ gridColumn: `${h.startIndex + 2} / ${h.startIndex + 2 + h.span}`, gridRow: 1 }}
-                onClick={() => toggleColGroup(h.group)}
-                title={h.collapsed ? 'Expand group' : 'Collapse group'}
+                key={`gh-${h.node.id}`}
+                className={`col-group-head depth-${Math.min(depth, 2)}`}
+                style={{
+                  gridColumn: `${h.startIndex + 2} / ${h.startIndex + 2 + h.span}`,
+                  gridRow: depth + 1,
+                  // Each row sticks below the ones above it, not on top of them.
+                  top: depth * GROUP_H
+                }}
               >
-                <span className="chevron">{h.collapsed ? '▸' : '▾'}</span> {h.group}
+                <button
+                  className="chevron"
+                  title={h.collapsed ? 'Expand' : 'Collapse'}
+                  aria-label={`${h.collapsed ? 'Expand' : 'Collapse'} ${h.node.label}`}
+                  onClick={() => toggleColGroup(h.node.id)}
+                >
+                  {h.collapsed ? '▸' : '▾'}
+                </button>
+                <button
+                  className="col-group-label"
+                  title={`Open the note for ${h.node.label}`}
+                  onClick={() => openPanel({ kind: 'colgroup', id: h.node.id })}
+                >
+                  {h.node.label}
+                  {h.node.hasNote && (
+                    <span className="row-note-icon" aria-hidden="true">
+                      {' '}
+                      📝
+                    </span>
+                  )}
+                </button>
               </div>
-            ))}
+            ))
+          )}
 
           {/* column headers (row colHeadRow) */}
           {cols.slots.map((slot) =>
@@ -460,7 +492,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
               <div
                 key={slot.unit.id}
                 className="col-head"
-                style={{ gridColumn: slot.index + 2, gridRow: colHeadRow }}
+                style={{ gridColumn: slot.index + 2, gridRow: colHeadRow, top: cols.depth * GROUP_H }}
                 title={
                   revising
                     ? `Reveal or re-hide every card in ${slot.unit.label}`
@@ -475,15 +507,36 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                   hideCol(slot.unit.id)
                 }}
               >
-                {slot.unit.label}
+                {/* A column with a note says so, and the label opens it — as a
+                    character's name does on the row axis (#41). Not in revision
+                    mode, where the click is the reveal and a note would give the
+                    answer away (#67). */}
+                {slot.unit.hasNote && !revising ? (
+                  <button
+                    className="col-name col-note"
+                    title={`Read the note for ${slot.unit.label}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openPanel({ kind: 'timeline', id: slot.unit.id })
+                    }}
+                  >
+                    {slot.unit.label}
+                    <span className="row-note-icon" aria-hidden="true">
+                      {' '}
+                      📝
+                    </span>
+                  </button>
+                ) : (
+                  slot.unit.label
+                )}
               </div>
             ) : (
               <div
-                key={`cg-${slot.group}`}
+                key={`cg-${slot.node.id}`}
                 className="col-head collapsed"
-                style={{ gridColumn: slot.index + 2, gridRow: colHeadRow }}
-                onClick={() => toggleColGroup(slot.group)}
-                title="Expand group"
+                style={{ gridColumn: slot.index + 2, gridRow: colHeadRow, top: cols.depth * GROUP_H }}
+                onClick={() => toggleColGroup(slot.node.id)}
+                title={`Expand ${slot.node.label}`}
               >
                 {slot.members.length} cols
               </div>
@@ -608,10 +661,10 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                     const count = markers.get(markerKey(line.index, slot.index))
                     return (
                       <div
-                        key={slot.group}
+                        key={slot.node.id}
                         className="cell collapsed-cell"
                         style={{ gridColumn: slot.index + 2, gridRow }}
-                        onClick={() => toggleColGroup(slot.group)}
+                        onClick={() => toggleColGroup(slot.node.id)}
                       >
                         {count ? <span className="marker">{count}</span> : null}
                       </div>

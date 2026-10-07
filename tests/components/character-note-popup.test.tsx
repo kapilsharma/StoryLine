@@ -49,6 +49,7 @@ const snapshot: ProjectSnapshot = {
       timeline: [{ id: 'ch1', label: 'Chapter 1', order: 1 }],
       notes: [],
       views: [],
+      colGroups: [],
       problems: []
     }
   ]
@@ -64,12 +65,16 @@ async function bootBoard({ readOnly = false }: { readOnly?: boolean } = {}): Pro
   })
   render(<App readOnly={readOnly} bootRoot={snapshot.root} />)
   await screen.findByText('My Novel')
+  // The header renders a tick before the board's rows, and the tests below read the
+  // rows straight away — so wait for them here, once, rather than racing in each.
+  await screen.findByText('Bran')
 }
 
 describe('the board’s character note popup', () => {
   it('makes only a character with a note clickable', async () => {
     await bootBoard()
-    expect(screen.getByTitle('Read Aeri’s note')).toBeInTheDocument()
+    // The project header renders a tick before the board's rows do, so wait for them.
+    expect(await screen.findByTitle('Read Aeri’s note')).toBeInTheDocument()
     expect(screen.queryByTitle('Read Bran’s note')).not.toBeInTheDocument()
     // Bran is still on the board — just not a button.
     expect(screen.getByText('Bran')).toBeInTheDocument()

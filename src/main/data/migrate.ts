@@ -4,6 +4,7 @@ import { SCHEMA_VERSION, type Board, type Card } from '@shared/types'
 import { exists } from './fsutil'
 import { parseFrontmatter, serializeFrontmatter } from './frontmatter'
 import { uniqueNoteUid } from './uid'
+import { uniqueSlug } from './slug'
 
 /**
  * Schema migrations over the on-disk project. Runs on open when the stamped
@@ -76,6 +77,11 @@ export async function migrateIfNeeded(root: string): Promise<void> {
   }
   if (version < 3) {
     await migrateV2toV3(root, project)
+    project = await readJson(projectPath)
+    version = 3
+  }
+  if (version < 4) {
+    await migrateV3toV4(root, project)
   }
 }
 
@@ -250,5 +256,139 @@ async function migrateV2toV3(root: string, project: Record<string, unknown>): Pr
   }
 
   project.schemaVersion = 3
+  await fs.writeFile(join(root, 'project.json'), JSON.stringify(project, null, 2) + '\n')
+}
+
+/**
+ * v3 → v4 (Issue #104): a column group stops being a string repeated on each
+ * timeline unit and becomes an entity — `colgroups/<id>.md` — that units point at
+ * with `parent`. That is what lets a group carry a note that survives a rename.
+ *
+ * The migrated tree has to *draw identically* to the old board, and the old
+ * layout gathered every unit sharing a `group` label into one block at the
+ * position of the first of them. So the same gathering is done here: blocks are
+ * taken in order of first appearance, and a unit's new `order` is its place among
+ * its siblings. Groups are created with an empty note.
+ */
+async function migrateV3toV4(root: string, project: Record<string, unknown>): Promise<void> {
+  const boardsDir = join(root, 'boards')
+
+  const backup = join(root, '.zn-story-line-backup-v3')
+  if (!(await exists(backup))) {
+    await fs.mkdir(backup, { recursive: true })
+    for (const item of ['project.json', 'boards']) {
+      const src = join(root, item)
+      if (await exists(src)) await fs.cp(src, join(backup, item), { recursive: true })
+    }
+  }
+
+  let boardDirs: string[] = []
+  try {
+    const entries = await fs.readdir(boardsDir, { withFileTypes: true })
+    boardDirs = entries.filter((e) => e.isDirectory() && !e.name.startsWith('.')).map((e) => e.name)
+  } catch {
+    // no boards
+  }
+
+  let anyGrouped = false
+
+  for (const boardId of boardDirs) {
+    const boardFile = join(boardsDir, boardId, 'board.json')
+    if (!(await exists(boardFile))) continue
+    const timelineDir = join(boardsDir, boardId, 'timeline')
+    const groupsDir = join(boardsDir, boardId, 'colgroups')
+
+    interface Parsed {
+      id: string
+      data: Record<string, unknown>
+      body: string
+      order: number
+      group: string | null
+    }
+    const units: Parsed[] = []
+    for (const id of await mdStems(timelineDir)) {
+      const { data, body } = parseFrontmatter(await fs.readFile(join(timelineDir, `${id}.md`), 'utf8'))
+      const group = typeof data.group === 'string' && data.group.trim() ? data.group.trim() : null
+      units.push({ id, data, body, order: typeof data.order === 'number' ? data.order : 0, group })
+    }
+    units.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
+
+    // Groups a previous, interrupted run already wrote are reused rather than duplicated.
+    const nodeIdOf = new Map<string, string>()
+    const takenIds = new Set<string>()
+    for (const id of await mdStems(groupsDir)) {
+      takenIds.add(id)
+      const { data } = parseFrontmatter(await fs.readFile(join(groupsDir, `${id}.md`), 'utf8'))
+      if (typeof data.label === 'string') nodeIdOf.set(data.label, id)
+    }
+
+    // Gather blocks the way the old layout did: by first appearance of a label.
+    type Block = { group: string | null; members: Parsed[] }
+    const blocks: Block[] = []
+    const byGroup = new Map<string, Block>()
+    for (const u of units) {
+      if (u.group === null) {
+        blocks.push({ group: null, members: [u] })
+        continue
+      }
+      let block = byGroup.get(u.group)
+      if (!block) {
+        block = { group: u.group, members: [] }
+        byGroup.set(u.group, block)
+        blocks.push(block)
+      }
+      block.members.push(u)
+    }
+
+    const writeUnit = async (u: Parsed, order: number, parent: string | null): Promise<void> => {
+      const { group: _retired, ...rest } = u.data
+      const next: Record<string, unknown> = { ...rest, order }
+      if (parent) next.parent = parent
+      await fs.writeFile(join(timelineDir, `${u.id}.md`), serializeFrontmatter(next, u.body))
+    }
+
+    for (const [blockIndex, block] of blocks.entries()) {
+      if (block.group === null) {
+        await writeUnit(block.members[0], blockIndex + 1, null)
+        continue
+      }
+      anyGrouped = true
+      let nodeId = nodeIdOf.get(block.group)
+      if (!nodeId) {
+        nodeId = uniqueSlug(block.group, takenIds)
+        takenIds.add(nodeId)
+        nodeIdOf.set(block.group, nodeId)
+        await fs.mkdir(groupsDir, { recursive: true })
+        await fs.writeFile(
+          join(groupsDir, `${nodeId}.md`),
+          serializeFrontmatter(
+            { id: nodeId, type: 'colgroup', label: block.group, order: blockIndex + 1 },
+            ''
+          )
+        )
+      }
+      for (const [i, u] of block.members.entries()) await writeUnit(u, i + 1, nodeId)
+    }
+
+    // View state: collapsed groups were remembered by label, now by id.
+    const board = await readJson<LegacyBoard>(boardFile)
+    const collapsed = Array.isArray(board.collapsedColGroups)
+      ? (board.collapsedColGroups as unknown[])
+          .filter((l): l is string => typeof l === 'string')
+          .map((label) => nodeIdOf.get(label))
+          .filter((id): id is string => Boolean(id))
+      : []
+    await fs.writeFile(boardFile, JSON.stringify({ ...board, collapsedColGroups: collapsed }, null, 2) + '\n')
+  }
+
+  // Name the two levels the migration produced; the author renames them in Settings.
+  if (anyGrouped && !Array.isArray(project.timelineLevelLabels)) {
+    const leaf =
+      typeof project.timelineLabel === 'string' && project.timelineLabel.trim()
+        ? project.timelineLabel.trim()
+        : 'Chapter'
+    project.timelineLevelLabels = ['Group', leaf]
+  }
+  project.schemaVersion = 4
   await fs.writeFile(join(root, 'project.json'), JSON.stringify(project, null, 2) + '\n')
 }

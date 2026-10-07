@@ -24,6 +24,8 @@ const NOTE = 'Keeps the ledger, and the grudge.'
 test.beforeAll(async () => {
   projectDir = join(await fs.mkdtemp(join(tmpdir(), 'zn-board-note-e2e-')), 'ashvale-family')
   await fs.cp(join(__dirname, '../fixtures/ashvale-family'), projectDir, { recursive: true })
+  // The fixture has no timeline folder (git does not track an empty one).
+  await fs.mkdir(join(projectDir, 'boards', 'family', 'timeline'), { recursive: true })
   await fs.writeFile(
     join(projectDir, 'boards', 'family', 'timeline', 'ch1.md'),
     '---\nid: ch1\nlabel: Chapter 1\norder: 1\n---\n\n'
