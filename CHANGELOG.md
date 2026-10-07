@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.0](https://github.com/kapilsharma/StoryLine/compare/2.2.0...2.3.0) (2026-10-07)
+
+
+### Features
+
+* **#116:** hover text indicator on cards ([1bd8030](https://github.com/kapilsharma/StoryLine/commit/1bd8030fd49939b5ab33fbf0968ef3149c374114))
+* **#116:** hover text indicator on cards ([f64346f](https://github.com/kapilsharma/StoryLine/commit/f64346f1671b79b668de4d0abfb5ce927b5f9d4e))
+
 ## [2.2.0](https://github.com/kapilsharma/StoryLine/compare/2.1.1...2.2.0) (2026-10-07)
 
 
