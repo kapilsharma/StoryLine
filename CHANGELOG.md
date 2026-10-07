@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.1](https://github.com/kapilsharma/StoryLine/compare/2.1.0...2.1.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **105:** LLM docs ([aab5aee](https://github.com/kapilsharma/StoryLine/commit/aab5aee948d1513cef61d887ff7c34bb3ff87a98))
+* **105:** LLM docs ([62fd6f6](https://github.com/kapilsharma/StoryLine/commit/62fd6f63082b787706302d91690e76dcf1a8b838))
+
 ## [2.1.0](https://github.com/kapilsharma/StoryLine/compare/2.0.0...2.1.0) (2026-10-07)
 
 
