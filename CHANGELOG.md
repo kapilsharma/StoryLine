@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.0.0](https://github.com/kapilsharma/StoryLine/compare/1.6.4...2.0.0) (2026-10-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **#104:** entity-backed arbitrary-depth column hierarchy with per-level notes
+
+### Features
+
+* **#104:** entity-backed arbitrary-depth column hierarchy with per-level notes ([ec6e5a8](https://github.com/kapilsharma/StoryLine/commit/ec6e5a8721e3fe7799a336e36cb26a9337837c6e))
+* **#104:** Merge pull request [#106](https://github.com/kapilsharma/StoryLine/issues/106) from kapilsharma/feat_104-heading-for-book-part-chapter-and-scene ([bb3ec3d](https://github.com/kapilsharma/StoryLine/commit/bb3ec3d7495a9dd206404c687284a1b33bea3f85))
+
+
+### Bug Fixes
+
+* **105:** Resolved conflicts ([27d7ef4](https://github.com/kapilsharma/StoryLine/commit/27d7ef4517eb7c1ae4ca258b9fd75e312b1a4c32))
+
 ## [1.6.4](https://github.com/kapilsharma/StoryLine/compare/1.6.3...1.6.4) (2026-09-23)
 
 
