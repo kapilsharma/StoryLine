@@ -13,6 +13,7 @@ import {
   readProject,
   writeBoard,
   writeCharacter,
+  writeColumnGroup,
   writeEntityBody,
   writeNote,
   writeProject,
@@ -21,6 +22,7 @@ import {
   writeView
 } from '@main/data/repository'
 import { ASSETS_DIR, staticAssetResolver } from '@shared/assets'
+import { createStaticApi, STATIC_ROOT } from '../../src/web/staticApi'
 
 let base: string
 let root: string
@@ -141,6 +143,29 @@ describe('buildExportBundle', () => {
     expect(bundle.entityBodies[entityBodyKey('main', 'timeline', 'ch1')]).toContain(
       'Opens on the observatory.'
     )
+  })
+
+  it('includes the column groups and their notes, so a published tier header can open its note (#104)', async () => {
+    await seedMain()
+    await writeColumnGroup(root, 'main', { id: 'part-one', type: 'colgroup', label: 'Part One', order: 1 })
+    await writeEntityBody(root, 'main', 'colgroup', 'part-one', '\nHarker goes east.\n')
+    await writeTimelineUnit(root, 'main', { id: 'ch1', label: 'Chapter 1', order: 1, parent: 'part-one' })
+
+    const bundle = await buildExportBundle(root, options)
+    const board = bundle.boards[0]
+    expect(board.colGroups.map((g) => [g.id, g.label, g.hasNote])).toEqual([['part-one', 'Part One', true]])
+    expect(board.timeline.find((t) => t.id === 'ch1')?.parent).toBe('part-one')
+    expect(bundle.entityBodies[entityBodyKey('main', 'colgroup', 'part-one')]).toContain('Harker goes east.')
+
+    // And the published site can actually read it back — end to end through the static API.
+    const api = createStaticApi(bundle)
+    expect(await api.getEntityBody(STATIC_ROOT, 'main', 'colgroup', 'part-one')).toContain('Harker goes east.')
+    expect((await api.openProject(STATIC_ROOT)).boards[0].colGroups).toHaveLength(1)
+  })
+
+  it('exports a flat board with no column groups as an empty list, not a missing field', async () => {
+    await seedMain()
+    expect((await buildExportBundle(root, options)).boards[0].colGroups).toEqual([])
   })
 
   it('carries each board’s family trees, in the board’s own view order', async () => {

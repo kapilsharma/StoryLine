@@ -211,7 +211,9 @@ test.describe('the Timeline tab', () => {
     await window.getByRole('button', { name: 'Delete' }).click()
     await window.getByRole('button', { name: 'Delete everything' }).click()
     await expect.poll(() => exists(join(projectDir, 'boards/main/colgroups/act-1.md'))).toBe(false)
-    expect(await exists(join(projectDir, 'boards/main/timeline/ch1.md'))).toBe(false)
+    // The handler removes files one after another, so wait for each rather than racing it.
+    await expect.poll(() => exists(join(projectDir, 'boards/main/timeline/ch1.md'))).toBe(false)
+    await expect.poll(() => exists(join(projectDir, 'boards/main/timeline/ch2.md'))).toBe(false)
     expect(await exists(join(projectDir, 'boards/main/timeline/ch3.md'))).toBe(true)
     // The card that spanned ch1–ch3 pointed at a deleted column, so it went with it.
     // (The board file is rewritten after the files go, so wait for it.)
