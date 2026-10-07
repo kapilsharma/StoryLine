@@ -23,6 +23,27 @@ export class ProjectGroupError extends Error {
   }
 }
 
+/**
+ * Thrown specifically when `projectgroup.json` is otherwise valid but doesn't
+ * list the project being exported — as opposed to a malformed file or a
+ * listed sibling that's missing, which stay plain {@link ProjectGroupError}s.
+ * Callers that can ask ("export ungrouped anyway?") catch this one
+ * separately; the CLI, which can't, lets it propagate like any other.
+ */
+export class ProjectNotInGroupError extends ProjectGroupError {
+  constructor(
+    readonly groupJsonPath: string,
+    readonly currentFolder: string,
+    readonly listed: string[]
+  ) {
+    super(
+      `${groupJsonPath} doesn't list "${currentFolder}" (the project being exported). ` +
+        `Add it to "projects", or export a project this group actually lists: ${listed.join(', ')}`
+    )
+    this.name = 'ProjectNotInGroupError'
+  }
+}
+
 export interface ResolvedProjectGroup {
   /** Folder holding `projectgroup.json` and every member project. */
   groupRoot: string
@@ -139,10 +160,7 @@ export async function resolveProjectGroup(projectRoot: string): Promise<Resolved
 
   const currentFolder = basename(projectRoot)
   if (!file.projects.includes(currentFolder)) {
-    throw new ProjectGroupError(
-      `${groupJsonPath} doesn't list "${currentFolder}" (the project being exported). ` +
-        `Add it to "projects", or export a project this group actually lists: ${file.projects.join(', ')}`
-    )
+    throw new ProjectNotInGroupError(groupJsonPath, currentFolder, file.projects)
   }
 
   const members = await Promise.all(

@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { migrateIfNeeded } from '@main/data/migrate'
-import { loadSnapshot } from '@main/projectService'
+import { migrateIfNeeded, needsMigration } from '@main/data/migrate'
+import { createProject, loadSnapshot } from '@main/projectService'
 import { orderedLeaves } from '@shared/columns'
 import { SCHEMA_VERSION } from '@shared/types'
 
@@ -265,5 +265,24 @@ describe('v3 → v4 migration', () => {
 
     const snap = await loadSnapshot(root)
     expect(snap.boards.map((b) => b.colGroups.map((g) => g.id))).toEqual([['act-1'], ['act-1']])
+  })
+})
+
+describe('needsMigration', () => {
+  it('is false for a project already on the current schema', async () => {
+    await createProject(root)
+    expect(await needsMigration(root)).toBe(false)
+  })
+
+  it('is true for a project stamped with an older schema version, without migrating it', async () => {
+    await writeV1Project()
+    expect(await needsMigration(root)).toBe(true)
+    // Read-only: the on-disk layout is untouched.
+    expect(await exists(join(root, 'boards', 'main.json'))).toBe(true)
+    expect(await exists(join(root, 'boards', 'main'))).toBe(false)
+  })
+
+  it('is false when project.json is missing or unreadable — a different failure to surface elsewhere', async () => {
+    expect(await needsMigration(root)).toBe(false)
   })
 })

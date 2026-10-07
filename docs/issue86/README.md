@@ -1,8 +1,19 @@
 # Issue #86 — Project groups
 
 Planning workspace for [issue #86](https://github.com/kapilsharma/StoryLine/issues/86)
-("Story Project group"). **No implementation yet** — these docs exist to shake out
-problems in the issue's sketch and settle a tech design before any code is written.
+("Story Project group"). These docs record the design as it was settled and
+first implemented — some of the framing below (points 1 and 4 in particular)
+has since been superseded by issue #101, noted where it applies.
+
+> **Update (issue #101):** points 1 and 4 below said the desktop app would
+> never read `projectgroup.json` beyond the single-project export path. That
+> changed: the in-app "Export static site" button (issue #48) now offers
+> "export every project in the group" when one is found, looping the same
+> `buildExportBundle`/`assembleStaticSite` pipeline over every member listed
+> in `projects` — see `ipcMain.handle('static:export', …)` in
+> [../../src/main/ipc.ts](../../src/main/ipc.ts). `projectgroup.json` is still
+> hand-written and still only *read* (never created or edited) by the app;
+> what changed is how many projects one export run can build from it.
 
 - [problem-analysis.md](./problem-analysis.md) — what the issue asks for, what's
   underspecified or risky in its sketch, and the decisions made so far.

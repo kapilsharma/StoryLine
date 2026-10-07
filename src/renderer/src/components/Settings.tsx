@@ -20,7 +20,29 @@ import {
 import { useStore } from '../store'
 
 export function Settings(): JSX.Element {
-  const { snapshot, config, saveProjectMeta, updateSettings, readOnly } = useStore()
+  const { snapshot, config, saveProjectMeta, updateSettings, exportStaticSite, readOnly } = useStore()
+  const [exporting, setExporting] = useState(false)
+  const [exportStatus, setExportStatus] = useState<string | null>(null)
+
+  const runExport = async (): Promise<void> => {
+    setExporting(true)
+    setExportStatus(null)
+    try {
+      const result = await exportStaticSite()
+      if (result) {
+        const size = `${result.files} files (${(result.bytes / 1024).toFixed(0)} KB)`
+        setExportStatus(
+          result.projects
+            ? `Exported ${result.projects.length} projects — ${size} total — to ${result.outDir}`
+            : `Exported ${size} to ${result.outDir}`
+        )
+      }
+    } catch (err) {
+      setExportStatus(err instanceof Error ? err.message : String(err))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   // Project-level form. One piece of state for the whole editable metadata set —
   // name, the column levels (#104), the row label (#62) and the project kind (#63).
@@ -208,6 +230,21 @@ export function Settings(): JSX.Element {
           </>
         )}
       </section>
+
+      {!readOnly && (
+        <section className="settings-group">
+          <h2>Publish</h2>
+          <p className="muted small">
+            Export every board as a self-contained static site — a folder you can upload anywhere,
+            or open straight in a browser. Same output as{' '}
+            <code>npm run export:static</code>.
+          </p>
+          <button className="btn" disabled={exporting} onClick={() => void runExport()}>
+            {exporting ? 'Exporting…' : 'Export static site'}
+          </button>
+          {exportStatus && <p className="muted small">{exportStatus}</p>}
+        </section>
+      )}
 
       <section className="settings-group">
         <h2>Application</h2>

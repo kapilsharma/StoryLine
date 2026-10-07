@@ -37,6 +37,20 @@ function ErrorToast(): JSX.Element | null {
   )
 }
 
+/** Fixed credit badge on a published (read-only) build. See issue #89. */
+function CreditFooter(): JSX.Element {
+  return (
+    <a
+      className="credit-footer"
+      href="https://github.com/kapilsharma/StoryLine"
+      target="_blank"
+      rel="noreferrer"
+    >
+      Built by Zoey Nyxx Story Line
+    </a>
+  )
+}
+
 function Root(): JSX.Element {
   const { snapshot, editorTarget, readOnly } = useStore()
   // The published build boots straight into its one project, so show a neutral
@@ -49,6 +63,7 @@ function Root(): JSX.Element {
           state, so closing returns to exactly where you were. */}
       {editorTarget && <EditorPage key={`${editorTarget.kind}:${editorTarget.id}`} target={editorTarget} />}
       <ErrorToast />
+      {readOnly && <CreditFooter />}
     </>
   )
 }

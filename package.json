@@ -1,7 +1,7 @@
 {
   "name": "zn-story-line",
   "productName": "ZN Story Line",
-  "version": "1.5.0",
+  "version": "1.6.4",
   "private": true,
   "description": "Visual story planning — a structured 2D grid (characters × timeline). Filesystem-first.",
   "author": "Kapil Sharma",
@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "build:app": "electron-vite build && electron-builder",
+    "build:app": "npm run build:web && electron-vite build && electron-builder",
     "build:web": "vite build --config vite.web.config.ts",
     "export:static": "tsx --tsconfig tsconfig.node.json scripts/export-static.mts",
     "preview": "electron-vite preview",

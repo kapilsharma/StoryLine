@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.6.4](https://github.com/kapilsharma/StoryLine/compare/1.6.3...1.6.4) (2026-09-23)
+
+
+### Bug Fixes
+
+* **101:** Multi project export from UI ([0437543](https://github.com/kapilsharma/StoryLine/commit/0437543a12e5c57b367c770609494735c14cedcc))
+* **101:** Multi project export from UI ([4439a5f](https://github.com/kapilsharma/StoryLine/commit/4439a5f5354de1ae843cc4ab5a2d4cb2a05e7161))
+
+## [1.6.3](https://github.com/kapilsharma/StoryLine/compare/1.6.2...1.6.3) (2026-09-23)
+
+
+### Bug Fixes
+
+* **#48:** export from app ([3704ee9](https://github.com/kapilsharma/StoryLine/commit/3704ee9bdf46afc504494e987adc5d36fd2c93ba))
+* **#48:** export from app ([a86ee32](https://github.com/kapilsharma/StoryLine/commit/a86ee3250333f5c5f8577c0de176145fefda7d96))
+* **48:** fixed failing test case ([086980e](https://github.com/kapilsharma/StoryLine/commit/086980e367a7bf0de1d73bd4266b5c42b1bde4f4))
+
+## [1.6.2](https://github.com/kapilsharma/StoryLine/compare/1.6.1...1.6.2) (2026-09-22)
+
+
+### Bug Fixes
+
+* **#95:** Add favicon in generated site ([aad7ab4](https://github.com/kapilsharma/StoryLine/commit/aad7ab4e5f2f2f9b8711dc563ee4f0079d761ebf))
+* **#95:** Add favicon in generated site ([3f83b9e](https://github.com/kapilsharma/StoryLine/commit/3f83b9ed039a3696b8a7ce2e3049501f0ba7a5a1))
+
+## [1.6.1](https://github.com/kapilsharma/StoryLine/compare/1.6.0...1.6.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **#92:** pass --repo to gh release edit so it works without a checkout ([5bdc6c7](https://github.com/kapilsharma/StoryLine/commit/5bdc6c716b12cb9679eb4787e43649ed95cb65b1))
+* **#92:** pass --repo to gh release edit so it works without a checkout ([bd19de1](https://github.com/kapilsharma/StoryLine/commit/bd19de1fcfa3ef31a7b0fef10f0c5e410863e10e))
+
+## [1.6.0](https://github.com/kapilsharma/StoryLine/compare/1.5.0...1.6.0) (2026-09-22)
+
+
+### Features
+
+* **89:** credit line at bottom right on generated fiels ([ba27b51](https://github.com/kapilsharma/StoryLine/commit/ba27b512c74bf3ab6bb368c34a6a65aac3199919))
+* **89:** credit line at bottom right on generated fiels ([3872421](https://github.com/kapilsharma/StoryLine/commit/387242174dd5a9dbf65307f21ad42b471919ad7c))
+
 ## [1.5.0](https://github.com/kapilsharma/StoryLine/compare/1.4.0...1.5.0) (2026-09-19)
 
 
