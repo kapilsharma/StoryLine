@@ -175,6 +175,21 @@ export function TimelineEditor(): JSX.Element {
     hint !== null && hint.position === position && sameRef(hint.ref, refOf(row.item))
 
   const hasLevels = levels.length > 1
+  /**
+   * Where a new group at `depth` starts: inside the selected item's ancestor one
+   * level up, so selecting a Novel then "+ Add chapter" lands in it. Top level for
+   * depth 0, or when nothing relevant is selected (the Inside field can still move it).
+   */
+  const defaultParentAt = (depth: number): string | null => {
+    if (depth === 0 || !selected) return null
+    let cur: ColumnRef | null = selected
+    while (cur) {
+      if (cur.kind === 'node' && tree.depthOf(cur) === depth - 1) return cur.id
+      const up: string | null = tree.parentOf(cur)
+      cur = up ? { kind: 'node', id: up } : null
+    }
+    return null
+  }
   const selectedDepth = selected ? tree.depthOf(selected) : 0
   const editing = creating !== null || selectedUnit !== null || selectedGroup !== null
 
@@ -189,11 +204,17 @@ export function TimelineEditor(): JSX.Element {
               <button className="btn small" onClick={() => startCreate('unit', null)}>
                 + Add {leafWord.toLowerCase()}
               </button>
-              {hasLevels && (
-                <button className="btn small" onClick={() => startCreate('node', null)}>
-                  + Add {word(0).toLowerCase()}
+              {/* One button per group level (Novel, Chapter…), not just the outermost,
+                  so a middle level can be made without first finding its parent. */}
+              {Array.from({ length: levels.length - 1 }, (_, d) => (
+                <button
+                  key={d}
+                  className="btn small"
+                  onClick={() => startCreate('node', defaultParentAt(d))}
+                >
+                  + Add {word(d).toLowerCase()}
                 </button>
-              )}
+              ))}
             </div>
           </div>
           {rows.length === 0 ? (
