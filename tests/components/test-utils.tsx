@@ -55,6 +55,7 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     importAsset: vi.fn(),
     pickAsset: vi.fn().mockResolvedValue(null),
     exportStaticSite: vi.fn().mockResolvedValue(null),
+    exportDocument: vi.fn().mockResolvedValue(null),
     createCard: vi.fn(),
     updateCard: vi.fn(),
     deleteCard: vi.fn(),

@@ -14,6 +14,8 @@ import type { SearchHit, SearchScope } from '@shared/search'
 import type { AssetImport, AssetRef } from '@shared/assets'
 import type {
   BoardData,
+  DocExportOptions,
+  DocExportResult,
   EntityBodyKind,
   NewCardInput,
   ProjectSnapshot,
@@ -133,6 +135,12 @@ interface StoreValue {
    * folder picker for the destination; null if cancelled.
    */
   exportStaticSite: () => Promise<StaticExportResult | null>
+  /**
+   * Export the active board as a single Markdown/PDF document (Issue #125).
+   * Opens a native save dialog; null if cancelled. Distinct from the static
+   * site export — see `exportDocument` in the IPC contract.
+   */
+  exportDocument: (options: DocExportOptions) => Promise<DocExportResult | null>
   renameNote: (oldId: string, newName: string) => Promise<void>
   getEntityBody: (kind: EntityBodyKind, id: string) => Promise<string>
   saveEntityBody: (kind: EntityBodyKind, id: string, body: string) => Promise<void>
@@ -406,6 +414,16 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
     return api.exportStaticSite(root)
   }, [])
 
+  const exportDocument = useCallback(
+    async (options: DocExportOptions): Promise<DocExportResult | null> => {
+      const root = rootRef.current
+      const boardId = activeBoardRef.current
+      if (!root || !boardId) return null
+      return api.exportDocument(root, boardId, options)
+    },
+    []
+  )
+
   const getEntityBody = useCallback(async (kind: EntityBodyKind, id: string): Promise<string> => {
     const root = rootRef.current
     const boardId = activeBoardRef.current
@@ -441,6 +459,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       importAsset,
       pickAsset,
       exportStaticSite,
+      exportDocument,
       saveFamilyColours: (families) => mutate((root) => api.saveFamilyColours(root, families)),
       saveCharacter: (c, addToBoard) => mutateBoard((root, b) => api.saveCharacter(root, b, c, addToBoard)),
       deleteCharacter: (id) => mutateBoard((root, b) => api.deleteCharacter(root, b, id)),
@@ -486,7 +505,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       revealTarget,
       revealCharacter
     }),
-    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, searchNotes, importAsset, pickAsset, exportStaticSite, getEntityBody, editorTarget, openEditor, closeEditor, revealTarget, revealCharacter]
+    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, searchNotes, importAsset, pickAsset, exportStaticSite, exportDocument, getEntityBody, editorTarget, openEditor, closeEditor, revealTarget, revealCharacter]
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

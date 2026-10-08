@@ -5,10 +5,11 @@ import { basename, join } from 'path'
 import type { Card, Character, ColumnGroup, Note, TimelineUnit, View } from '@shared/types'
 import { defaultView } from '@shared/types'
 import type { AppSettings } from '@shared/config'
-import type { EntityBodyKind, NewCardInput, ProjectSnapshot } from '@shared/ipc'
+import type { DocExportOptions, EntityBodyKind, NewCardInput, ProjectSnapshot } from '@shared/ipc'
 import type { ProjectChange } from '@shared/changes'
 import type { ProjectMeta } from '@shared/project'
 import { applyMeta } from '@shared/project'
+import { buildMarkdownExport } from '@shared/exportMarkdown'
 import type { SearchScope } from '@shared/search'
 import type { AssetImport } from '@shared/assets'
 import { assignFamilyColours, familiesIn } from '@shared/families'
@@ -27,6 +28,7 @@ import {
 import { readConfig, removeRecent, touchRecent, updateConfig } from './appConfig'
 import { createProject, defaultBoard, loadSnapshot } from './projectService'
 import { assembleStaticSite, buildExportBundle } from './data/exportBundle'
+import { markdownToPdf } from './data/renderPdf'
 import { ProjectNotInGroupError, resolveProjectGroup, type ResolvedProjectGroup } from './data/projectGroup'
 import { needsMigration } from './data/migrate'
 import { uniqueSlug } from './data/slug'
@@ -43,6 +45,7 @@ import {
   listCharacters,
   listColumnGroups,
   listNoteMetas,
+  listNotes,
   listTimeline,
   listViews,
   readBoard,
@@ -937,6 +940,65 @@ export function registerIpc(window: BrowserWindow): void {
     } finally {
       await loadSnapshot(root).catch(() => {})
     }
+  })
+
+  // ── Document export (Issue #125) ──
+  // One board flattened to a single Markdown/PDF file for reading or printing.
+  // Nothing to do with `static:export` above — that publishes the whole project
+  // as an interactive site; this is a linear read-through of one board.
+  ipcMain.handle('doc:export', async (_e, root: string, boardId: string, options: DocExportOptions) => {
+    const snapshot = await loadSnapshot(root)
+    const boardData = snapshot.boards.find((bd) => bd.board.id === boardId)
+    if (!boardData) throw new Error(`Unknown board: ${boardId}`)
+
+    // Snapshot notes are metadata-only (bodies are lazy); the export needs them
+    // whole, plus each column tier's own note when the Scenes section is on.
+    const notes = await listNotes(root, boardId)
+    const groupBodies: Record<string, string> = {}
+    const unitBodies: Record<string, string> = {}
+    if (options.scenes) {
+      for (const group of boardData.colGroups) {
+        groupBodies[group.id] = await readEntityBody(root, boardId, 'colgroup', group.id)
+      }
+      for (const unit of boardData.timeline) {
+        unitBodies[unit.id] = await readEntityBody(root, boardId, 'timeline', unit.id)
+      }
+    }
+
+    const markdown = buildMarkdownExport(
+      {
+        boardName: boardData.board.name,
+        colGroups: boardData.colGroups,
+        timeline: boardData.timeline,
+        characters: boardData.characters,
+        cards: boardData.board.cards,
+        notes,
+        groupBodies,
+        unitBodies
+      },
+      options
+    )
+
+    const ext = options.format === 'pdf' ? 'pdf' : 'md'
+    const safeName =
+      boardData.board.name.replace(/[^\w.-]+/g, '-').replace(/^-+|-+$/g, '') || 'export'
+    const result = await dialog.showSaveDialog(window, {
+      title: 'Export board',
+      defaultPath: `${safeName}.${ext}`,
+      filters:
+        options.format === 'pdf'
+          ? [{ name: 'PDF', extensions: ['pdf'] }]
+          : [{ name: 'Markdown', extensions: ['md'] }]
+    })
+    if (result.canceled || !result.filePath) return null
+
+    if (options.format === 'pdf') {
+      const pdf = await markdownToPdf(markdown, boardData.board.name)
+      await fsp.writeFile(result.filePath, pdf)
+      return { path: result.filePath, bytes: pdf.length }
+    }
+    await fsp.writeFile(result.filePath, markdown, 'utf8')
+    return { path: result.filePath, bytes: Buffer.byteLength(markdown, 'utf8') }
   })
 }
 

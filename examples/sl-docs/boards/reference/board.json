@@ -904,6 +904,34 @@
       "rowId": "readonly",
       "colStart": "watch",
       "colEnd": "watch"
+    },
+    {
+      "id": "card-bde0a001",
+      "noteUid": "n_bd10ee01",
+      "rowId": "board-export",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-bde0a002",
+      "noteUid": "n_bd20ee02",
+      "rowId": "board-export",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-bde0a003",
+      "noteUid": "n_bd30ee03",
+      "rowId": "board-export",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-bde0a004",
+      "noteUid": "n_bd40ee04",
+      "rowId": "board-export",
+      "colStart": "watch",
+      "colEnd": "watch"
     }
   ],
   "hiddenRows": [],
@@ -953,6 +981,7 @@
         "app-settings",
         "editor-styles",
         "export",
+        "board-export",
         "readonly"
       ],
       "hiddenCols": []
@@ -982,6 +1011,7 @@
         "proj-settings",
         "app-settings",
         "export",
+        "board-export",
         "readonly"
       ],
       "hiddenCols": []
@@ -1019,6 +1049,7 @@
     "app-settings",
     "editor-styles",
     "export",
+    "board-export",
     "readonly"
   ],
   "rowOrder": [
@@ -1053,6 +1084,7 @@
     "app-settings",
     "editor-styles",
     "export",
+    "board-export",
     "readonly"
   ],
   "rowGroupOrder": [

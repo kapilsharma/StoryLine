@@ -1,6 +1,13 @@
 import type { AppConfig, AppSettings } from '@shared/config'
 import { SNAPSHOT_GLOBAL, entityBodyKey, type ExportBundle } from '@shared/export'
-import type { AppApi, BoardData, EntityBodyKind, ProjectSnapshot, StaticExportResult } from '@shared/ipc'
+import type {
+  AppApi,
+  BoardData,
+  DocExportResult,
+  EntityBodyKind,
+  ProjectSnapshot,
+  StaticExportResult
+} from '@shared/ipc'
 import type { Note } from '@shared/types'
 import type { AssetRef } from '@shared/assets'
 import { searchEntries } from '@shared/search'
@@ -195,6 +202,8 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     onProjectChange: () => () => {},
 
     // Re-exporting from a browser has nowhere to write a folder to.
-    exportStaticSite: () => denied<StaticExportResult | null>()
+    exportStaticSite: () => denied<StaticExportResult | null>(),
+    // Document export needs a native save dialog, which a static site has not.
+    exportDocument: () => denied<DocExportResult | null>()
   }
 }
