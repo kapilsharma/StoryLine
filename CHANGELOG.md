@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.4.0](https://github.com/kapilsharma/StoryLine/compare/2.3.0...2.4.0) (2026-10-08)
+
+
+### Features
+
+* **#119:** plot rows high-level planning threads on the board ([d145b39](https://github.com/kapilsharma/StoryLine/commit/d145b39a4823c2bc1db95f16ce0d516460626710))
+* **#119:** plot rows high-level planning threads on the board ([873b9da](https://github.com/kapilsharma/StoryLine/commit/873b9da06a1b9820070c691b02f942b70c9c4481))
+
 ## [2.3.0](https://github.com/kapilsharma/StoryLine/compare/2.2.0...2.3.0) (2026-10-07)
 
 
