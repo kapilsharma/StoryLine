@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.4.1](https://github.com/kapilsharma/StoryLine/compare/2.4.0...2.4.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **#122:** Fixed create chapter not working on scenes tab ([216a489](https://github.com/kapilsharma/StoryLine/commit/216a489e3ce261586be01a36161c14810f4a0d68))
+* **#122:** Fixed create chapter not working on scenes tab ([5731833](https://github.com/kapilsharma/StoryLine/commit/57318339cf90264cbd4549573dd1729d3d309b81))
+
 ## [2.4.0](https://github.com/kapilsharma/StoryLine/compare/2.3.0...2.4.0) (2026-10-08)
 
 
