@@ -141,6 +141,7 @@ row** to get each character's arc.
 | `rowOrder` | Row order. Members not listed come after, sorted by name. |
 | `rowGroupOrder` | Order of row *blocks*: a group label (see character `group`), or a character id for an ungrouped row. |
 | `hiddenRows`, `hiddenCols`, `presets`, `collapsed*`, `zoom`, `rowHeaderWidth` | **View state only.** Hidden or collapsed things are still part of the story — never treat them as deleted. |
+| `hidePlotRows`, `hideCharacterRows` | **View state only** (booleans; absent = `false`). Hide a whole kind of row (`plot` vs character) at once — never treat the hidden rows as deleted. |
 | `colOrder` | Legacy, ignore it. Column order comes from the column tree (§5). |
 | `views` | Family-tree tab order. |
 
@@ -295,6 +296,11 @@ Character note: who she is, her arc, voice, secrets…
 
 - Only `id`, `type`, `name`, `colour` are always there; everything else is optional.
 - `group` — rows with the same group are drawn together under that label.
+- `rowKind` — `plot` marks a high-level **planning thread** (a transformation
+  arc, the stakes, a beat) rather than a person. Plot rows always sit above the
+  character rows and stay off the family tree. **Absent means a normal character
+  row**, so most files never carry this key. A plot row usually has only
+  `id`/`type`/`name`/`colour` (plus maybe `group`/`tags`) — no family fields.
 - Family fields (`family`, `gender`, `birthday`, `died`, `maidenName`, `father`,
   `mother`, `spouse`) feed the family tree. `father`/`mother`/`spouse` hold
   **character ids on the same board**. Dates are partial ISO strings:

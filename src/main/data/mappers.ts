@@ -31,6 +31,7 @@ const CHARACTER_KNOWN_KEYS = [
   'species',
   'tags',
   'group',
+  'rowKind',
   // family
   'family',
   'gender',
@@ -98,6 +99,9 @@ export function frontmatterToCharacter(data: Record<string, unknown>, id: string
   if (typeof data.age === 'number') char.age = data.age
   if (typeof data.species === 'string') char.species = data.species
   if (typeof data.group === 'string' && data.group.trim()) char.group = data.group.trim()
+  // Only `plot` is meaningful; anything else (including the default `character`)
+  // is left absent so a people file round-trips byte-identical.
+  if (data.rowKind === 'plot') char.rowKind = 'plot'
   const tags = asStringArray(data.tags)
   if (tags) char.tags = tags
 
@@ -143,6 +147,7 @@ export function characterToFrontmatter(c: Character): Record<string, unknown> {
     ...(c.age !== undefined ? { age: c.age } : {}),
     ...(c.species !== undefined ? { species: c.species } : {}),
     ...(c.group !== undefined ? { group: c.group } : {}),
+    ...(c.rowKind === 'plot' ? { rowKind: 'plot' } : {}),
     ...(c.tags?.length ? { tags: c.tags } : {}),
     ...(c.family ? { family: c.family } : {}),
     ...(c.gender ? { gender: c.gender } : {}),

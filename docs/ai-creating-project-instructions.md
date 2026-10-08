@@ -183,6 +183,11 @@ Who she is, what she wants, what she hides, how she changes.
   `#E24B4A #3B6FD4 #1F9D8F #D98E04 #8E5BD9 #C2413B #2E9E4F #D4589A #5A7184 #B07A3B`.
 - Optional: `role`, `group` (rows sharing a group are drawn together),
   `age` (number), `species`, `tags` (list).
+- `rowKind: plot` turns a row into a high-level **planning thread** (e.g. a
+  transformation arc, the stakes) instead of a person. Plot rows always sort
+  above the character rows and stay off the family tree — give them only
+  `id`/`type`/`name`/`colour` (and maybe `group`/`tags`), no family fields. Omit
+  the key for an ordinary character.
 - Family (story projects only; all optional): `family` (surname), `gender`
   (`male` / `female` / `other` / `unknown`), `birthday` / `died` (quoted partial
   dates: `'1984'`, `'1984-06'`, `'1984-06-12'`), `maidenName`, `father`,

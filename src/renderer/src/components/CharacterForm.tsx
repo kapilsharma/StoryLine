@@ -11,6 +11,7 @@ interface FormState {
   id: string;
   name: string;
   colour: string;
+  rowKind: "character" | "plot";
   role: string;
   age: string;
   species: string;
@@ -32,6 +33,7 @@ const BLANK: FormState = {
   id: "",
   name: "",
   colour: "#4A90D9",
+  rowKind: "character",
   role: "",
   age: "",
   species: "",
@@ -53,6 +55,7 @@ function toForm(c: Character): FormState {
     id: c.id,
     name: c.name,
     colour: c.colour,
+    rowKind: c.rowKind ?? "character",
     role: c.role ?? "",
     age: c.age != null ? String(c.age) : "",
     species: c.species ?? "",
@@ -89,11 +92,19 @@ function toCharacter(f: FormState): Character {
     name: f.name.trim(),
     colour: f.colour,
   };
+  if (f.group.trim()) char.group = f.group.trim();
+  if (tags.length) char.tags = tags;
+  if (Object.keys(custom).length) char.custom = custom;
+  // A plot row (Issue #119) is a planning thread, not a person: it carries only
+  // the row essentials above, and none of the people/family fields — so the
+  // "people" part of the form is dropped if a character is switched to plot.
+  if (f.rowKind === "plot") {
+    char.rowKind = "plot";
+    return char;
+  }
   if (f.role.trim()) char.role = f.role.trim();
   if (f.age.trim() && !Number.isNaN(Number(f.age))) char.age = Number(f.age);
   if (f.species.trim()) char.species = f.species.trim();
-  if (f.group.trim()) char.group = f.group.trim();
-  if (tags.length) char.tags = tags;
   // Family fields stay absent when untouched, so a character that never appears
   // on a tree round-trips through its file unchanged.
   if (f.family.trim()) char.family = f.family.trim();
@@ -104,7 +115,6 @@ function toCharacter(f: FormState): Character {
   if (f.father) char.father = f.father;
   if (f.mother) char.mother = f.mother;
   if (f.spouse.length) char.spouse = f.spouse;
-  if (Object.keys(custom).length) char.custom = custom;
   return char;
 }
 
@@ -164,7 +174,8 @@ export function CharacterForm({
 
   const all = activeBoard?.characters ?? [];
   const familyColours = snapshot?.project.families ?? {};
-  const showFamily = snapshot ? hasFamilyFeatures(snapshot.project) : true;
+  const isPlot = form.rowKind === "plot";
+  const showFamily = (snapshot ? hasFamilyFeatures(snapshot.project) : true) && !isPlot;
   const knownFamilies = useMemo(() => familiesIn(all), [all]);
 
   /** Everyone else on the board, for the parent / spouse / child pickers. */
@@ -252,27 +263,50 @@ export function CharacterForm({
         </div>
       </div>
       <div className="form-row">
-        <label>Role</label>
-        <input
-          value={form.role}
-          onChange={(e) => set("role", e.target.value)}
-        />
+        <label>Row type</label>
+        <select
+          value={form.rowKind}
+          onChange={(e) =>
+            set("rowKind", e.target.value as "character" | "plot")
+          }
+        >
+          <option value="character">Character</option>
+          <option value="plot">Plot (planning thread)</option>
+        </select>
       </div>
-      <div className="form-row">
-        <label>Age</label>
-        <input
-          type="number"
-          value={form.age}
-          onChange={(e) => set("age", e.target.value)}
-        />
-      </div>
-      <div className="form-row">
-        <label>Species</label>
-        <input
-          value={form.species}
-          onChange={(e) => set("species", e.target.value)}
-        />
-      </div>
+      {isPlot && (
+        <p className="small muted">
+          A plot row is a high-level planning thread — a transformation arc, the
+          stakes, the mystery — not a person. It sits above the character rows
+          and stays off the family tree.
+        </p>
+      )}
+      {!isPlot && (
+        <>
+          <div className="form-row">
+            <label>Role</label>
+            <input
+              value={form.role}
+              onChange={(e) => set("role", e.target.value)}
+            />
+          </div>
+          <div className="form-row">
+            <label>Age</label>
+            <input
+              type="number"
+              value={form.age}
+              onChange={(e) => set("age", e.target.value)}
+            />
+          </div>
+          <div className="form-row">
+            <label>Species</label>
+            <input
+              value={form.species}
+              onChange={(e) => set("species", e.target.value)}
+            />
+          </div>
+        </>
+      )}
       <div className="form-row">
         <label>Group</label>
         <input

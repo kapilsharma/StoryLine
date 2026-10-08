@@ -52,6 +52,19 @@ describe('character mapper', () => {
     expect(c.name).toBe('fallback')
     expect(c.type).toBe('character')
   })
+
+  it('round-trips rowKind: plot (#119) and omits it for a character', () => {
+    const plot = characterToFrontmatter({ id: 'p', type: 'character', name: 'P', colour: '#fff', rowKind: 'plot' })
+    expect(plot.rowKind).toBe('plot')
+    expect(frontmatterToCharacter(plot, 'p').rowKind).toBe('plot')
+
+    // The default kind is never written, so a people file stays byte-identical.
+    const person = characterToFrontmatter({ id: 'q', type: 'character', name: 'Q', colour: '#fff' })
+    expect('rowKind' in person).toBe(false)
+    expect(frontmatterToCharacter(person, 'q').rowKind).toBeUndefined()
+    // A stray non-'plot' value is dropped rather than preserved.
+    expect(frontmatterToCharacter({ rowKind: 'character' }, 'r').rowKind).toBeUndefined()
+  })
 })
 
 describe('timeline mapper', () => {

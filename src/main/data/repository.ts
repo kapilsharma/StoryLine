@@ -444,6 +444,10 @@ function normalizeBoard(raw: Partial<Board> & { id: string; name: string }): Boa
     colOrder: raw.colOrder ?? [],
     collapsedRowGroups: raw.collapsedRowGroups ?? [],
     collapsedColGroups: raw.collapsedColGroups ?? [],
+    // Kept out of the object unless true, so a board that never used the row-kind
+    // toggles is written back without the keys (Issue #119).
+    ...(raw.hidePlotRows ? { hidePlotRows: true } : {}),
+    ...(raw.hideCharacterRows ? { hideCharacterRows: true } : {}),
     zoom: raw.zoom ?? 1,
     views: raw.views ?? [],
     rowHeaderWidth: normalizeRowHeaderWidth(raw.rowHeaderWidth)

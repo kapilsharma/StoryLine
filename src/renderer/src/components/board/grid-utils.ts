@@ -1,4 +1,5 @@
 import type { Board, Card, Character, ColumnGroup, Note, TimelineUnit } from '@shared/types'
+import { isPlotRow } from '@shared/types'
 import { buildColumnTree, orderedLeaves } from '@shared/columns'
 
 // Every column function takes the board's `colGroups` last, defaulting to none: a
@@ -65,9 +66,17 @@ export function nonMembers(board: Board, characters: Character[]): Character[] {
   return characters.filter((c) => !on.has(c.id)).sort((a, b) => a.name.localeCompare(b.name))
 }
 
-/** Rows drawn on a board: its cast, minus the ones hidden for now. */
+/**
+ * Rows drawn on a board: its cast, minus the ones hidden for now — whether hidden
+ * one at a time (`hiddenRows`) or by kind through the toolbar toggles (Issue #119).
+ */
 export function visibleRows(board: Board, characters: Character[]): Character[] {
-  return boardMembers(board, characters).filter((c) => !board.hiddenRows.includes(c.id))
+  return boardMembers(board, characters).filter((c) => {
+    if (board.hiddenRows.includes(c.id)) return false
+    if (board.hidePlotRows && isPlotRow(c)) return false
+    if (board.hideCharacterRows && !isPlotRow(c)) return false
+    return true
+  })
 }
 
 /**
@@ -292,9 +301,18 @@ export function buildRowLayout(board: Board, characters: Character[]): RowLayout
     const i = board.rowGroupOrder.indexOf(key)
     return i < 0 ? Infinity : i
   }
+  // Plot blocks always sort above character blocks (Issue #119), regardless of
+  // `rowGroupOrder` — so the high-level planning threads stay pinned at the top
+  // even after the order is hand-edited. Within each kind the usual order holds.
+  const kindRank = (b: { members: Character[] }): number => (isPlotRow(b.members[0]) ? 0 : 1)
   const blocks = gathered
     .map((b, i) => ({ b, i }))
-    .sort((x, y) => goIndex(rowBlockKey(x.b)) - goIndex(rowBlockKey(y.b)) || x.i - y.i)
+    .sort(
+      (x, y) =>
+        kindRank(x.b) - kindRank(y.b) ||
+        goIndex(rowBlockKey(x.b)) - goIndex(rowBlockKey(y.b)) ||
+        x.i - y.i
+    )
     .map((o) => o.b)
 
   const lines: RowLine[] = []

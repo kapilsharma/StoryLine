@@ -159,6 +159,38 @@ describe('custom row + group sorting (issue #2)', () => {
   })
 })
 
+describe('plot rows (#119)', () => {
+  // A plot row and a character row, both ungrouped, plus the grouped `chars`.
+  const withPlot: Character[] = [
+    { id: 'p', type: 'character', name: 'Transformation', colour: '#999', rowKind: 'plot' },
+    ...chars
+  ]
+
+  it('sorts plot rows above character rows, whatever the block order', () => {
+    const layout = buildRowLayout(board({ rowGroupOrder: ['Fae', 'Human', 'p'] }), withPlot)
+    // The plot row wins line 0 even though its block key is last in rowGroupOrder.
+    expect(layout.lineOfChar.get('p')).toBe(0)
+    expect(layout.lineOfChar.get('p')!).toBeLessThan(layout.lineOfChar.get('a')!)
+    expect(layout.lineOfChar.get('p')!).toBeLessThan(layout.lineOfChar.get('b')!)
+  })
+
+  it('hidePlotRows drops only the plot rows', () => {
+    const vis = visibleRows(board({ hidePlotRows: true }), withPlot)
+    expect(vis.map((c) => c.id)).not.toContain('p')
+    expect(vis.map((c) => c.id)).toEqual(expect.arrayContaining(['a', 'b', 'c']))
+  })
+
+  it('hideCharacterRows drops only the character rows', () => {
+    const vis = visibleRows(board({ hideCharacterRows: true }), withPlot)
+    expect(vis.map((c) => c.id)).toEqual(['p'])
+  })
+
+  it('hiding both kinds leaves an empty board', () => {
+    const vis = visibleRows(board({ hidePlotRows: true, hideCharacterRows: true }), withPlot)
+    expect(vis).toEqual([])
+  })
+})
+
 describe('card placement + markers', () => {
   const notes: Note[] = [{ id: 'n1', uid: 'n_1111', title: 'Hunt', body: '' }]
   const card = { id: 'card1', noteUid: 'n_1111', rowId: 'a', colStart: 'ch3', colEnd: 'ch3' }
