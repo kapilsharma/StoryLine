@@ -223,7 +223,10 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
    */
   const characters = activeBoard?.characters
   const graph = useMemo<FamilyGraph | null>(
-    () => (characters ? buildGraph(characters) : null),
+    // Plot rows (Issue #119) are planning threads, not people, so they are kept
+    // out of the family graph — otherwise a "transformation" row would show up as
+    // a person on the tree.
+    () => (characters ? buildGraph(characters.filter((c) => c.rowKind !== 'plot')) : null),
     [characters]
   )
 

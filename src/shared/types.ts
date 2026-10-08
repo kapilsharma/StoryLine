@@ -28,6 +28,15 @@ export interface Character {
   tags?: string[]
   /** Optional group label; rows sharing a value are grouped on the board. */
   group?: string
+  /**
+   * What sort of row this is on the board (Issue #119). `plot` marks a
+   * high-level planning thread — a transformation arc, the stakes, the mystery —
+   * rather than a person; such rows always sort above character rows and can be
+   * hidden as a group. Absent (the default) means `character`, so every file
+   * written before this existed loads and writes back unchanged. A plot row is
+   * kept out of the family tree / graph, since it is not a person.
+   */
+  rowKind?: 'character' | 'plot'
 
   // ── Family fields (all optional; see src/shared/families.ts) ──
   /**
@@ -66,6 +75,11 @@ export interface Character {
    * every body. Never written to disk.
    */
   hasNote?: boolean
+}
+
+/** A plot row (Issue #119) — a planning thread rather than a person. */
+export function isPlotRow(c: Character): boolean {
+  return c.rowKind === 'plot'
 }
 
 /**
@@ -247,6 +261,13 @@ export interface Board {
   colOrder: string[]
   /** Collapsed row-group labels (view state, per board). */
   collapsedRowGroups: string[]
+  /**
+   * Hide all plot rows on this board (Issue #119). Per-board view state, so a
+   * chosen "character-only" or "structure-only" view sticks. Absent/false = show.
+   */
+  hidePlotRows?: boolean
+  /** Hide all character rows on this board (Issue #119). Absent/false = show. */
+  hideCharacterRows?: boolean
   /** Ids of collapsed {@link ColumnGroup}s (view state, per board). Labels before v4. */
   collapsedColGroups: string[]
   /** Persisted zoom level for this board. */

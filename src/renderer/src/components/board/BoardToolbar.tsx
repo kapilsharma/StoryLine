@@ -1,12 +1,53 @@
+import { isPlotRow } from '@shared/types'
+import { useStore } from '../../store'
 import { useBoardUi } from './BoardUiContext'
 
 /** Right-side tab-bar toolbar for the Boards tab. */
 export function BoardToolbar(): JSX.Element {
   const { allExpanded, setAll, cardIds, revising, setRevising, revealAll } = useBoardUi()
+  const { activeBoard, saveBoard, readOnly } = useStore()
   const empty = cardIds.length === 0
+
+  // The row-kind toggles (Issue #119) only matter once a board actually has plot
+  // rows, so they stay hidden until the author creates one — keeping the toolbar
+  // unchanged for everyone else.
+  const board = activeBoard?.board
+  const hasPlotRows = (activeBoard?.characters ?? []).some(isPlotRow)
+  const hidePlot = board?.hidePlotRows ?? false
+  const hideChars = board?.hideCharacterRows ?? false
+
+  // Write the flag only when true, so a board left in the default state keeps a
+  // clean board.json (matching how `normalizeBoard` drops the keys on read).
+  const setFlag = (key: 'hidePlotRows' | 'hideCharacterRows', on: boolean): void => {
+    if (!board) return
+    const next = { ...board }
+    if (on) next[key] = true
+    else delete next[key]
+    void saveBoard(next)
+  }
 
   return (
     <div className="header-toolbar">
+      {board && hasPlotRows && (
+        <>
+          <button
+            className={`toolbar-btn${hidePlot ? ' active' : ''}`}
+            disabled={readOnly}
+            title={hidePlot ? 'Show plot rows' : 'Hide plot rows'}
+            onClick={() => setFlag('hidePlotRows', !hidePlot)}
+          >
+            📋
+          </button>
+          <button
+            className={`toolbar-btn${hideChars ? ' active' : ''}`}
+            disabled={readOnly}
+            title={hideChars ? 'Show character rows' : 'Hide character rows'}
+            onClick={() => setFlag('hideCharacterRows', !hideChars)}
+          >
+            👥
+          </button>
+        </>
+      )}
       {/* Revision mode (#67). Hiding a column with a preset gives you the prompt;
           this gives you the answer back one card at a time. */}
       <button
