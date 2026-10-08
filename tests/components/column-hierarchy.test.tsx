@@ -290,6 +290,25 @@ describe('Timeline tab as a tree', () => {
     expect('parent' in sent).toBe(false)
   })
 
+  it('offers a button for a middle level too, and starts it inside the selected outer group (issue #122)', async () => {
+    const snap = makeSnapshot({
+      project: { timelineLevelLabels: ['Novel', 'Chapter', 'Scene'], timelineLabel: 'Scene' },
+      colGroups: [{ id: 'n', type: 'colgroup', label: 'Book', order: 1 }],
+      timeline: []
+    })
+    const api = await renderTab(snap, { saveColumnGroup: vi.fn().mockResolvedValue(snap) })
+    expect(screen.getByRole('button', { name: '+ Add novel' })).toBeInTheDocument()
+    await userEvent.click(screen.getByText('Book'))
+    await userEvent.click(screen.getAllByRole('button', { name: '+ Add chapter' })[0])
+    await userEvent.type(screen.getByLabelText('Name'), 'Ch 1')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    await waitFor(() => expect(api.saveColumnGroup).toHaveBeenCalled())
+    expect((api.saveColumnGroup as ReturnType<typeof vi.fn>).mock.calls[0][2]).toMatchObject({
+      label: 'Ch 1',
+      parent: 'n'
+    })
+  })
+
   it('adds a column inside the selected group', async () => {
     const api = await renderTab(groupedSnapshot(), { saveTimelineUnit: vi.fn().mockResolvedValue(groupedSnapshot()) })
     await userEvent.click(screen.getByText('Act 2'))
