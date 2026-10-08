@@ -25,6 +25,7 @@ import type { ProjectChange } from './changes'
 import type { SearchHit, SearchScope } from './search'
 import type { AssetImport, AssetRef } from './assets'
 import type { ColumnRef } from './columns'
+import type { MarkdownExportOptions } from './exportMarkdown'
 
 /**
  * Entities whose markdown body the dedicated editor can edit (notes use
@@ -263,6 +264,19 @@ export interface AppApi {
    * lists what was exported.
    */
   exportStaticSite(root: string): Promise<StaticExportResult | null>
+
+  // ── Document export (Issue #125) ──
+  /**
+   * Flatten one board into a single Markdown or PDF document for reading or
+   * printing — unrelated to {@link exportStaticSite}, which publishes the whole
+   * project as an interactive web app. Opens a native save dialog; null if the
+   * save was cancelled.
+   */
+  exportDocument(
+    root: string,
+    boardId: string,
+    options: DocExportOptions
+  ): Promise<DocExportResult | null>
 }
 
 /** Summary returned after a successful in-app static export. */
@@ -272,4 +286,18 @@ export interface StaticExportResult {
   bytes: number
   /** Present only when the user chose to export every project in the group. */
   projects?: { folder: string; name: string }[]
+}
+
+/** Output format for a document export (Issue #125). */
+export type DocExportFormat = 'markdown' | 'pdf'
+
+/** What a document export covers, plus the format to write it in (Issue #125). */
+export interface DocExportOptions extends MarkdownExportOptions {
+  format: DocExportFormat
+}
+
+/** Where a document export landed and how big it is. */
+export interface DocExportResult {
+  path: string
+  bytes: number
 }

@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { isPlotRow } from '@shared/types'
 import { useStore } from '../../store'
 import { useBoardUi } from './BoardUiContext'
+import { ExportDialog } from './ExportDialog'
 
 /** Right-side tab-bar toolbar for the Boards tab. */
 export function BoardToolbar(): JSX.Element {
   const { allExpanded, setAll, cardIds, revising, setRevising, revealAll } = useBoardUi()
   const { activeBoard, saveBoard, readOnly } = useStore()
+  const [exporting, setExporting] = useState(false)
   const empty = cardIds.length === 0
 
   // The row-kind toggles (Issue #119) only matter once a board actually has plot
@@ -86,6 +89,17 @@ export function BoardToolbar(): JSX.Element {
       >
         {allExpanded ? '⤡' : '⤢'}
       </button>
+      {/* Export this board to one Markdown/PDF file (#125). Read-only, so it
+          stays available even when the board is open read-only. */}
+      <button
+        className="toolbar-btn"
+        disabled={!board}
+        title="Export board to a file…"
+        onClick={() => setExporting(true)}
+      >
+        📤
+      </button>
+      {exporting && <ExportDialog onClose={() => setExporting(false)} />}
     </div>
   )
 }

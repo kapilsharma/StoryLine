@@ -452,6 +452,29 @@ h2 {
   margin-top: 1.5rem;
 }
 
+/* ── Export dialog (Issue #125) ── */
+.export-group {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.8rem 0 0;
+}
+.export-group legend {
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.export-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
+.export-check input {
+  cursor: pointer;
+}
+
 /* ── Form controls (shared) ── */
 .form-row select,
 .form-row textarea {

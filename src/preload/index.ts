@@ -79,7 +79,9 @@ const api: AppApi = {
     return () => ipcRenderer.removeListener('project:change', handler)
   },
 
-  exportStaticSite: (root) => ipcRenderer.invoke('static:export', root)
+  exportStaticSite: (root) => ipcRenderer.invoke('static:export', root),
+  exportDocument: (root, boardId, options) =>
+    ipcRenderer.invoke('doc:export', root, boardId, options)
 }
 
 export type Api = AppApi
