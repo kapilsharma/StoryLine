@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.0](https://github.com/kapilsharma/StoryLine/compare/2.4.1...2.5.0) (2026-10-08)
+
+
+### Features
+
+* **#125:** scene export to markdown and pdf ([ccfbda3](https://github.com/kapilsharma/StoryLine/commit/ccfbda31cb2ab3ec3f9c18e4653fd8f6bf9c9f2f))
+* **#125:** scene export to markdown and pdf ([7c53458](https://github.com/kapilsharma/StoryLine/commit/7c5345808fe07829d81a872c8401a478a3b5e8c8))
+
 ## [2.4.1](https://github.com/kapilsharma/StoryLine/compare/2.4.0...2.4.1) (2026-10-08)
 
 
