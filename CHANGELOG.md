@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.1](https://github.com/kapilsharma/StoryLine/compare/2.6.0...2.6.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **#137:** handle Google Drive transient errors in watcher, snapshot … ([edf28c6](https://github.com/kapilsharma/StoryLine/commit/edf28c6c3fdc2a27c21cfd1786fa80fdcf7c7088))
+* **#137:** handle Google Drive transient errors in watcher, snapshot and live-reload ([2a7eab3](https://github.com/kapilsharma/StoryLine/commit/2a7eab33f15a1d4c18cf8b8dd76eca34c003121b))
+
 ## [2.6.0](https://github.com/kapilsharma/StoryLine/compare/2.5.0...2.6.0) (2026-10-09)
 
 
