@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.0](https://github.com/kapilsharma/StoryLine/compare/2.5.0...2.6.0) (2026-10-09)
+
+
+### Features
+
+* **#134:** set ZoeyNyxx icon on the Electron BrowserWindow ([e1a279d](https://github.com/kapilsharma/StoryLine/commit/e1a279d205bd6c8dbf6178e1d0b6c758850fc595))
+* **#134:** set ZoeyNyxx icon on the Electron BrowserWindow ([ee809ee](https://github.com/kapilsharma/StoryLine/commit/ee809ee1e1c94b0031221514630c54ebbb667c46))
+
 ## [2.5.0](https://github.com/kapilsharma/StoryLine/compare/2.4.1...2.5.0) (2026-10-08)
 
 
