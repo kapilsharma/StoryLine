@@ -1,4 +1,4 @@
-import { app, net, protocol, shell, BrowserWindow } from 'electron'
+import { app, net, protocol, shell, BrowserWindow, nativeImage } from 'electron'
 import { join } from 'path'
 import { pathToFileURL } from 'url'
 import { ASSET_SCHEME } from '@shared/assets'
@@ -39,6 +39,9 @@ function registerAssetProtocol(): void {
 }
 
 function createWindow(): void {
+  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  const iconImage = nativeImage.createFromPath(join(app.getAppPath(), 'build', iconFile))
+
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -47,6 +50,7 @@ function createWindow(): void {
     show: false,
     title: 'ZN Story Line',
     backgroundColor: '#ffffff',
+    icon: iconImage.isEmpty() ? undefined : iconImage,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
