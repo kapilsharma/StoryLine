@@ -266,9 +266,16 @@ async function writeViewOrder(root: string, boardId: string, views: string[]): P
 export function registerIpc(window: BrowserWindow): void {
   // Every mutating handler funnels through here, which makes it the one place
   // the search index (Issue #59) has to be invalidated after an in-app write.
-  const snap = (root: string): Promise<ProjectSnapshot> => {
+  const snap = async (root: string): Promise<ProjectSnapshot> => {
     invalidateSearchIndex(root)
-    return loadSnapshot(root, false)
+    try {
+      return await loadSnapshot(root, false)
+    } catch {
+      // Google Drive can transiently return an empty/partial file immediately
+      // after a write while it syncs. Retry once after a short pause.
+      await new Promise<void>((r) => setTimeout(r, 500))
+      return loadSnapshot(root, false)
+    }
   }
 
   // ── App config ──
