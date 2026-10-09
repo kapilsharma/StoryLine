@@ -261,7 +261,10 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         const root = rootRef.current
-        if (root) api.reloadProject(root).then(setSnapshot).catch((e) => setError(String(e)))
+        // Transient failures (Google Drive mid-sync, file briefly unavailable)
+        // are silent — the watcher will fire again and the next reload will
+        // succeed. Only a user-initiated action should show the error bar.
+        if (root) api.reloadProject(root).then(setSnapshot).catch((e) => console.warn('[live-reload] reload failed (ignored):', e))
       }, 150)
     })
     return () => {

@@ -69,6 +69,10 @@ export class ProjectWatcher {
       .on('add', emit('add'))
       .on('change', emit('change'))
       .on('unlink', emit('unlink'))
+      // Google Drive's virtual filesystem on Windows can reject watch calls
+      // transiently. Suppress the unhandled rejection — the watcher recovers
+      // on its own and the app still works; live-reload just misses that event.
+      .on('error', (err) => console.warn('[watcher] fs.watch error (ignored):', (err as Error).message))
   }
 
   async stop(): Promise<void> {
