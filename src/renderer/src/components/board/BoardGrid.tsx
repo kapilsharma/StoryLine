@@ -19,7 +19,8 @@ import {
   orderedColumnIds,
   removeBoardMember,
   reorderRowBlocks,
-  reorderRowMember
+  reorderRowMember,
+  withFilters
 } from './grid-utils'
 
 const MIME_MEMBER = 'application/x-znstoryline-row-member'
@@ -156,6 +157,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     isRowExpanded,
     toggleRow,
     openPanel,
+    rowFilter,
+    colFilter,
     revising,
     isRevealed,
     toggleRevealed,
@@ -211,16 +214,19 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   // across zoom levels; base size is the user's setting.
   const cardFont = (config?.settings.cardFontSize ?? 13) * zoom
 
-  // Apply any live resize preview to the board before computing layout.
+  // Apply the transient filters (#140), then any live resize preview, before
+  // computing layout. Filtering goes first so the preview still edits the one
+  // card by id; both just return the board unchanged when there's nothing to do.
   const effectiveBoard = useMemo<Board>(() => {
-    if (!preview) return board
+    const filtered = withFilters(board, rowFilter, colFilter)
+    if (!preview) return filtered
     return {
-      ...board,
-      cards: board.cards.map((c) =>
+      ...filtered,
+      cards: filtered.cards.map((c) =>
         c.id === preview.cardId ? { ...c, colStart: preview.colStart, colEnd: preview.colEnd } : c
       )
     }
-  }, [board, preview])
+  }, [board, preview, rowFilter, colFilter])
 
   const layout = useMemo(
     () => buildBoardLayout(effectiveBoard, characters, timeline, notes, colGroups),
