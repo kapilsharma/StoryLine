@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.0](https://github.com/kapilsharma/StoryLine/compare/2.6.1...2.7.0) (2026-10-10)
+
+
+### Features
+
+* **#140:** Add filters on board ([e164e37](https://github.com/kapilsharma/StoryLine/commit/e164e37eb845c58efd1f783abd21ee5044f48ba5))
+* **#140:** Add filters on board ([4ab9151](https://github.com/kapilsharma/StoryLine/commit/4ab9151fc74951f97563916afb6c34b4fd2d0374))
+
 ## [2.6.1](https://github.com/kapilsharma/StoryLine/compare/2.6.0...2.6.1) (2026-10-09)
 
 
