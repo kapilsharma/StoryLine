@@ -6,7 +6,8 @@ import { ExportDialog } from './ExportDialog'
 
 /** Right-side tab-bar toolbar for the Boards tab. */
 export function BoardToolbar(): JSX.Element {
-  const { allExpanded, setAll, cardIds, revising, setRevising, revealAll } = useBoardUi()
+  const { allExpanded, setAll, cardIds, revising, setRevising, revealAll, filtersOpen, setFiltersOpen, filterActive } =
+    useBoardUi()
   const { activeBoard, saveBoard, readOnly } = useStore()
   const [exporting, setExporting] = useState(false)
   const empty = cardIds.length === 0
@@ -88,6 +89,16 @@ export function BoardToolbar(): JSX.Element {
         onClick={() => setAll(!allExpanded)}
       >
         {allExpanded ? '⤡' : '⤢'}
+      </button>
+      {/* Open the filter bar below the tabs (#140). Stays lit while a filter is
+          applied, so a board showing only some of its rows/columns says why. */}
+      <button
+        className={`toolbar-btn${filtersOpen || filterActive ? ' active' : ''}`}
+        disabled={!board}
+        title={filtersOpen ? 'Hide filters' : 'Filter rows and columns'}
+        onClick={() => setFiltersOpen(!filtersOpen)}
+      >
+        🔍
       </button>
       {/* Export this board to one Markdown/PDF file (#125). Read-only, so it
           stays available even when the board is open read-only. */}

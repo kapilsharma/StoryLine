@@ -26,4 +26,28 @@ describe('BoardUiContext', () => {
     const { result } = renderHook(() => useBoardUi(), { wrapper: BoardUiProvider })
     expect(result.current.allExpanded).toBe(false)
   })
+
+  it('tracks row/column filters and clears them together (#140)', () => {
+    const { result } = renderHook(() => useBoardUi(), { wrapper: BoardUiProvider })
+    expect(result.current.filterActive).toBe(false)
+
+    act(() => result.current.setRowFilter(new Set(['a'])))
+    expect(result.current.filterActive).toBe(true)
+    expect(result.current.rowFilter.has('a')).toBe(true)
+
+    act(() => result.current.setColFilter(new Set(['ch1'])))
+    expect(result.current.colFilter.has('ch1')).toBe(true)
+
+    act(() => result.current.clearFilters())
+    expect(result.current.filterActive).toBe(false)
+    expect(result.current.rowFilter.size).toBe(0)
+    expect(result.current.colFilter.size).toBe(0)
+  })
+
+  it('toggles the filter bar open state (#140)', () => {
+    const { result } = renderHook(() => useBoardUi(), { wrapper: BoardUiProvider })
+    expect(result.current.filtersOpen).toBe(false)
+    act(() => result.current.setFiltersOpen(true))
+    expect(result.current.filtersOpen).toBe(true)
+  })
 })

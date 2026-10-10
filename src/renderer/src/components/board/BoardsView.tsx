@@ -11,6 +11,7 @@ import { NotePopup } from '../NotePopup'
 import { CharacterNotePopup } from '../CharacterNotePopup'
 import { ColumnNotePopup } from '../ColumnNotePopup'
 import { BoardGrid } from './BoardGrid'
+import { BoardFilterBar } from './BoardFilterBar'
 import { NoteSidePanel } from './NoteSidePanel'
 import { useBoardUi } from './BoardUiContext'
 import { addBoardMember, nonMembers } from './grid-utils'
@@ -34,7 +35,7 @@ export function BoardsView(): JSX.Element {
     updateSettings
   } = useStore()
   const ask = usePrompt()
-  const { panel, openPanel, closePanel } = useBoardUi()
+  const { panel, openPanel, closePanel, filtersOpen, clearFilters } = useBoardUi()
   const characters = activeBoard?.characters ?? []
   const timeline = activeBoard?.timeline ?? []
   const board = activeBoard?.board ?? null
@@ -68,10 +69,13 @@ export function BoardsView(): JSX.Element {
         : null
 
   // A note belongs to the board it was opened from — carrying it across to the
-  // next tab would show a note that board does not have.
+  // next tab would show a note that board does not have. The filters name this
+  // board's rows and columns too, so they reset alongside it (#140); the bar
+  // itself stays open, now listing the new board's cast.
   useEffect(() => {
     closePanel()
-  }, [activeBoardId, closePanel])
+    clearFilters()
+  }, [activeBoardId, closePanel, clearFilters])
 
   /**
    * Drag the divider to change the split (#83). Only the final fraction is
@@ -254,6 +258,9 @@ export function BoardsView(): JSX.Element {
         <p className="muted placeholder">No boards. Create one with the + above.</p>
       ) : (
         <>
+          {/* Filters sit just below the tabs (#140), shown by the toolbar's 🔍. */}
+          {filtersOpen && activeBoard && <BoardFilterBar data={activeBoard} />}
+
           <div className="board-toolbar">
             {board.presets.length > 0 && (
               <select

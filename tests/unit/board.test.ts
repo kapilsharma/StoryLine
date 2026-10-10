@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { Board, Character, ColumnGroup, Note, TimelineUnit } from '@shared/types'
+import type { Board, Card, Character, ColumnGroup, Note, TimelineUnit } from '@shared/types'
 import {
   visibleColumns as visibleColumnsOf,
   visibleRows,
@@ -11,7 +11,8 @@ import {
   markerKey,
   reorderRowMember,
   reorderRowBlocks,
-  orderedRowBlockKeys
+  orderedRowBlockKeys,
+  withFilters
 } from '@renderer/components/board/grid-utils'
 
 // Chapter 1 holds S1–S2, S3 sits loose between the two chapters, Chapter 2 holds S4:
@@ -322,5 +323,48 @@ describe('card stacking (#66)', () => {
     )
     expect(layout.fullCards.map((c) => c.stackIndex).sort()).toEqual([0, 1, 2])
     expect(layout.stackDepth.get(layout.rows.lineOfChar.get('a')!)).toBe(3)
+  })
+})
+
+describe('withFilters (#140)', () => {
+  const note: Note[] = [{ id: 'n1', uid: 'n_1111', title: 'X', body: '' }]
+  const at = (id: string, rowId: string, colStart: string, colEnd = colStart): Card => ({
+    id,
+    noteUid: 'n_1111',
+    rowId,
+    colStart,
+    colEnd
+  })
+
+  it('returns the same board object when nothing is filtered', () => {
+    const b = board({})
+    expect(withFilters(b, new Set(), new Set())).toBe(b)
+  })
+
+  it('folds excluded rows and columns into hiddenRows / hiddenCols', () => {
+    const b = board({ hiddenRows: ['a'], hiddenCols: ['ch1'] })
+    const filtered = withFilters(b, new Set(['b']), new Set(['ch3']))
+    // Pre-hidden entries are kept, filtered ones added, and no id is duplicated.
+    expect(filtered.hiddenRows.sort()).toEqual(['a', 'b'])
+    expect(filtered.hiddenCols.sort()).toEqual(['ch1', 'ch3'])
+    expect(b.hiddenRows).toEqual(['a']) // original untouched
+  })
+
+  it("doesn't duplicate an id already hidden on the board", () => {
+    const b = board({ hiddenRows: ['a'] })
+    expect(withFilters(b, new Set(['a']), new Set()).hiddenRows).toEqual(['a'])
+  })
+
+  it('a filtered row drops out of the layout like a hidden one', () => {
+    const b = board({ cards: [at('c1', 'a', 'ch3'), at('c2', 'b', 'ch3')] })
+    const layout = buildBoardLayout(withFilters(b, new Set(['b']), new Set()), chars, timeline, note)
+    expect(visibleRows(withFilters(b, new Set(['b']), new Set()), chars).map((c) => c.id)).toEqual(['a', 'c'])
+    expect(layout.fullCards.map((c) => c.card.id)).toEqual(['c1'])
+  })
+
+  it('a card whose whole span is filtered away disappears', () => {
+    const b = board({ cards: [at('c1', 'a', 'ch3')] })
+    const layout = buildBoardLayout(withFilters(b, new Set(), new Set(['ch3'])), chars, timeline, note)
+    expect(layout.fullCards).toHaveLength(0)
   })
 })

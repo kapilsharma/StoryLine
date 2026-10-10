@@ -46,6 +46,27 @@ interface BoardUiValue {
   openPanel: (target: PanelTarget) => void
   closePanel: () => void
 
+  // ── Filters (Issue #140) ──
+  /**
+   * A momentary lens on a crowded board: which rows (characters) and columns
+   * (scenes) are filtered *out*. Each is a set of excluded ids — empty means no
+   * filter, everything shows. Transient like expand/revision: a way of *looking*
+   * at a board, not content, so it is never written to disk and resets when the
+   * board changes. The grid folds these into the board's `hiddenRows`/`hiddenCols`
+   * so all the existing hide/layout logic applies unchanged.
+   */
+  rowFilter: Set<string>
+  colFilter: Set<string>
+  setRowFilter: (next: Set<string>) => void
+  setColFilter: (next: Set<string>) => void
+  /** Clear both filters at once (the filter bar's "Clear"). */
+  clearFilters: () => void
+  /** True when either filter is excluding something. */
+  filterActive: boolean
+  /** Whether the filter bar is shown (the toolbar's filter button). */
+  filtersOpen: boolean
+  setFiltersOpen: (open: boolean) => void
+
   // ── Revision mode (Issue #67) ──
   /**
    * When on, card titles are masked until revealed. Turns a board into a prompt
@@ -72,9 +93,18 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
   const [revising, setRevisingState] = useState(false)
   const [revealed, setRevealed] = useState<Set<string>>(new Set())
   const [panel, setPanel] = useState<PanelTarget | null>(null)
+  const [rowFilter, setRowFilter] = useState<Set<string>>(new Set())
+  const [colFilter, setColFilter] = useState<Set<string>>(new Set())
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const openPanel = useCallback((target: PanelTarget) => setPanel(target), [])
   const closePanel = useCallback(() => setPanel(null), [])
+
+  const clearFilters = useCallback(() => {
+    setRowFilter(new Set())
+    setColFilter(new Set())
+  }, [])
+  const filterActive = rowFilter.size > 0 || colFilter.size > 0
 
   const isExpanded = useCallback((id: string) => expanded.has(id), [expanded])
 
@@ -149,6 +179,14 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
       panel,
       openPanel,
       closePanel,
+      rowFilter,
+      colFilter,
+      setRowFilter,
+      setColFilter,
+      clearFilters,
+      filterActive,
+      filtersOpen,
+      setFiltersOpen,
       revising,
       setRevising,
       isRevealed,
@@ -168,6 +206,11 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
       panel,
       openPanel,
       closePanel,
+      rowFilter,
+      colFilter,
+      clearFilters,
+      filterActive,
+      filtersOpen,
       revising,
       setRevising,
       isRevealed,

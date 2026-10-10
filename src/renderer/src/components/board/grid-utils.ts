@@ -80,6 +80,34 @@ export function visibleRows(board: Board, characters: Character[]): Character[] 
 }
 
 /**
+ * The board as seen through the transient board filters (Issue #140).
+ *
+ * Each filter is a set of *excluded* ids; folding them into `hiddenRows` /
+ * `hiddenCols` lets every existing hide/layout rule apply unchanged — a filtered
+ * row drops out, a card whose whole span is filtered away disappears, a group
+ * left with no visible columns collapses. Returns the board untouched when
+ * nothing is filtered, so the common case allocates nothing and the layout memo
+ * keeps its identity.
+ */
+export function withFilters(
+  board: Board,
+  rowFilter: Set<string>,
+  colFilter: Set<string>
+): Board {
+  if (rowFilter.size === 0 && colFilter.size === 0) return board
+  const union = (base: string[], extra: Set<string>): string[] => {
+    if (extra.size === 0) return base
+    const seen = new Set(base)
+    return [...base, ...[...extra].filter((id) => !seen.has(id))]
+  }
+  return {
+    ...board,
+    hiddenRows: union(board.hiddenRows, rowFilter),
+    hiddenCols: union(board.hiddenCols, colFilter)
+  }
+}
+
+/**
  * The board with `members` turned into a concrete list, so the first curating
  * action on a legacy board converts it rather than silently doing nothing.
  * Returns the board unchanged when it already has a list.

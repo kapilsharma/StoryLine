@@ -830,6 +830,90 @@ textarea {
   color: var(--danger);
 }
 
+/* ── Board filter bar (#140) ── */
+.board-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 1rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.filter-select {
+  position: relative;
+}
+.filter-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.filter-select-btn:hover {
+  border-color: var(--accent, #4078f2);
+}
+.filter-select-btn.active {
+  border-color: var(--accent, #4078f2);
+  color: var(--accent, #4078f2);
+}
+.filter-select-btn .caret {
+  opacity: 0.6;
+}
+.filter-popover {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 14rem;
+  max-height: 20rem;
+  overflow: auto;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+.filter-popover-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0 0.2rem 0.3rem;
+  margin-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+.filter-popover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.filter-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.filter-check:hover {
+  background: var(--panel);
+}
+.filter-check input {
+  cursor: pointer;
+}
+.filter-check.group {
+  font-weight: 600;
+}
+.filter-group .filter-check:not(.group) {
+  padding-left: 1.4rem;
+}
+
 /* Board and note panel side by side (#83). */
 .board-main {
   flex: 1;
