@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.8.1](https://github.com/kapilsharma/StoryLine/compare/2.8.0...2.8.1) (2026-10-13)
+
+
+### Performance Improvements
+
+* **#131:** reload only the changed entity on external edits ([a882f3f](https://github.com/kapilsharma/StoryLine/commit/a882f3f180ceb4858c746d314f61be1c349ab0bd))
+* **#131:** reload only the changed entity on external edits ([c744afd](https://github.com/kapilsharma/StoryLine/commit/c744afd20f01567c32fa87420822f44f4c722af6))
+
 ## [2.8.0](https://github.com/kapilsharma/StoryLine/compare/2.7.0...2.8.0) (2026-10-13)
 
 
