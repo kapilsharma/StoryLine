@@ -227,6 +227,31 @@ describe('card placement + markers', () => {
     const line = layout.rows.lineOfChar.get('b')!
     expect(layout.markers.get(markerKey(line, 0))).toBe(1)
   })
+
+  // The span → visible-column resolution is a binary-search slice (#132); these
+  // pin the edges that a scan handled implicitly.
+  it('spans every slot for a full-width card and attaches its note', () => {
+    const wide = { id: 'w', noteUid: 'n_1111', rowId: 'a', colStart: 'ch1', colEnd: 'ch4' }
+    const layout = buildBoardLayout(board({ cards: [wide] }), chars, timeline, notes)
+    const [pc] = layout.fullCards
+    expect([pc.startSlot, pc.endSlot]).toEqual([0, 3])
+    expect(pc.note?.title).toBe('Hunt')
+  })
+
+  it('resolves a span given end-before-start the same as start-before-end', () => {
+    const rev = { id: 'r', noteUid: 'n_1111', rowId: 'a', colStart: 'ch4', colEnd: 'ch1' }
+    const layout = buildBoardLayout(board({ cards: [rev] }), chars, timeline, notes)
+    const [pc] = layout.fullCards
+    expect([pc.startSlot, pc.endSlot]).toEqual([0, 3])
+  })
+
+  it('stretches a span across a hidden interior column', () => {
+    const wide = { id: 'w', noteUid: 'n_1111', rowId: 'a', colStart: 'ch1', colEnd: 'ch3' }
+    const layout = buildBoardLayout(board({ cards: [wide], hiddenCols: ['ch2'] }), chars, timeline, notes)
+    const [pc] = layout.fullCards
+    // ch2 is gone, so the visible slots are ch1 (0) and ch3 (1).
+    expect([pc.startSlot, pc.endSlot]).toEqual([0, 1])
+  })
 })
 
 /**

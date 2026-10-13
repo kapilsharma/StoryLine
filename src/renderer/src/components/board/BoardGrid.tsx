@@ -35,6 +35,8 @@ const GROUP_H = 26
 const COLHEAD_H = 44
 /** How long the mouse rests on a card before its hover text shows (#111). */
 const HOVER_TIP_DELAY = 400
+/** How long Ctrl+scroll must pause before the new zoom is written to disk (#129). */
+const ZOOM_SAVE_DELAY = 150
 
 /** Stable empty list, so a board without groups doesn't re-run the layout memo every render. */
 const NO_GROUPS: ColumnGroup[] = []
@@ -175,6 +177,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   // moment the card is left, pressed, dragged or scrolled away.
   const [hoverTip, setHoverTip] = useState<HoverTip | null>(null)
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Deferred zoom write (#129); see the zoom block below.
+  const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hideHoverTip = (): void => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current)
     hoverTimer.current = null
@@ -191,11 +195,31 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   useEffect(
     () => () => {
       if (hoverTimer.current) clearTimeout(hoverTimer.current)
+      if (zoomTimer.current) clearTimeout(zoomTimer.current)
     },
     []
   )
 
-  const zoom = board.zoom || 1
+  // Zoom writes are debounced (#129): a Ctrl+scroll gesture fires many wheel
+  // events, and each saveBoard writes board.json and reloads the project. The new
+  // zoom is shown at once from local state, and a single save is flushed once
+  // scrolling pauses. `pendingZoom` is cleared by an effect only after the saved
+  // board catches up, so the view never flickers back to the old value in between.
+  const [pendingZoom, setPendingZoom] = useState<number | null>(null)
+  const zoom = (pendingZoom ?? board.zoom) || 1
+  const lastBoardId = useRef(board.id)
+  useEffect(() => {
+    // Switching boards (this component isn't remounted) must drop a pending zoom,
+    // or the new board would render at the old board's in-flight value.
+    if (lastBoardId.current !== board.id) {
+      lastBoardId.current = board.id
+      setPendingZoom(null)
+    } else if (pendingZoom != null && board.zoom === pendingZoom) {
+      // Saved board has caught up — hand the view back to the persisted value.
+      setPendingZoom(null)
+    }
+  }, [board.id, board.zoom, pendingZoom])
+
   // The header column keeps the width the user dragged (#80). Unlike the data
   // columns it is deliberately not scaled by zoom: zoom is about how much of the
   // plot fits on screen, and the names have to stay readable either way.
@@ -335,8 +359,13 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     hideHoverTip()
     if (!e.ctrlKey && !e.metaKey) return
     e.preventDefault()
-    const next = Math.min(2, Math.max(0.5, zoom * (1 - e.deltaY * 0.0015)))
-    void saveBoard({ ...board, zoom: Math.round(next * 100) / 100 })
+    const next = Math.round(Math.min(2, Math.max(0.5, zoom * (1 - e.deltaY * 0.0015))) * 100) / 100
+    setPendingZoom(next) // immediate visual update; the write is deferred below
+    if (zoomTimer.current) clearTimeout(zoomTimer.current)
+    zoomTimer.current = setTimeout(() => {
+      zoomTimer.current = null
+      void saveBoard({ ...board, zoom: next })
+    }, ZOOM_SAVE_DELAY)
   }
 
   // ── Create / move / resize ──

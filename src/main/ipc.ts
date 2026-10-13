@@ -68,6 +68,7 @@ import {
 import { uniqueNoteUid } from './data/uid'
 import { invalidateSearchIndex, searchProject } from './data/searchIndex'
 import { ProjectWatcher } from './data/watcher'
+import { clearOwnWrites } from './data/ownWrites'
 
 /** The single active project watcher; replaced when a new project is opened. */
 let activeWatcher: ProjectWatcher | null = null
@@ -83,6 +84,9 @@ function pushChange(window: BrowserWindow, change: ProjectChange): void {
 
 async function startWatching(root: string, window: BrowserWindow): Promise<void> {
   if (activeWatcher) await activeWatcher.stop()
+  // Drop any own-write claims from the previous project so a path reused across
+  // projects can't carry a stale suppression into the new watch (#130).
+  clearOwnWrites()
   activeWatcher = new ProjectWatcher(root, (change) => pushChange(window, change))
   activeWatcher.start()
 }

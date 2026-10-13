@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs'
 import { dirname } from 'path'
+import { markOwnWrite } from './ownWrites'
 
 /**
  * Filesystem helpers with an mtime guard to avoid clobbering external edits.
@@ -57,6 +58,10 @@ export async function writeTextGuarded(
 
   await fs.mkdir(dirname(filePath), { recursive: true })
   await fs.writeFile(filePath, text, 'utf8')
+  // Tag the write so the watcher can tell it apart from an external edit and
+  // skip the redundant full reload (#130). Done before the post-write stat so
+  // the claim is in place well ahead of the watcher's (delayed) event.
+  markOwnWrite(filePath)
   const stat = await fs.stat(filePath)
   return stat.mtimeMs
 }

@@ -1,6 +1,7 @@
 import chokidar, { type FSWatcher } from 'chokidar'
 import { basename, relative, sep } from 'path'
 import type { ChangeType, ProjectChange } from '@shared/changes'
+import { claimOwnWrite } from './ownWrites'
 
 /**
  * Watches a project folder and reports which entity changed, so the renderer
@@ -61,6 +62,10 @@ export class ProjectWatcher {
     })
 
     const emit = (type: ChangeType) => (path: string) => {
+      // A write the app just made returns a fresh snapshot already; claim it and
+      // skip the redundant full reload this event would otherwise trigger (#130).
+      // Only 'add'/'change' can be ours — a delete never goes through our writer.
+      if (type !== 'unlink' && claimOwnWrite(path)) return
       const change = classify(relative(this.root, path), type)
       if (change) this.onChange(change)
     }
