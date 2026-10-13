@@ -374,22 +374,38 @@ export function buildRowLayout(board: Board, characters: Character[]): RowLayout
   return { lines, lineOfChar, hasGroups }
 }
 
-/** Visible units within a card's [colStart..colEnd] range, in display order. */
+/** First index in a non-decreasing array whose value is >= target. */
+function lowerBound(sorted: number[], target: number): number {
+  let lo = 0
+  let hi = sorted.length
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1
+    if (sorted[mid] < target) lo = mid + 1
+    else hi = mid
+  }
+  return lo
+}
+
+/**
+ * Visible units within a card's [colStart..colEnd] range, in display order.
+ *
+ * `visible` is already in ascending full-order position and `visPositions` holds
+ * those positions in step, so the range is a binary-search slice rather than a
+ * scan of every column — O(log cols) per card instead of O(cols) (#132).
+ */
 function unitsInSpan(
   colStart: string,
   colEnd: string,
   visible: TimelineUnit[],
-  positions: Map<string, number>
+  positions: Map<string, number>,
+  visPositions: number[]
 ): TimelineUnit[] {
   const a = positions.get(colStart)
   const b = positions.get(colEnd)
   if (a == null || b == null) return []
   const lo = Math.min(a, b)
   const hi = Math.max(a, b)
-  return visible.filter((u) => {
-    const p = positions.get(u.id)
-    return p != null && p >= lo && p <= hi
-  })
+  return visible.slice(lowerBound(visPositions, lo), lowerBound(visPositions, hi + 1))
 }
 
 export interface PlacedCard {
@@ -464,6 +480,10 @@ export function buildBoardLayout(
   const rows = buildRowLayout(board, characters)
   const positions = timelinePositions(timeline, colGroups)
   const visible = visibleColumns(board, timeline, colGroups)
+  // Lookups built once, so the per-card loop stays O(1) in notes and O(log cols)
+  // in columns rather than scanning both for every card (#132).
+  const visPositions = visible.map((u) => positions.get(u.id)!)
+  const noteByUid = new Map(notes.map((n) => [n.uid, n]))
   const charById = new Map(characters.map((c) => [c.id, c]))
   const collapsedColSlot = new Set(
     cols.slots.filter((s) => s.kind === 'colGroup').map((s) => s.index)
@@ -479,7 +499,7 @@ export function buildBoardLayout(
   for (const card of board.cards) {
     const lineIndex = rows.lineOfChar.get(card.rowId)
     if (lineIndex == null) continue // character hidden
-    const within = unitsInSpan(card.colStart, card.colEnd, visible, positions)
+    const within = unitsInSpan(card.colStart, card.colEnd, visible, positions, visPositions)
     if (within.length === 0) continue // whole span hidden
 
     const slotIdxs = within.map((u) => cols.slotOfUnit.get(u.id)!).filter((i) => i != null)
@@ -496,7 +516,7 @@ export function buildBoardLayout(
       const char = charById.get(card.rowId)
       fullCards.push({
         card,
-        note: noteForCard(notes, card.noteUid),
+        note: noteByUid.get(card.noteUid),
         lineIndex,
         startSlot,
         endSlot,
