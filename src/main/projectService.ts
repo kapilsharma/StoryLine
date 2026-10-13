@@ -1,6 +1,8 @@
 import { basename } from 'path'
 import { SCHEMA_VERSION, type Board, type Project } from '@shared/types'
 import type { BoardData, ProjectSnapshot } from '@shared/ipc'
+import type { ProjectChange } from '@shared/changes'
+import type { PatchOp, ProjectPatch } from '@shared/patch'
 import { buildGraph } from '@shared/graph'
 import {
   ensureBoardDirs,
@@ -12,7 +14,12 @@ import {
   listTimeline,
   listViews,
   readBoard,
+  readCharacter,
+  readColumnGroup,
+  readNoteMeta,
   readProject,
+  readTimelineUnit,
+  readView,
   writeBoard,
   writeProject
 } from './data/repository'
@@ -139,4 +146,80 @@ export async function loadSnapshot(root: string, stampLastOpened = false): Promi
   }
 
   return { root, project, boards }
+}
+
+/** True for a "the file is simply gone" error — the file was read after a delete. */
+function isMissing(err: unknown): boolean {
+  return (err as NodeJS.ErrnoException)?.code === 'ENOENT'
+}
+
+/**
+ * Read one changed entity into the patch op that re-states it in the snapshot
+ * (#131). A delete — or a file that vanished before it could be read — becomes a
+ * null-value op the merge treats as a removal. Any other read error (a half-synced
+ * Google Drive file, say) is thrown, so the whole focused reload is abandoned and
+ * the renderer keeps the snapshot it has; the watcher will fire again.
+ */
+async function loadOp(root: string, change: ProjectChange): Promise<PatchOp | null> {
+  const { kind, id, boardId, type } = change
+  if (kind === 'project') {
+    try {
+      return { target: 'project', project: (await readProject(root)).value }
+    } catch (err) {
+      if (isMissing(err)) return null
+      throw err
+    }
+  }
+  if (!boardId) return null
+
+  if (kind === 'board') {
+    try {
+      return { target: 'board', boardId, board: (await readBoard(root, boardId)).value }
+    } catch (err) {
+      if (isMissing(err)) return null
+      throw err
+    }
+  }
+
+  // A delete needs no read — the entity is simply dropped from its board.
+  if (type === 'unlink') return { target: kind, boardId, id, value: null }
+
+  try {
+    switch (kind) {
+      case 'character':
+        return { target: 'character', boardId, id, value: (await readCharacter(root, boardId, id)).value }
+      case 'timeline':
+        return { target: 'timeline', boardId, id, value: (await readTimelineUnit(root, boardId, id)).value }
+      case 'colgroup':
+        return { target: 'colgroup', boardId, id, value: (await readColumnGroup(root, boardId, id)).value }
+      case 'note':
+        return { target: 'note', boardId, id, value: await readNoteMeta(root, boardId, id) }
+      case 'view':
+        return { target: 'view', boardId, id, value: (await readView(root, boardId, id)).value }
+    }
+  } catch (err) {
+    // Added/changed then gone (a quick create-delete) — drop it, same as unlink.
+    if (isMissing(err)) return { target: kind, boardId, id, value: null }
+    throw err
+  }
+  return null
+}
+
+/**
+ * Re-read only the entities a batch of watcher changes names, for a focused
+ * live-reload (#131). Duplicate events for one file (chokidar often fires add then
+ * change) collapse to a single read — the last event for a path wins, so a trailing
+ * delete still removes it. Returns the ops in first-seen order.
+ */
+export async function loadChanges(root: string, changes: ProjectChange[]): Promise<ProjectPatch> {
+  // Collapse to the last change per target path, preserving first-seen order.
+  const order: string[] = []
+  const latest = new Map<string, ProjectChange>()
+  for (const change of changes) {
+    const key = `${change.kind}:${change.boardId ?? ''}:${change.id}`
+    if (!latest.has(key)) order.push(key)
+    latest.set(key, change)
+  }
+  const ops = await Promise.all(order.map((key) => loadOp(root, latest.get(key)!)))
+  return { ops: ops.filter((op): op is PatchOp => op !== null) }
 }

@@ -14,6 +14,7 @@ const api: AppApi = {
   pickProject: () => ipcRenderer.invoke('project:pick'),
   openProject: (root) => ipcRenderer.invoke('project:open', root),
   reloadProject: (root) => ipcRenderer.invoke('project:reload', root),
+  reloadChanges: (root, changes) => ipcRenderer.invoke('project:reloadChanges', root, changes),
   removeRecent: (root) => ipcRenderer.invoke('project:removeRecent', root),
   saveProjectMeta: (root, meta) => ipcRenderer.invoke('project:saveMeta', root, meta),
   saveFamilyColours: (root, families) => ipcRenderer.invoke('project:saveFamilies', root, families),
