@@ -7,5 +7,11 @@ export interface ProjectChange {
   kind: EntityKind
   /** Entity id (filename stem), or 'project' for project.json. */
   id: string
+  /**
+   * The board that owns the entity, for every per-board kind (note, character,
+   * timeline, colgroup, view, and `board` itself). Absent only for `project`.
+   * Carried so the renderer can reload just that board's slice (#131).
+   */
+  boardId?: string
   type: ChangeType
 }

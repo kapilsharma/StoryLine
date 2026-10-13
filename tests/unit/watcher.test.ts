@@ -17,28 +17,33 @@ describe('watcher classify (per-board layout since v0.2.0)', () => {
     expect(classify(p('boards', 'main', 'board.json'), 'change')).toEqual({
       kind: 'board',
       id: 'main',
+      boardId: 'main',
       type: 'change'
     })
   })
 
-  it('classifies per-board notes / characters / timeline', () => {
+  it('classifies per-board notes / characters / timeline, carrying the owning board (#131)', () => {
     expect(classify(p('boards', 'main', 'notes', 'experiment-mage.md'), 'add')).toEqual({
       kind: 'note',
       id: 'experiment-mage',
+      boardId: 'main',
       type: 'add'
     })
     expect(classify(p('boards', 'main', 'characters', 'wolf.md'), 'unlink')).toMatchObject({
       kind: 'character',
-      id: 'wolf'
+      id: 'wolf',
+      boardId: 'main'
     })
     expect(classify(p('boards', 'b2', 'colgroups', 'part-one.md'), 'change')).toEqual({
       kind: 'colgroup',
       id: 'part-one',
+      boardId: 'b2',
       type: 'change'
     })
     expect(classify(p('boards', 'b2', 'timeline', 'ch1.md'), 'change')).toMatchObject({
       kind: 'timeline',
-      id: 'ch1'
+      id: 'ch1',
+      boardId: 'b2'
     })
   })
 
@@ -46,6 +51,7 @@ describe('watcher classify (per-board layout since v0.2.0)', () => {
     expect(classify(p('boards', 'main', 'views', 'ashvale-side.json'), 'change')).toEqual({
       kind: 'view',
       id: 'ashvale-side',
+      boardId: 'main',
       type: 'change'
     })
     // Views are JSON, not markdown — the wrong extension is not a view.

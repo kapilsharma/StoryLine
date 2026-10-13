@@ -20,6 +20,7 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     pickProject: vi.fn().mockResolvedValue(null),
     openProject: vi.fn(),
     reloadProject: vi.fn(),
+    reloadChanges: vi.fn().mockResolvedValue({ ops: [] }),
     removeRecent: vi.fn().mockResolvedValue(baseConfig),
     saveProjectMeta: vi.fn(),
     saveFamilyColours: vi.fn(),

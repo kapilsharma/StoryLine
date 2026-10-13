@@ -375,23 +375,26 @@ export async function writeNote(
 }
 
 /**
+ * One note's metadata — everything except the body. The file is read whole (uid
+ * and title live in the frontmatter) but the body is dropped, with `hasBody`
+ * recording whether it held anything (issue #46). This is the per-note unit a
+ * focused reload re-reads (#131); `listNoteMetas` is the whole-board sweep.
+ */
+export async function readNoteMeta(root: string, boardId: string, id: string): Promise<Note> {
+  const { value } = await readNote(root, boardId, id)
+  const meta: Note = { ...value, body: '' }
+  if (value.body.trim() !== '') meta.hasBody = true
+  return meta
+}
+
+/**
  * Note metadata for a board — everything except the body. Used for board/list
  * views (cards show only the title now); the body is fetched lazily when a note
- * popup opens. Still opens each file (needed for uid + title).
+ * popup opens.
  */
 export async function listNoteMetas(root: string, boardId: string): Promise<Note[]> {
   const ids = await listNoteIds(root, boardId)
-  return Promise.all(
-    ids.map(async (id) => {
-      const { value } = await readNote(root, boardId, id)
-      // The file was read whole anyway, so record whether the body held
-      // anything before dropping it — that flag is what marks a card as
-      // having more inside (issue #46).
-      const meta: Note = { ...value, body: '' }
-      if (value.body.trim() !== '') meta.hasBody = true
-      return meta
-    })
-  )
+  return Promise.all(ids.map((id) => readNoteMeta(root, boardId, id)))
 }
 
 export function deleteNote(root: string, boardId: string, id: string): Promise<void> {

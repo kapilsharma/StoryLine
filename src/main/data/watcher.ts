@@ -27,18 +27,19 @@ export function classify(rel: string, type: ChangeType): ProjectChange | null {
 
   // boards/<id>/board.json
   if (parts.length === 3 && parts[2] === 'board.json') {
-    return { kind: 'board', id: boardId, type }
+    return { kind: 'board', id: boardId, boardId, type }
   }
 
   // boards/<id>/<sub>/<file>.{md,json}
   if (parts.length === 4) {
     const sub = parts[2]
     const file = parts[3]
-    if (sub === 'characters' && file.endsWith('.md')) return { kind: 'character', id: basename(file, '.md'), type }
-    if (sub === 'timeline' && file.endsWith('.md')) return { kind: 'timeline', id: basename(file, '.md'), type }
-    if (sub === 'colgroups' && file.endsWith('.md')) return { kind: 'colgroup', id: basename(file, '.md'), type }
-    if (sub === 'notes' && file.endsWith('.md')) return { kind: 'note', id: basename(file, '.md'), type }
-    if (sub === 'views' && file.endsWith('.json')) return { kind: 'view', id: basename(file, '.json'), type }
+    const stem = (ext: string): string => basename(file, ext)
+    if (sub === 'characters' && file.endsWith('.md')) return { kind: 'character', id: stem('.md'), boardId, type }
+    if (sub === 'timeline' && file.endsWith('.md')) return { kind: 'timeline', id: stem('.md'), boardId, type }
+    if (sub === 'colgroups' && file.endsWith('.md')) return { kind: 'colgroup', id: stem('.md'), boardId, type }
+    if (sub === 'notes' && file.endsWith('.md')) return { kind: 'note', id: stem('.md'), boardId, type }
+    if (sub === 'views' && file.endsWith('.json')) return { kind: 'view', id: stem('.json'), boardId, type }
   }
   return null
 }

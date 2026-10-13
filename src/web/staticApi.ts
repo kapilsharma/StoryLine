@@ -105,6 +105,9 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     pickProject: () => denied<string | null>(),
     openProject: async () => snapshot(),
     reloadProject: async () => snapshot(),
+    // A static export has no watcher, so nothing ever calls this — but the
+    // contract needs it. An empty patch leaves the snapshot untouched.
+    reloadChanges: async () => ({ ops: [] }),
     // Recents are never exported, so there is nothing to remove — succeed quietly.
     removeRecent: async () => config(),
     saveProjectMeta: () => denied<ProjectSnapshot>(),

@@ -32,6 +32,8 @@ import type {
   ViewMode
 } from '@shared/types'
 import type { ColumnRef } from '@shared/columns'
+import type { ProjectChange } from '@shared/changes'
+import { applyProjectPatch, planReload } from '@shared/patch'
 import { buildGraph, type FamilyGraph } from '@shared/graph'
 import { api } from './api'
 import { editorStyleVars } from './lib/markdown'
@@ -198,6 +200,11 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
   const rootRef = useRef<string | null>(null)
   rootRef.current = snapshot?.root ?? null
 
+  // The live-reload effect runs once (its listener must stay subscribed), so it
+  // reads the current snapshot through a ref rather than closing over stale state.
+  const snapshotRef = useRef<ProjectSnapshot | null>(null)
+  snapshotRef.current = snapshot
+
   const boards = useMemo(() => (snapshot?.boards ?? []).map((bd) => bd.board), [snapshot])
   const activeBoard = useMemo(
     () => snapshot?.boards.find((bd) => bd.board.id === activeBoardId) ?? null,
@@ -253,18 +260,41 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
     for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v)
   }, [config?.settings.editorStyles, config?.settings.theme])
 
-  // Live reload: debounce filesystem changes into a single project re-read.
+  // Live reload: debounce filesystem changes, then reload only the entities that
+  // actually changed (#131). The watcher names each one, so an external edit of a
+  // single note re-reads that one file instead of every board in the project. A
+  // change that alters the board set (a board folder added or removed) falls back
+  // to a full reload, which is also the backstop if anything can't be patched.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
-    const unsubscribe = api.onProjectChange(() => {
+    let pending: ProjectChange[] = []
+    // Transient failures (Google Drive mid-sync, a file briefly unavailable) are
+    // silent — the watcher fires again and the next reload succeeds. Only a
+    // user-initiated action should raise the error bar.
+    const warn = (e: unknown): void => console.warn('[live-reload] reload failed (ignored):', e)
+
+    const unsubscribe = api.onProjectChange((change) => {
       if (!rootRef.current) return
+      pending.push(change)
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         const root = rootRef.current
-        // Transient failures (Google Drive mid-sync, file briefly unavailable)
-        // are silent — the watcher will fire again and the next reload will
-        // succeed. Only a user-initiated action should show the error bar.
-        if (root) api.reloadProject(root).then(setSnapshot).catch((e) => console.warn('[live-reload] reload failed (ignored):', e))
+        const snap = snapshotRef.current
+        const batch = pending
+        pending = []
+        if (!root || !snap) return
+        const plan = planReload(snap, batch)
+        if (plan.mode === 'full') {
+          api.reloadProject(root).then(setSnapshot).catch(warn)
+        } else if (plan.changes.length > 0) {
+          api
+            .reloadChanges(root, plan.changes)
+            // Apply against the *current* snapshot: an in-app edit may have landed
+            // while the focused read was in flight, and the patch merges cleanly
+            // onto it (a board the patch names but no longer exists is skipped).
+            .then((patch) => setSnapshot((cur) => (cur ? applyProjectPatch(cur, patch) : cur)))
+            .catch(warn)
+        }
       }, 150)
     })
     return () => {

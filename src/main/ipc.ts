@@ -26,7 +26,7 @@ import {
   type ColumnRef
 } from '@shared/columns'
 import { readConfig, removeRecent, touchRecent, updateConfig } from './appConfig'
-import { createProject, defaultBoard, loadSnapshot } from './projectService'
+import { createProject, defaultBoard, loadChanges, loadSnapshot } from './projectService'
 import { assembleStaticSite, buildExportBundle } from './data/exportBundle'
 import { markdownToPdf } from './data/renderPdf'
 import { ProjectNotInGroupError, resolveProjectGroup, type ResolvedProjectGroup } from './data/projectGroup'
@@ -318,6 +318,12 @@ export function registerIpc(window: BrowserWindow): void {
   })
 
   ipcMain.handle('project:reload', (_e, root: string) => snap(root))
+  // Focused live-reload (#131): read only the changed entities. A pure read, so
+  // no search-index invalidation here — `pushChange` already did that when the
+  // watcher event arrived.
+  ipcMain.handle('project:reloadChanges', (_e, root: string, changes: ProjectChange[]) =>
+    loadChanges(root, changes)
+  )
   ipcMain.handle('project:removeRecent', (_e, root: string) => removeRecent(root))
 
   ipcMain.handle('project:saveMeta', async (_e, root: string, meta: ProjectMeta) => {

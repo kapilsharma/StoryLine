@@ -22,6 +22,7 @@ import type {
 import type { AppConfig, AppSettings } from './config'
 import type { ProjectMeta } from './project'
 import type { ProjectChange } from './changes'
+import type { ProjectPatch } from './patch'
 import type { SearchHit, SearchScope } from './search'
 import type { AssetImport, AssetRef } from './assets'
 import type { ColumnRef } from './columns'
@@ -86,6 +87,15 @@ export interface AppApi {
   pickProject(): Promise<string | null>
   openProject(root: string): Promise<ProjectSnapshot>
   reloadProject(root: string): Promise<ProjectSnapshot>
+  /**
+   * Re-read only the entities named by a batch of watcher changes and return a
+   * patch to merge into the current snapshot (#131). The focused counterpart of
+   * {@link reloadProject}: the renderer calls this when {@link ProjectChange}s
+   * are all board-local, so an external edit of one note costs one file read
+   * instead of re-reading every board. Removed entities come back as a null-value
+   * op; board/project adds and removals go through `reloadProject` instead.
+   */
+  reloadChanges(root: string, changes: ProjectChange[]): Promise<ProjectPatch>
   removeRecent(root: string): Promise<AppConfig>
   /** Update project-level metadata (name, row/timeline labels, project kind). */
   saveProjectMeta(root: string, meta: ProjectMeta): Promise<ProjectSnapshot>
