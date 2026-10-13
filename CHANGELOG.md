@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.8.0](https://github.com/kapilsharma/StoryLine/compare/2.7.0...2.8.0) (2026-10-13)
+
+
+### Features
+
+* **#129:** + [#130](https://github.com/kapilsharma/StoryLine/issues/130),[#132](https://github.com/kapilsharma/StoryLine/issues/132) cut board I/O and layout cost on large projects ([ff4f9db](https://github.com/kapilsharma/StoryLine/commit/ff4f9db6e4284d85d5339ba1fe16b919af47a4aa))
+
+
+### Performance Improvements
+
+* **#129:** + [#130](https://github.com/kapilsharma/StoryLine/issues/130),[#132](https://github.com/kapilsharma/StoryLine/issues/132) cut board I/O and layout cost on large projects ([d2fd82d](https://github.com/kapilsharma/StoryLine/commit/d2fd82dae7af546d89d1a69a32c94fd9cc3fb32f))
+
 ## [2.7.0](https://github.com/kapilsharma/StoryLine/compare/2.6.1...2.7.0) (2026-10-10)
 
 
