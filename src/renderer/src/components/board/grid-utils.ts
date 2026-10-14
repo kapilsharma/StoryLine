@@ -146,6 +146,38 @@ export function noteForCard(notes: Note[], noteUid: string): Note | undefined {
   return notes.find((n) => n.uid === noteUid)
 }
 
+/**
+ * The inclusive range of column slots to render for a horizontally-scrolled
+ * board (#150). Columns are a fixed `colW` and start after the sticky row-header
+ * of width `headerW`, so the visible range is pure arithmetic — no measuring of
+ * individual columns. `overscan` extra columns are kept on each side so a scroll
+ * never shows a blank edge before the next recompute.
+ *
+ * With no measured `clientWidth` (first mount, or a test environment that does
+ * no layout) every column is returned, so nothing is ever missing when the
+ * board can't be measured.
+ */
+export function columnWindow(
+  scrollLeft: number,
+  clientWidth: number,
+  headerW: number,
+  colW: number,
+  slotCount: number,
+  overscan: number
+): { first: number; last: number } {
+  if (slotCount <= 0) return { first: 0, last: -1 }
+  if (!clientWidth || colW <= 0) return { first: 0, last: slotCount - 1 }
+  const first = Math.min(
+    slotCount - 1,
+    Math.max(0, Math.floor((scrollLeft - headerW) / colW) - overscan)
+  )
+  const last = Math.min(
+    slotCount - 1,
+    Math.ceil((scrollLeft + clientWidth - headerW) / colW) + overscan
+  )
+  return { first, last: Math.max(first, last) }
+}
+
 export function truncate(text: string, max = 60): string {
   return text.length > max ? text.slice(0, max - 1) + '…' : text
 }

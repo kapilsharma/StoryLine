@@ -8,6 +8,7 @@ import {
   buildColumnLayout as buildColumnLayoutOf,
   buildRowLayout,
   buildBoardLayout as buildBoardLayoutOf,
+  columnWindow,
   markerKey,
   reorderRowMember,
   reorderRowBlocks,
@@ -391,5 +392,39 @@ describe('withFilters (#140)', () => {
     const b = board({ cards: [at('c1', 'a', 'ch3')] })
     const layout = buildBoardLayout(withFilters(b, new Set(), new Set(['ch3'])), chars, timeline, note)
     expect(layout.fullCards).toHaveLength(0)
+  })
+})
+
+describe('columnWindow (#150 horizontal virtualization)', () => {
+  // headerW 200, colW 100, 50 columns, overscan 2.
+  const win = (scrollLeft: number, clientWidth: number): { first: number; last: number } =>
+    columnWindow(scrollLeft, clientWidth, 200, 100, 50, 2)
+
+  it('renders every column when the container is unmeasured (first mount / jsdom)', () => {
+    expect(win(0, 0)).toEqual({ first: 0, last: 49 })
+  })
+
+  it('at the left edge starts at 0 and covers the viewport plus overscan', () => {
+    // 800px of columns after the 200px header = 8 columns, + 2 overscan.
+    expect(win(0, 1000)).toEqual({ first: 0, last: 10 })
+  })
+
+  it('scrolled right, returns a middle slice offset by the scroll', () => {
+    // Columns start at x=200; scrollLeft 1200 → (1200-200)/100 = col 10, minus
+    // overscan = 8; right edge (1200+1000-200)/100 = 20, plus overscan = 22.
+    expect(win(1200, 1000)).toEqual({ first: 8, last: 22 })
+  })
+
+  it('clamps the last column to the end of the board', () => {
+    expect(win(100000, 1000).last).toBe(49)
+  })
+
+  it('never returns last before first', () => {
+    const w = win(100000, 1000)
+    expect(w.last).toBeGreaterThanOrEqual(w.first)
+  })
+
+  it('is empty-safe when there are no columns', () => {
+    expect(columnWindow(0, 1000, 200, 100, 0, 2)).toEqual({ first: 0, last: -1 })
   })
 })
