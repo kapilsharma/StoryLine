@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.8.4](https://github.com/kapilsharma/StoryLine/compare/2.8.3...2.8.4) (2026-10-14)
+
+
+### Performance Improvements
+
+* **#157:** Virtualize rows ([cbecf76](https://github.com/kapilsharma/StoryLine/commit/cbecf76346917b09009dbbe78dff2ee9b4d9bec8))
+* **#157:** Virtualize rows ([cd338ed](https://github.com/kapilsharma/StoryLine/commit/cd338ed7cf9d16d900119657f2233ea1d2d8f578))
+
 ## [2.8.3](https://github.com/kapilsharma/StoryLine/compare/2.8.2...2.8.3) (2026-10-14)
 
 
