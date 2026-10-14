@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Board, Card, Character, ColumnGroup } from '@shared/types'
 import {
   ROW_HEADER_W_DEFAULT,
@@ -10,8 +10,7 @@ import { cardStatuses, findCardStatus } from '@shared/cardStatus'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
 import { useBoardUi } from './BoardUiContext'
-import { CardHoverTip } from './CardHoverTip'
-import type { Rect } from '../../lib/tooltip'
+import { CardHoverTipHost, showCardHoverTip, hideCardHoverTip } from './CardHoverTip'
 import {
   buildBoardLayout,
   markerKey,
@@ -22,6 +21,7 @@ import {
   reorderRowMember,
   withFilters
 } from './grid-utils'
+import type { PlacedCard } from './grid-utils'
 
 const MIME_MEMBER = 'application/x-znstoryline-row-member'
 const MIME_BLOCK = 'application/x-znstoryline-row-block'
@@ -33,10 +33,10 @@ const COMPACT_ROW_H = 66
 const GROUPHEAD_LINE_H = 30
 const GROUP_H = 26
 const COLHEAD_H = 44
-/** How long the mouse rests on a card before its hover text shows (#111). */
-const HOVER_TIP_DELAY = 400
 /** How long Ctrl+scroll must pause before the new zoom is written to disk (#129). */
 const ZOOM_SAVE_DELAY = 150
+/** Vertical gap between stacked cards, and above/below the stack (#66). */
+const STACK_GAP = 6
 
 /** Stable empty list, so a board without groups doesn't re-run the layout memo every render. */
 const NO_GROUPS: ColumnGroup[] = []
@@ -53,11 +53,6 @@ interface RowMenu {
   name: string
   x: number
   y: number
-}
-
-interface HoverTip {
-  text: string
-  anchor: Rect
 }
 
 interface Preview {
@@ -137,6 +132,148 @@ function RowHeadName({
   )
 }
 
+/**
+ * One plotted card. Memoised (#133) so a re-render of the grid — a hover, a
+ * collapse, another card expanding, a menu opening — doesn't re-diff every card
+ * on the board. All props are either the stable `PlacedCard` from the layout
+ * memo, primitives, or callbacks the grid keeps stable with `useCallback`, so a
+ * card re-renders only when something about *that* card changed.
+ */
+interface BoardCardProps {
+  pc: PlacedCard
+  gridRow: number
+  cardH: number
+  lineDepth: number
+  masked: boolean
+  isExp: boolean
+  expandable: boolean
+  hoverText?: string
+  statusIcon?: string
+  statusLabel?: string
+  noteId?: string
+  title: string
+  hasBody: boolean
+  hasLinks: boolean
+  onOpenNote: (noteId: string) => void
+  onToggleReveal: (cardId: string) => void
+  onToggleExpand: (cardId: string) => void
+  onBeginResize: (e: React.PointerEvent, card: Card, edge: 'start' | 'end') => void
+  onCardDragStart: (e: React.DragEvent, card: Card) => void
+  onOpenMenu: (e: React.MouseEvent, cardId: string) => void
+}
+
+const BoardCard = memo(function BoardCard({
+  pc,
+  gridRow,
+  cardH,
+  lineDepth,
+  masked,
+  isExp,
+  expandable,
+  hoverText,
+  statusIcon,
+  statusLabel,
+  noteId,
+  title,
+  hasBody,
+  hasLinks,
+  onOpenNote,
+  onToggleReveal,
+  onToggleExpand,
+  onBeginResize,
+  onCardDragStart,
+  onOpenMenu
+}: BoardCardProps): JSX.Element {
+  const card = pc.card
+  return (
+    <div
+      className={`board-card${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}`}
+      draggable
+      onDragStart={(e) => {
+        hideCardHoverTip()
+        onCardDragStart(e, card)
+      }}
+      onMouseEnter={hoverText ? (e) => showCardHoverTip(e.currentTarget, hoverText) : undefined}
+      onMouseLeave={hoverText ? hideCardHoverTip : undefined}
+      onPointerDown={hoverText ? hideCardHoverTip : undefined}
+      style={{
+        gridColumn: `${pc.startSlot + 2} / ${pc.endSlot + 3}`,
+        gridRow,
+        height: isExp ? 'auto' : `${cardH}px`,
+        ['--card-border' as string]: pc.colour,
+        // Stacked rows lay their cards out from the top so the levels line up; a
+        // lone card keeps centring (#66).
+        ...(lineDepth > 1
+          ? {
+              alignSelf: 'start',
+              marginTop: `${STACK_GAP + pc.stackIndex * (cardH + STACK_GAP)}px`
+            }
+          : {})
+      }}
+      onClick={() => {
+        // In revision mode the first click is the reveal — opening the note would
+        // give the answer away (#67).
+        if (masked) {
+          onToggleReveal(card.id)
+          return
+        }
+        if (noteId) onOpenNote(noteId)
+      }}
+      onContextMenu={(e) => onOpenMenu(e, card.id)}
+    >
+      <span className="resize-handle left" onPointerDown={(e) => onBeginResize(e, card, 'start')} />
+      <div className="card-content">
+        <div className="card-title">
+          {masked ? (
+            <span className="card-masked" aria-label="Hidden — click to reveal">
+              • • •
+            </span>
+          ) : (
+            <>
+              {/* Where the scene stands, leftmost so a glance down a row reads as
+                  a progress bar (#108). */}
+              {statusIcon && (
+                <span className="card-status-icon" title={statusLabel}>
+                  {statusIcon}{' '}
+                </span>
+              )}
+              {/* A card whose note has a body opens onto more than its title, so
+                  it says so up front (#46). */}
+              {hasBody && (
+                <span className="card-note-icon" title="Has note details">
+                  📝{' '}
+                </span>
+              )}
+              {title}
+              {hasLinks && <span className="link-icon"> 🔗</span>}
+            </>
+          )}
+        </div>
+      </div>
+      {/* Says "rest the mouse here" (#116) — in the corner, so it sits in one
+          place on every card and a glance down a row finds the ones with a hint. */}
+      {hoverText && (
+        <span className="card-hover-icon" aria-label="Has hover text">
+          ℹ️
+        </span>
+      )}
+      {expandable && (
+        <button
+          className="card-expand"
+          title={isExp ? 'Collapse card' : 'Expand card'}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleExpand(card.id)
+          }}
+        >
+          {isExp ? '⤡' : '⤢'}
+        </button>
+      )}
+      <span className="resize-handle right" onPointerDown={(e) => onBeginResize(e, card, 'end')} />
+    </div>
+  )
+})
+
 export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const { snapshot, config, createCard, updateCard, deleteCard, saveBoard } = useStore()
   const statuses = snapshot ? cardStatuses(snapshot.project) : []
@@ -167,34 +304,20 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     revealMany
   } = useBoardUi()
   // Both clicks that used to open a modal now open the side panel beside the
-  // board (#83); `BoardsView` is what renders it.
-  const openNote = (id: string): void => openPanel({ kind: 'note', id })
+  // board (#83); `BoardsView` is what renders it. `openNote` is kept stable so
+  // it can be a prop of the memoised card (#133).
+  const openNote = useCallback((id: string): void => openPanel({ kind: 'note', id }), [openPanel])
   const openCharacterNote = (id: string): void => openPanel({ kind: 'character', id })
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // A card's hover text (#111). Shown after a short rest, so sweeping the mouse
-  // across the board does not flash a tip on every card it crosses; hidden the
-  // moment the card is left, pressed, dragged or scrolled away.
-  const [hoverTip, setHoverTip] = useState<HoverTip | null>(null)
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Deferred zoom write (#129); see the zoom block below.
   const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const hideHoverTip = (): void => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current)
-    hoverTimer.current = null
-    setHoverTip(null)
-  }
-  const showHoverTipSoon = (el: HTMLElement, text: string): void => {
-    hideHoverTip()
-    hoverTimer.current = setTimeout(() => {
-      hoverTimer.current = null
-      const r = el.getBoundingClientRect()
-      setHoverTip({ text, anchor: { left: r.left, top: r.top, width: r.width, height: r.height } })
-    }, HOVER_TIP_DELAY)
-  }
+  // The card hover tip (#111) now lives in an external store (CardHoverTip), so
+  // showing or hiding a tip re-renders only the tip host, not the whole grid and
+  // its thousands of cells (#133). Clear anything pending/shown on unmount.
   useEffect(
     () => () => {
-      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+      hideCardHoverTip()
       if (zoomTimer.current) clearTimeout(zoomTimer.current)
     },
     []
@@ -292,9 +415,6 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     return s
   }, [fullCards, isExpanded])
 
-  /** Vertical gap between stacked cards, and above/below the stack (#66). */
-  const STACK_GAP = 6
-
   const rowTracks = rows.lines
     .map((line) => {
       if (line.kind === 'groupHeader') return `${GROUPHEAD_LINE_H * zoom}px`
@@ -356,7 +476,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   // ── Zoom ──
   const onWheel = (e: React.WheelEvent): void => {
     // A zoom resizes the card under the tip, so the tip would point at nothing.
-    hideHoverTip()
+    hideCardHoverTip()
     if (!e.ctrlKey && !e.metaKey) return
     e.preventDefault()
     const next = Math.round(Math.min(2, Math.max(0.5, zoom * (1 - e.deltaY * 0.0015))) * 100) / 100
@@ -395,10 +515,18 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     }
   }
 
-  const onCardDragStart = (e: React.DragEvent, card: Card): void => {
+  // Stable for the memoised card (#133) — it closes over nothing that changes.
+  const onCardDragStart = useCallback((e: React.DragEvent, card: Card): void => {
     e.dataTransfer.setData('text/plain', card.id)
     e.dataTransfer.effectAllowed = 'move'
-  }
+  }, [])
+
+  // Stable context-menu opener for the memoised card (#133).
+  const openCardMenu = useCallback((e: React.MouseEvent, cardId: string): void => {
+    e.preventDefault()
+    hideCardHoverTip()
+    setMenu({ cardId, x: e.clientX, y: e.clientY })
+  }, [])
   const onCellDrop = (e: React.DragEvent, rowId: string, colId: string): void => {
     e.preventDefault()
     const cardId = e.dataTransfer.getData('text/plain')
@@ -412,44 +540,72 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     updateCard(board.id, { ...card, rowId, colStart: colId, colEnd: fullOrder[endPos] })
   }
 
-  const beginResize = (e: React.PointerEvent, card: Card, edge: 'start' | 'end'): void => {
-    e.preventDefault()
-    e.stopPropagation()
-    const grid = scrollRef.current
-    if (!grid) return
-    const slotAtX = (clientX: number): number => {
-      const rect = grid.getBoundingClientRect()
-      const x = clientX - rect.left + grid.scrollLeft - headerW
-      return Math.min(cols.slots.length - 1, Math.max(0, Math.floor(x / colW)))
-    }
-    const onMove = (ev: PointerEvent): void => {
-      const unitId = unitIdBySlot[slotAtX(ev.clientX)]
-      if (!unitId) return
-      setPreview(
-        edge === 'end'
-          ? { cardId: card.id, colStart: card.colStart, colEnd: unitId }
-          : { cardId: card.id, colStart: unitId, colEnd: card.colEnd }
-      )
-    }
-    const onUp = (): void => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      setPreview((p) => {
-        if (p && p.cardId === card.id) {
-          const a = fullOrder.indexOf(p.colStart)
-          const b = fullOrder.indexOf(p.colEnd)
-          updateCard(board.id, {
-            ...card,
-            colStart: fullOrder[Math.min(a, b)],
-            colEnd: fullOrder[Math.max(a, b)]
-          })
-        }
-        return null
-      })
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
+  // Empty-cell click and drop are delegated to the grid container (#133): read
+  // the cell under the event from its data attributes rather than binding a
+  // handler to each of the board's thousands of cells. Collapsed cells keep
+  // their own handler, so the `:not(.collapsed-cell)` guard skips them here.
+  const cellFromEvent = (e: React.SyntheticEvent): { row: string; col: string } | null => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('.cell:not(.collapsed-cell)')
+    const row = el?.dataset.row
+    const col = el?.dataset.col
+    return row && col ? { row, col } : null
   }
+  const onGridClick = (e: React.MouseEvent): void => {
+    const hit = cellFromEvent(e)
+    if (hit) void createAt(hit.row, hit.col)
+  }
+  const onGridDragOver = (e: React.DragEvent): void => {
+    if (cellFromEvent(e)) e.preventDefault()
+  }
+  const onGridDrop = (e: React.DragEvent): void => {
+    const hit = cellFromEvent(e)
+    if (hit) onCellDrop(e, hit.row, hit.col)
+  }
+
+  // Wrapped so the memoised card (#133) keeps a stable handler across the common
+  // re-renders (hover, expand, menu). Its deps only move on zoom/layout/data
+  // changes — cases where the cards re-render anyway.
+  const beginResize = useCallback(
+    (e: React.PointerEvent, card: Card, edge: 'start' | 'end'): void => {
+      e.preventDefault()
+      e.stopPropagation()
+      const grid = scrollRef.current
+      if (!grid) return
+      const slotAtX = (clientX: number): number => {
+        const rect = grid.getBoundingClientRect()
+        const x = clientX - rect.left + grid.scrollLeft - headerW
+        return Math.min(cols.slots.length - 1, Math.max(0, Math.floor(x / colW)))
+      }
+      const onMove = (ev: PointerEvent): void => {
+        const unitId = unitIdBySlot[slotAtX(ev.clientX)]
+        if (!unitId) return
+        setPreview(
+          edge === 'end'
+            ? { cardId: card.id, colStart: card.colStart, colEnd: unitId }
+            : { cardId: card.id, colStart: unitId, colEnd: card.colEnd }
+        )
+      }
+      const onUp = (): void => {
+        window.removeEventListener('pointermove', onMove)
+        window.removeEventListener('pointerup', onUp)
+        setPreview((p) => {
+          if (p && p.cardId === card.id) {
+            const a = fullOrder.indexOf(p.colStart)
+            const b = fullOrder.indexOf(p.colEnd)
+            updateCard(board.id, {
+              ...card,
+              colStart: fullOrder[Math.min(a, b)],
+              colEnd: fullOrder[Math.max(a, b)]
+            })
+          }
+          return null
+        })
+      }
+      window.addEventListener('pointermove', onMove)
+      window.addEventListener('pointerup', onUp)
+    },
+    [headerW, colW, cols.slots.length, unitIdBySlot, fullOrder, updateCard, board.id]
+  )
 
   /**
    * Drag the corner's right edge to widen or narrow the row headers (#80).
@@ -492,13 +648,19 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const empty = cols.slots.length === 0 || rows.lines.length === 0
 
   return (
-    <div className="board-scroll" ref={scrollRef} onWheel={onWheel} onScroll={hideHoverTip}>
+    <div className="board-scroll" ref={scrollRef} onWheel={onWheel} onScroll={hideCardHoverTip}>
       {empty ? (
         <p className="muted placeholder">
           Add at least one column (timeline unit) and one row (character) to start plotting.
         </p>
       ) : (
-        <div className="board-grid" style={gridStyle}>
+        <div
+          className="board-grid"
+          style={gridStyle}
+          onClick={onGridClick}
+          onDragOver={onGridDragOver}
+          onDrop={onGridDrop}
+        >
           {/* corner */}
           <div className="grid-corner" style={{ gridColumn: 1, gridRow: `1 / ${headerRows + 1}` }} />
 
@@ -743,14 +905,16 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                       </div>
                     )
                   }
+                  // No per-cell handlers (#133): click/drag are delegated to the
+                  // grid container, which reads these data attributes. On a large
+                  // board that removes ~3 listeners × thousands of cells.
                   return (
                     <div
                       key={slot.unit.id}
                       className="cell"
+                      data-row={char.id}
+                      data-col={slot.unit.id}
                       style={{ gridColumn: slot.index + 2, gridRow }}
-                      onClick={() => createAt(char.id, slot.unit.id)}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => onCellDrop(e, char.id, slot.unit.id)}
                     />
                   )
                 })}
@@ -758,121 +922,37 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                 {fullCards
                   .filter((pc) => pc.lineIndex === line.index)
                   .map((pc) => {
-                    const lineDepth = stackDepth.get(line.index) ?? 1
-                    const masked = revising && !isRevealed(pc.card.id)
                     const note = pc.note
+                    // A hidden card keeps its hint to itself too — it would give
+                    // the answer away just as opening it would (#67).
+                    const masked = revising && !isRevealed(pc.card.id)
                     const status = findCardStatus(statuses, note?.status)
-                    const isExp = isExpanded(pc.card.id)
-                    // A hidden card keeps its hint to itself too — it would
-                    // give the answer away just as opening it would (#67).
-                    const hoverText = masked ? undefined : note?.hover
-                    // Board cards show the title only (quick view); the full note
-                    // lives in the popup. Expand reveals a long title in full.
-                    const expandable = (note?.title?.length ?? 0) > 36
                     return (
-                      <div
+                      <BoardCard
                         key={pc.card.id}
-                        className={`board-card${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}`}
-                        draggable
-                        onDragStart={(e) => {
-                          hideHoverTip()
-                          onCardDragStart(e, pc.card)
-                        }}
-                        onMouseEnter={
-                          hoverText
-                            ? (e) => showHoverTipSoon(e.currentTarget, hoverText)
-                            : undefined
-                        }
-                        onMouseLeave={hoverText ? hideHoverTip : undefined}
-                        onPointerDown={hoverText ? hideHoverTip : undefined}
-                        style={{
-                          gridColumn: `${pc.startSlot + 2} / ${pc.endSlot + 3}`,
-                          gridRow,
-                          height: isExp ? 'auto' : `${cardH}px`,
-                          ['--card-border' as string]: pc.colour,
-                          // Stacked rows lay their cards out from the top so the
-                          // levels line up; a lone card keeps centring (#66).
-                          ...(lineDepth > 1
-                            ? {
-                                alignSelf: 'start',
-                                marginTop: `${STACK_GAP + pc.stackIndex * (cardH + STACK_GAP)}px`
-                              }
-                            : {})
-                        }}
-                        onClick={() => {
-                          // In revision mode the first click is the reveal —
-                          // opening the note would give the answer away (#67).
-                          if (revising && !isRevealed(pc.card.id)) {
-                            toggleRevealed(pc.card.id)
-                            return
-                          }
-                          if (note) openNote(note.id)
-                        }}
-                        onContextMenu={(e) => {
-                          e.preventDefault()
-                          hideHoverTip()
-                          setMenu({ cardId: pc.card.id, x: e.clientX, y: e.clientY })
-                        }}
-                      >
-                        <span
-                          className="resize-handle left"
-                          onPointerDown={(e) => beginResize(e, pc.card, 'start')}
-                        />
-                        <div className="card-content">
-                          <div className="card-title">
-                            {masked ? (
-                              <span className="card-masked" aria-label="Hidden — click to reveal">
-                                • • •
-                              </span>
-                            ) : (
-                              <>
-                                {/* Where the scene stands, leftmost so a glance
-                                    down a row reads as a progress bar (#108). */}
-                                {status && (
-                                  <span className="card-status-icon" title={status.label}>
-                                    {status.icon}{' '}
-                                  </span>
-                                )}
-                                {/* A card whose note has a body opens onto more
-                                    than its title, so it says so up front (#46). */}
-                                {note?.hasBody && (
-                                  <span className="card-note-icon" title="Has note details">
-                                    📝{' '}
-                                  </span>
-                                )}
-                                {note?.title ?? '(missing note)'}
-                                {note?.related && note.related.length > 0 && (
-                                  <span className="link-icon"> 🔗</span>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        {/* Says "rest the mouse here" (#116) — in the corner, so
-                            it sits in one place on every card and a glance down
-                            a row finds the ones with a hint. */}
-                        {hoverText && (
-                          <span className="card-hover-icon" aria-label="Has hover text">
-                            ℹ️
-                          </span>
-                        )}
-                        {expandable && (
-                          <button
-                            className="card-expand"
-                            title={isExp ? 'Collapse card' : 'Expand card'}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleExpand(pc.card.id)
-                            }}
-                          >
-                            {isExp ? '⤡' : '⤢'}
-                          </button>
-                        )}
-                        <span
-                          className="resize-handle right"
-                          onPointerDown={(e) => beginResize(e, pc.card, 'end')}
-                        />
-                      </div>
+                        pc={pc}
+                        gridRow={gridRow}
+                        cardH={cardH}
+                        lineDepth={stackDepth.get(line.index) ?? 1}
+                        masked={masked}
+                        isExp={isExpanded(pc.card.id)}
+                        // Board cards show the title only; expand reveals a long
+                        // title in full.
+                        expandable={(note?.title?.length ?? 0) > 36}
+                        hoverText={masked ? undefined : note?.hover}
+                        statusIcon={status?.icon}
+                        statusLabel={status?.label}
+                        noteId={note?.id}
+                        title={note?.title ?? '(missing note)'}
+                        hasBody={!!note?.hasBody}
+                        hasLinks={!!note?.related && note.related.length > 0}
+                        onOpenNote={openNote}
+                        onToggleReveal={toggleRevealed}
+                        onToggleExpand={toggleExpand}
+                        onBeginResize={beginResize}
+                        onCardDragStart={onCardDragStart}
+                        onOpenMenu={openCardMenu}
+                      />
                     )
                   })}
               </Fragment>
@@ -881,7 +961,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
         </div>
       )}
 
-      {hoverTip && <CardHoverTip text={hoverTip.text} anchor={hoverTip.anchor} />}
+      <CardHoverTipHost />
 
       {menu && (
         <div className="context-menu" style={{ left: menu.x, top: menu.y }}>
