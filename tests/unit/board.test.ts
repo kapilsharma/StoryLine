@@ -14,7 +14,13 @@ import {
   reorderRowMember,
   reorderRowBlocks,
   orderedRowBlockKeys,
-  withFilters
+  withFilters,
+  rowGroupNames,
+  colGroupDepths,
+  colGroupLevels,
+  columnLevelItems,
+  withAllRowGroups,
+  withColumnsAtLevel
 } from '@renderer/components/board/grid-utils'
 
 // Chapter 1 holds S1–S2, S3 sits loose between the two chapters, Chapter 2 holds S4:
@@ -534,5 +540,70 @@ describe('rowWindow (#157 vertical virtualization)', () => {
     const w = win(100000, 150)
     expect(w.last).toBeGreaterThanOrEqual(w.first)
     expect(rowWindow(0, 150, [44], 1)).toEqual({ first: 0, last: -1 })
+  })
+})
+
+describe('collapse / expand all groups (#164)', () => {
+  // Novel holds two chapters (c1, c2); a scene can also sit loose under it.
+  const nested: ColumnGroup[] = [
+    { id: 'novel', type: 'colgroup', label: 'Book', order: 1 },
+    { ...colGroups[0], parent: 'novel' },
+    { ...colGroups[1], parent: 'novel' }
+  ]
+  const levels3 = { timelineLabel: 'Scene', timelineLevelLabels: ['Novel', 'Chapter', 'Scene'] }
+
+  it('lists each row group once, members only', () => {
+    expect(rowGroupNames(board({}), chars).sort()).toEqual(['Fae', 'Human'])
+    expect(rowGroupNames(board({ members: ['b'] }), chars)).toEqual(['Human'])
+  })
+
+  it('collapses and expands every row group, leaving columns alone', () => {
+    const shut = withAllRowGroups(board({ collapsedColGroups: ['c2'] }), chars, true)
+    expect(shut.collapsedRowGroups.sort()).toEqual(['Fae', 'Human'])
+    expect(shut.collapsedColGroups).toEqual(['c2'])
+    expect(buildRowLayout(shut, chars).lines.every((l) => l.kind === 'groupRow')).toBe(true)
+    expect(withAllRowGroups(shut, chars, false).collapsedRowGroups).toEqual([])
+  })
+
+  it('knows each column group’s depth and which depths hold groups', () => {
+    expect(Object.fromEntries(colGroupDepths(nested))).toEqual({ novel: 0, c1: 1, c2: 1 })
+    expect(colGroupLevels(nested)).toEqual([0, 1])
+    expect(colGroupLevels([])).toEqual([])
+  })
+
+  it('shows the columns at one level: that level folded, every other open', () => {
+    // Novel had been folded; "Collapse Chapter" opens it so the chapters show.
+    const b = board({ collapsedColGroups: ['novel'], collapsedRowGroups: ['Fae'] })
+    const chapters = withColumnsAtLevel(b, nested, 1)
+    expect(chapters.collapsedColGroups.sort()).toEqual(['c1', 'c2'])
+    expect(chapters.collapsedRowGroups).toEqual(['Fae'])
+    const layout = buildColumnLayout(chapters, timeline)
+    // S3 is loose at the top level here, so it stays a column between chapters.
+    expect(layout.slots.map((sl) => sl.kind)).toEqual(['colGroup', 'col', 'colGroup'])
+
+    expect(withColumnsAtLevel(chapters, nested, 0).collapsedColGroups).toEqual(['novel'])
+    expect(withColumnsAtLevel(chapters, nested, null).collapsedColGroups).toEqual([])
+  })
+
+  it('names each level from the project, never the leaf level', () => {
+    expect(columnLevelItems(levels3, [0, 1])).toEqual([
+      { depth: 0, label: 'Collapse Novel' },
+      { depth: 1, label: 'Collapse Chapter' }
+    ])
+  })
+
+  it('falls back to plain wording where the levels don’t name a group', () => {
+    const single = { timelineLabel: 'Chapter' }
+    expect(columnLevelItems(single, [0])).toEqual([{ depth: 0, label: 'Collapse all columns' }])
+    expect(columnLevelItems(single, [0, 1]).map((i) => i.label)).toEqual([
+      'Collapse level 1',
+      'Collapse level 2'
+    ])
+    // Two named levels but groups three deep: the third borrows nothing.
+    expect(columnLevelItems(levels3, [0, 1, 2]).map((i) => i.label)).toEqual([
+      'Collapse Novel',
+      'Collapse Chapter',
+      'Collapse level 3'
+    ])
   })
 })

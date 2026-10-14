@@ -1,8 +1,100 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { isPlotRow } from '@shared/types'
 import { useStore } from '../../store'
 import { useBoardUi } from './BoardUiContext'
 import { ExportDialog } from './ExportDialog'
+import { colGroupLevels, columnLevelItems, rowGroupNames, withAllRowGroups, withColumnsAtLevel } from './grid-utils'
+
+/**
+ * Collapse or expand every row group, or show the columns at one group level
+ * (#164). One menu rather than a toggle, so rows and columns are separate and
+ * each item does exactly what it says whatever state the groups are in.
+ */
+function GroupsMenu(): JSX.Element {
+  const { activeBoard, snapshot, saveBoard, readOnly } = useStore()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('mousedown', onDown)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const board = activeBoard?.board
+  const characters = activeBoard?.characters ?? []
+  const colGroups = activeBoard?.colGroups ?? []
+  const hasRowGroups = !!board && rowGroupNames(board, characters).length > 0
+  const levelItems = columnLevelItems(snapshot?.project, colGroupLevels(colGroups))
+  const hasColGroups = levelItems.length > 0
+
+  const save = (next: (b: NonNullable<typeof board>) => NonNullable<typeof board>): void => {
+    setOpen(false)
+    if (board) void saveBoard(next(board))
+  }
+
+  return (
+    <div className="toolbar-menu" ref={rootRef}>
+      <button
+        className={`toolbar-btn${open ? ' active' : ''}`}
+        disabled={readOnly || (!hasRowGroups && !hasColGroups)}
+        title="Collapse or expand all row and column groups"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        ⊟
+      </button>
+      {open && (
+        <div className="context-menu" role="menu">
+          <button
+            role="menuitem"
+            disabled={!hasRowGroups}
+            onClick={() => save((b) => withAllRowGroups(b, characters, true))}
+          >
+            ⊟ Collapse all rows
+          </button>
+          <button
+            role="menuitem"
+            disabled={!hasRowGroups}
+            onClick={() => save((b) => withAllRowGroups(b, characters, false))}
+          >
+            ⊞ Expand all rows
+          </button>
+          <div className="context-menu-sep" role="separator" />
+          {/* One item per group level; the deepest level is the columns
+              themselves, so it never appears here. */}
+          {levelItems.map(({ depth, label }) => (
+            <button
+              key={depth}
+              role="menuitem"
+              onClick={() => save((b) => withColumnsAtLevel(b, colGroups, depth))}
+            >
+              ⊟ {label}
+            </button>
+          ))}
+          <button
+            role="menuitem"
+            disabled={!hasColGroups}
+            onClick={() => save((b) => withColumnsAtLevel(b, colGroups, null))}
+          >
+            ⊞ Expand all columns
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 /** Right-side tab-bar toolbar for the Boards tab. */
 export function BoardToolbar(): JSX.Element {
@@ -82,6 +174,7 @@ export function BoardToolbar(): JSX.Element {
           </button>
         </>
       )}
+      {board && <GroupsMenu />}
       <button
         className="toolbar-btn"
         disabled={empty}
