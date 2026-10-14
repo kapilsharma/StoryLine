@@ -1273,6 +1273,28 @@ textarea {
   color: var(--danger);
 }
 
+.context-menu button:disabled {
+  color: var(--muted);
+  background: none;
+  cursor: default;
+}
+/* A toolbar button that drops a menu below it (#164), right-aligned so it
+   stays on screen at the window's edge. */
+.context-menu-sep {
+  height: 1px;
+  margin: 0.2rem 0.3rem;
+  background: var(--border);
+}
+.toolbar-menu {
+  position: relative;
+}
+.toolbar-menu .context-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  white-space: nowrap;
+}
+
 /* ── Prompt modal ── */
 .prompt-modal {
   max-width: 380px;

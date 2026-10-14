@@ -1,4 +1,5 @@
-import type { Board, Card, Character, ColumnGroup, Note, TimelineUnit } from '@shared/types'
+import type { Board, Card, Character, ColumnGroup, Note, Project, TimelineUnit } from '@shared/types'
+import { timelineLevelLabels } from '@shared/project'
 import { isPlotRow } from '@shared/types'
 import { buildColumnTree, orderedLeaves } from '@shared/columns'
 
@@ -53,6 +54,66 @@ export function boardMembers(board: Board, characters: Character[]): Character[]
   }
   const rest = pool.filter((c) => !seen.has(c.id)).sort((a, b) => a.name.localeCompare(b.name))
   return [...ordered, ...rest]
+}
+
+/** The row groups on this board, in no particular order (#164). */
+export function rowGroupNames(board: Board, characters: Character[]): string[] {
+  const names = new Set<string>()
+  for (const c of boardMembers(board, characters)) if (c.group) names.add(c.group)
+  return [...names]
+}
+
+/**
+ * Each column group's depth — 0 for a top-level group (a Novel), 1 for a group
+ * under it (a Chapter), and so on (#164). Read through the column tree so a
+ * broken or cyclic parent lands where the board draws it.
+ */
+export function colGroupDepths(colGroups: ColumnGroup[]): Map<string, number> {
+  const tree = buildColumnTree(colGroups, [])
+  return new Map(colGroups.map((g) => [g.id, tree.depthOf({ kind: 'node', id: g.id })]))
+}
+
+/** The depths that hold at least one column group, shallowest first (#164). */
+export function colGroupLevels(colGroups: ColumnGroup[]): number[] {
+  return [...new Set(colGroupDepths(colGroups).values())].sort((a, b) => a - b)
+}
+
+/**
+ * The menu text for collapsing the column groups at each depth (#164), named by
+ * the project's column levels: "Collapse Novel", "Collapse Chapter". A depth the
+ * levels don't name (it would borrow the leaf's label, e.g. "Chapter" for what
+ * is really an Act) falls back to plain wording.
+ */
+export function columnLevelItems(
+  project: Pick<Project, 'timelineLabel' | 'timelineLevelLabels'> | undefined,
+  levels: number[]
+): { depth: number; label: string }[] {
+  const names = project ? timelineLevelLabels(project) : []
+  return levels.map((depth) => {
+    const named = depth < names.length - 1 ? names[depth] : undefined
+    const label = named
+      ? `Collapse ${named}`
+      : levels.length === 1
+        ? 'Collapse all columns'
+        : `Collapse level ${depth + 1}`
+    return { depth, label }
+  })
+}
+
+/** The board with every row group collapsed, or every one expanded (#164). */
+export function withAllRowGroups(board: Board, characters: Character[], collapse: boolean): Board {
+  return { ...board, collapsedRowGroups: collapse ? rowGroupNames(board, characters) : [] }
+}
+
+/**
+ * The board's columns shown at one group level (#164): every group at `depth`
+ * collapsed and every other group open, so "Collapse Chapter" shows one column
+ * per chapter even if a Novel above was folded. `null` opens every group.
+ */
+export function withColumnsAtLevel(board: Board, colGroups: ColumnGroup[], depth: number | null): Board {
+  if (depth === null) return { ...board, collapsedColGroups: [] }
+  const depths = colGroupDepths(colGroups)
+  return { ...board, collapsedColGroups: colGroups.filter((g) => depths.get(g.id) === depth).map((g) => g.id) }
 }
 
 /**
