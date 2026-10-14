@@ -256,6 +256,82 @@ describe('card placement + markers', () => {
   })
 })
 
+describe('lone cards in collapsed cells (#161)', () => {
+  const notes: Note[] = [{ id: 'n1', uid: 'n_1111', title: 'Hunt', body: '' }]
+  const at = (id: string, rowId: string, colStart: string, colEnd = colStart): Card => ({
+    id,
+    noteUid: 'n_1111',
+    rowId,
+    colStart,
+    colEnd
+  })
+  const runs = (l: { loneCards: { card: Card; startSlot: number; endSlot: number }[] }) =>
+    l.loneCards.map((pc) => [pc.card.id, pc.startSlot, pc.endSlot])
+
+  it('shows the only card in a collapsed row cell, in its own row colour', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [at('x', 'c', 'ch3')], collapsedRowGroups: ['Fae'] }),
+      chars,
+      timeline,
+      notes
+    )
+    expect(layout.fullCards).toHaveLength(0)
+    expect(runs(layout)).toEqual([['x', 2, 2]])
+    expect(layout.loneCards[0]).toMatchObject({ colour: '#333', lineIndex: 0, note: { title: 'Hunt' } })
+  })
+
+  it('shows the only card in a collapsed column cell', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [at('x', 'b', 'ch2')], collapsedColGroups: ['c1'] }),
+      chars,
+      timeline,
+      notes
+    )
+    expect(runs(layout)).toEqual([['x', 0, 0]])
+  })
+
+  it('keeps the count, and no card, when a cell holds two', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [at('x', 'b', 'ch1'), at('y', 'b', 'ch2')], collapsedColGroups: ['c1'] }),
+      chars,
+      timeline,
+      notes
+    )
+    expect(layout.loneCards).toEqual([])
+    expect(layout.markers.get(markerKey(layout.rows.lineOfChar.get('b')!, 0))).toBe(2)
+  })
+
+  it('counts a spanning card in every collapsed cell and splits it where it shares one', () => {
+    // Fae collapsed: Aria's card fills S1–S4 (slots 0–3); Cyra's sits on S3.
+    const layout = buildBoardLayout(
+      board({ cards: [at('wide', 'a', 'ch1', 'ch4'), at('y', 'c', 'ch3')], collapsedRowGroups: ['Fae'] }),
+      chars,
+      timeline,
+      notes
+    )
+    const counts = [0, 1, 2, 3].map((s) => layout.markers.get(markerKey(0, s)))
+    expect(counts).toEqual([1, 1, 2, 1])
+    expect(runs(layout)).toEqual([
+      ['wide', 0, 1],
+      ['wide', 3, 3]
+    ])
+  })
+
+  it('on an open row, summarises only the collapsed columns a card crosses', () => {
+    // Chapter 2 collapsed: S3 is slot 2 (open), Chapter 2 is slot 3.
+    const layout = buildBoardLayout(
+      board({ cards: [at('x', 'b', 'ch3', 'ch4')], collapsedColGroups: ['c2'] }),
+      chars,
+      timeline,
+      notes
+    )
+    const line = layout.rows.lineOfChar.get('b')!
+    expect(layout.markers.get(markerKey(line, 2))).toBeUndefined()
+    expect(layout.markers.get(markerKey(line, 3))).toBe(1)
+    expect(runs(layout)).toEqual([['x', 3, 3]])
+  })
+})
+
 /**
  * Stacking overlapping cards in one cell (Issue #66).
  *
