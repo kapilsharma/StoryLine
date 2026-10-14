@@ -38,6 +38,59 @@ const ZOOM_SAVE_DELAY = 150
 /** Vertical gap between stacked cards, and above/below the stack (#66). */
 const STACK_GAP = 6
 
+/**
+ * Coalesce rapid pointer-move updates to at most one per animation frame (#152).
+ *
+ * A card resize or header drag fires `mousemove` many times a second; each one
+ * sets state that re-runs the layout and re-renders the grid. Throttling to the
+ * frame means the preview updates at most ~60fps and never queues more work than
+ * a frame can do. The latest event always wins. On pointer-up call `flush` to
+ * apply that last event synchronously (so the end state is exact, not a frame
+ * stale, and doesn't depend on the pointer-up coordinates), or `cancel` to drop
+ * a pending frame without applying it.
+ */
+function rafThrottle<E>(fn: (e: E) => void): {
+  run: (e: E) => void
+  flush: () => void
+  cancel: () => void
+} {
+  let raf: number | null = null
+  let last: E | null = null
+  let pending = false
+  const stop = (): void => {
+    if (raf != null) {
+      cancelAnimationFrame(raf)
+      raf = null
+    }
+  }
+  return {
+    run(e: E): void {
+      last = e
+      pending = true
+      if (raf != null) return
+      raf = requestAnimationFrame(() => {
+        raf = null
+        if (pending) {
+          pending = false
+          fn(last as E)
+        }
+      })
+    },
+    flush(): void {
+      stop()
+      if (pending) {
+        pending = false
+        fn(last as E)
+      }
+    },
+    cancel(): void {
+      stop()
+      pending = false
+      last = null
+    }
+  }
+}
+
 /** Stable empty list, so a board without groups doesn't re-run the layout memo every render. */
 const NO_GROUPS: ColumnGroup[] = []
 
@@ -576,7 +629,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
         const x = clientX - rect.left + grid.scrollLeft - headerW
         return Math.min(cols.slots.length - 1, Math.max(0, Math.floor(x / colW)))
       }
-      const onMove = (ev: PointerEvent): void => {
+      const applyMove = (ev: PointerEvent): void => {
         const unitId = unitIdBySlot[slotAtX(ev.clientX)]
         if (!unitId) return
         setPreview(
@@ -585,8 +638,10 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
             : { cardId: card.id, colStart: unitId, colEnd: card.colEnd }
         )
       }
+      const move = rafThrottle(applyMove)
       const onUp = (): void => {
-        window.removeEventListener('pointermove', onMove)
+        move.flush() // apply the last move now, so the commit isn't a frame stale
+        window.removeEventListener('pointermove', move.run)
         window.removeEventListener('pointerup', onUp)
         setPreview((p) => {
           if (p && p.cardId === card.id) {
@@ -601,7 +656,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
           return null
         })
       }
-      window.addEventListener('pointermove', onMove)
+      window.addEventListener('pointermove', move.run)
       window.addEventListener('pointerup', onUp)
     },
     [headerW, colW, cols.slots.length, unitIdBySlot, fullOrder, updateCard, board.id]
@@ -624,18 +679,20 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     // Floored, not rounded: half is a ceiling, so overshooting it by a pixel on
     // an odd-width window would be wrong in the one direction that matters.
     const maxW = Math.max(ROW_HEADER_W_MIN, Math.floor(scroll.clientWidth * ROW_HEADER_W_MAX_FRACTION))
-    const onMove = (ev: PointerEvent): void => {
+    const applyMove = (ev: PointerEvent): void => {
       setHeaderDrag(Math.min(maxW, Math.max(ROW_HEADER_W_MIN, startW + ev.clientX - startX)))
     }
+    const move = rafThrottle(applyMove)
     const onUp = (): void => {
-      window.removeEventListener('pointermove', onMove)
+      move.flush() // apply the last move now, so the saved width isn't a frame stale
+      window.removeEventListener('pointermove', move.run)
       window.removeEventListener('pointerup', onUp)
       setHeaderDrag((w) => {
         if (w != null && w !== startW) void saveBoard({ ...board, rowHeaderWidth: w })
         return null
       })
     }
-    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointermove', move.run)
     window.addEventListener('pointerup', onUp)
   }
 
