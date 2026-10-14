@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.8.2](https://github.com/kapilsharma/StoryLine/compare/2.8.1...2.8.2) (2026-10-14)
+
+
+### Performance Improvements
+
+* **#133:** Reduce board size ([453e409](https://github.com/kapilsharma/StoryLine/commit/453e40999b71b78c8b46eb87bdd994e7dab43038))
+* **#133:** Reduce board size ([e59b9d1](https://github.com/kapilsharma/StoryLine/commit/e59b9d19e1929210585a525f0e3d30d140abf6be))
+
 ## [2.8.1](https://github.com/kapilsharma/StoryLine/compare/2.8.0...2.8.1) (2026-10-13)
 
 
