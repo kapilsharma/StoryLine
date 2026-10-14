@@ -493,8 +493,18 @@ export interface BoardLayout {
   cols: ColumnLayout
   rows: RowLayout
   fullCards: PlacedCard[]
-  /** Marker counts for collapsed regions, keyed `lineIndex:slotIndex`. */
+  /**
+   * Marker counts for collapsed regions, keyed `lineIndex:slotIndex`. A card
+   * counts in every collapsed cell its span covers, so a spanning card is not
+   * missed by the cells after its first (#161).
+   */
   markers: Map<string, number>
+  /**
+   * Cards drawn read-only inside collapsed cells where they are the only card
+   * (#161), in place of a "1" marker. Each spans one run of adjacent collapsed
+   * cells it alone occupies, so one card may appear as more than one entry.
+   */
+  loneCards: PlacedCard[]
   /**
    * How many stack levels each row line needs (Issue #66). Keyed by
    * `lineIndex`; absent means one. The grid uses it to grow the row track.
@@ -559,6 +569,8 @@ export function buildBoardLayout(
     const k = markerKey(line, slot)
     markers.set(k, (markers.get(k) ?? 0) + 1)
   }
+  /** Cards that fell into collapsed cells, with the collapsed slots they cover. */
+  const collapsedHits: { card: Card; lineIndex: number; slots: number[] }[] = []
 
   for (const card of board.cards) {
     const lineIndex = rows.lineOfChar.get(card.rowId)
@@ -575,7 +587,13 @@ export function buildBoardLayout(
     const colCollapsed = slotIdxs.some((i) => collapsedColSlot.has(i))
 
     if (rowCollapsed || colCollapsed) {
-      addMarker(lineIndex, startSlot)
+      // A collapsed row hides the whole card, so it counts across its span; on
+      // an open row only the collapsed columns it crosses are summarised.
+      const slots = [...new Set(slotIdxs)]
+        .filter((i) => rowCollapsed || collapsedColSlot.has(i))
+        .sort((a, b) => a - b)
+      slots.forEach((i) => addMarker(lineIndex, i))
+      collapsedHits.push({ card, lineIndex, slots })
     } else {
       const char = charById.get(card.rowId)
       fullCards.push({
@@ -603,7 +621,36 @@ export function buildBoardLayout(
     if (depth > 1) stackDepth.set(lineIndex, depth)
   }
 
-  return { cols, rows, fullCards, markers, stackDepth }
+  // A card alone in a collapsed cell is shown rather than counted (#161). Runs
+  // of adjacent cells it alone fills merge into one card, so a chapter card
+  // across two collapsed chapters reads as one card, not two.
+  const loneCards: PlacedCard[] = []
+  for (const hit of collapsedHits) {
+    let runStart = -1
+    let prev = -1
+    const flush = (): void => {
+      if (runStart === -1) return
+      loneCards.push({
+        card: hit.card,
+        note: noteByUid.get(hit.card.noteUid),
+        lineIndex: hit.lineIndex,
+        startSlot: runStart,
+        endSlot: prev,
+        colour: charById.get(hit.card.rowId)?.colour ?? '#888',
+        stackIndex: 0
+      })
+      runStart = -1
+    }
+    for (const slot of hit.slots) {
+      const alone = markers.get(markerKey(hit.lineIndex, slot)) === 1
+      if (!alone || slot !== prev + 1) flush()
+      if (alone && runStart === -1) runStart = slot
+      prev = slot
+    }
+    flush()
+  }
+
+  return { cols, rows, fullCards, markers, loneCards, stackDepth }
 }
 
 // ── Reordering (custom row/group sort, persisted in board JSON) ──────────────

@@ -213,6 +213,12 @@ interface BoardCardProps {
   title: string
   hasBody: boolean
   hasLinks: boolean
+  /**
+   * A card shown inside a collapsed group (#161): it opens and hovers like any
+   * card but can't be dragged, resized, expanded or edited from its menu, since
+   * the cell under it stands for a whole group rather than one column.
+   */
+  readOnly?: boolean
   onOpenNote: (noteId: string) => void
   onToggleReveal: (cardId: string) => void
   onToggleExpand: (cardId: string) => void
@@ -236,6 +242,7 @@ const BoardCard = memo(function BoardCard({
   title,
   hasBody,
   hasLinks,
+  readOnly = false,
   onOpenNote,
   onToggleReveal,
   onToggleExpand,
@@ -246,12 +253,16 @@ const BoardCard = memo(function BoardCard({
   const card = pc.card
   return (
     <div
-      className={`board-card${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}`}
-      draggable
-      onDragStart={(e) => {
-        hideCardHoverTip()
-        onCardDragStart(e, card)
-      }}
+      className={`board-card${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}${readOnly ? ' read-only' : ''}`}
+      draggable={!readOnly}
+      onDragStart={
+        readOnly
+          ? undefined
+          : (e) => {
+              hideCardHoverTip()
+              onCardDragStart(e, card)
+            }
+      }
       onMouseEnter={hoverText ? (e) => showCardHoverTip(e.currentTarget, hoverText) : undefined}
       onMouseLeave={hoverText ? hideCardHoverTip : undefined}
       onPointerDown={hoverText ? hideCardHoverTip : undefined}
@@ -278,9 +289,11 @@ const BoardCard = memo(function BoardCard({
         }
         if (noteId) onOpenNote(noteId)
       }}
-      onContextMenu={(e) => onOpenMenu(e, card.id)}
+      onContextMenu={readOnly ? (e) => e.preventDefault() : (e) => onOpenMenu(e, card.id)}
     >
-      <span className="resize-handle left" onPointerDown={(e) => onBeginResize(e, card, 'start')} />
+      {!readOnly && (
+        <span className="resize-handle left" onPointerDown={(e) => onBeginResize(e, card, 'start')} />
+      )}
       <div className="card-content">
         <div className="card-title">
           {masked ? (
@@ -316,7 +329,7 @@ const BoardCard = memo(function BoardCard({
           ℹ️
         </span>
       )}
-      {expandable && (
+      {expandable && !readOnly && (
         <button
           className="card-expand"
           title={isExp ? 'Collapse card' : 'Expand card'}
@@ -328,7 +341,9 @@ const BoardCard = memo(function BoardCard({
           {isExp ? '⤡' : '⤢'}
         </button>
       )}
-      <span className="resize-handle right" onPointerDown={(e) => onBeginResize(e, card, 'end')} />
+      {!readOnly && (
+        <span className="resize-handle right" onPointerDown={(e) => onBeginResize(e, card, 'end')} />
+      )}
     </div>
   )
 })
@@ -438,7 +453,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     () => buildBoardLayout(effectiveBoard, characters, timeline, notes, colGroups),
     [effectiveBoard, characters, timeline, notes, colGroups]
   )
-  const { cols, rows, fullCards, markers, stackDepth } = layout
+  const { cols, rows, fullCards, markers, loneCards, stackDepth } = layout
   const fullOrder = useMemo(() => orderedColumnIds(timeline, colGroups), [timeline, colGroups])
 
   // unit id per slot (null for collapsed-group slots), for resize hit-testing.
@@ -846,6 +861,49 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
 
   const empty = cols.slots.length === 0 || rows.lines.length === 0
 
+  const renderCard = (pc: PlacedCard, gridRow: number, lineDepth: number, readOnly: boolean): JSX.Element => {
+    const note = pc.note
+    // A hidden card keeps its hint to itself too — it would give the answer
+    // away just as opening it would (#67).
+    const masked = revising && !isRevealed(pc.card.id)
+    const status = findCardStatus(statuses, note?.status)
+    return (
+      <BoardCard
+        // A lone card can show in more than one collapsed run (#161).
+        key={readOnly ? `lone-${pc.card.id}-${pc.startSlot}` : pc.card.id}
+        pc={pc}
+        gridRow={gridRow}
+        cardH={cardH}
+        lineDepth={lineDepth}
+        masked={masked}
+        isExp={!readOnly && isExpanded(pc.card.id)}
+        // Board cards show the title only; expand reveals a long title in full.
+        expandable={(note?.title?.length ?? 0) > 36}
+        hoverText={masked ? undefined : note?.hover}
+        statusIcon={status?.icon}
+        statusLabel={status?.label}
+        noteId={note?.id}
+        title={note?.title ?? '(missing note)'}
+        hasBody={!!note?.hasBody}
+        hasLinks={!!note?.related && note.related.length > 0}
+        readOnly={readOnly}
+        onOpenNote={openNote}
+        onToggleReveal={toggleRevealed}
+        onToggleExpand={toggleExpand}
+        onBeginResize={beginResize}
+        onCardDragStart={onCardDragStart}
+        onOpenMenu={openCardMenu}
+      />
+    )
+  }
+
+  // Cards alone in a collapsed cell sit on its stripes instead of a "1" (#161).
+  // They are centred in the cell whatever the row's stack depth.
+  const lineLoneCards = (lineIndex: number, gridRow: number): JSX.Element[] =>
+    loneCards
+      .filter((pc) => pc.lineIndex === lineIndex && inWindow(pc.startSlot, pc.endSlot))
+      .map((pc) => renderCard(pc, gridRow, 1, true))
+
   return (
     <div className="board-scroll" ref={scrollRef} onWheel={onWheel} onScroll={onBoardScroll}>
       {empty ? (
@@ -1034,10 +1092,11 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                         style={{ gridColumn: slot.index + 2, gridRow }}
                         onClick={() => toggleRowGroup(line.group)}
                       >
-                        {count ? <span className="marker">{count}</span> : null}
+                        {count && count > 1 ? <span className="marker">{count}</span> : null}
                       </div>
                     )
                   })}
+                  {lineLoneCards(line.index, gridRow)}
                 </Fragment>
               )
             }
@@ -1103,7 +1162,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                         style={{ gridColumn: slot.index + 2, gridRow }}
                         onClick={() => toggleColGroup(slot.node.id)}
                       >
-                        {count ? <span className="marker">{count}</span> : null}
+                        {count && count > 1 ? <span className="marker">{count}</span> : null}
                       </div>
                     )
                   }
@@ -1123,40 +1182,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
 
                 {fullCards
                   .filter((pc) => pc.lineIndex === line.index && inWindow(pc.startSlot, pc.endSlot))
-                  .map((pc) => {
-                    const note = pc.note
-                    // A hidden card keeps its hint to itself too — it would give
-                    // the answer away just as opening it would (#67).
-                    const masked = revising && !isRevealed(pc.card.id)
-                    const status = findCardStatus(statuses, note?.status)
-                    return (
-                      <BoardCard
-                        key={pc.card.id}
-                        pc={pc}
-                        gridRow={gridRow}
-                        cardH={cardH}
-                        lineDepth={stackDepth.get(line.index) ?? 1}
-                        masked={masked}
-                        isExp={isExpanded(pc.card.id)}
-                        // Board cards show the title only; expand reveals a long
-                        // title in full.
-                        expandable={(note?.title?.length ?? 0) > 36}
-                        hoverText={masked ? undefined : note?.hover}
-                        statusIcon={status?.icon}
-                        statusLabel={status?.label}
-                        noteId={note?.id}
-                        title={note?.title ?? '(missing note)'}
-                        hasBody={!!note?.hasBody}
-                        hasLinks={!!note?.related && note.related.length > 0}
-                        onOpenNote={openNote}
-                        onToggleReveal={toggleRevealed}
-                        onToggleExpand={toggleExpand}
-                        onBeginResize={beginResize}
-                        onCardDragStart={onCardDragStart}
-                        onOpenMenu={openCardMenu}
-                      />
-                    )
-                  })}
+                  .map((pc) => renderCard(pc, gridRow, stackDepth.get(line.index) ?? 1, false))}
+                {lineLoneCards(line.index, gridRow)}
               </Fragment>
             )
           })}
