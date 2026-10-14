@@ -20,6 +20,7 @@ import {
   removeBoardMember,
   reorderRowBlocks,
   reorderRowMember,
+  rowWindow,
   withFilters
 } from './grid-utils'
 import type { PlacedCard } from './grid-utils'
@@ -40,6 +41,8 @@ const ZOOM_SAVE_DELAY = 150
 const STACK_GAP = 6
 /** Columns rendered beyond each edge of the viewport, so a scroll shows no gap (#150). */
 const OVERSCAN_COLS = 6
+/** Row lines rendered beyond each edge of the viewport (#157). */
+const OVERSCAN_ROWS = 4
 
 /**
  * Coalesce rapid pointer-move updates to at most one per animation frame (#152).
@@ -444,61 +447,34 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     [cols]
   )
 
-  // ── Column virtualization (#150) ───────────────────────────────────────────
-  // Only the columns in (or just beyond) the viewport are rendered. The full
-  // `gridTemplateColumns` is kept, so every track still exists and the scroll
-  // width and column positions are unchanged — off-screen cells, headers and
-  // cards are simply left out. Columns are a fixed width, so the visible range
-  // is arithmetic, no measuring. (Rows aren't windowed yet — #150 follow-up.)
+  // ── Grid virtualization (columns #150, rows #157) ──────────────────────────
+  // Only the cells near the viewport are rendered. The full `gridTemplate*` is
+  // kept, so every track still exists and the scroll size and track positions
+  // are unchanged — off-screen headers, cells and cards are simply left out.
+  // Columns are a fixed width (arithmetic window); rows vary in height, so the
+  // row window works off measured line offsets (see `lineTops` below).
+  // The window is null until the container is measured — meaning "render
+  // everything" — so the board is never shown missing columns before the first
+  // measurement (and jsdom, which never lays out, always renders all).
+  type Win = { first: number; last: number }
   const slotCount = cols.slots.length
-  const [colWin, setColWin] = useState({ first: 0, last: 0 })
+  const [colWin, setColWin] = useState<Win | null>(null)
   const recomputeColWin = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
-    // An unmeasured container (first mount, or jsdom in tests) yields the full
-    // range, so nothing is ever missing when the board can't be measured.
     const next = columnWindow(el.scrollLeft, el.clientWidth, headerW, colW, slotCount, OVERSCAN_COLS)
-    setColWin((prev) => (prev.first === next.first && prev.last === next.last ? prev : next))
+    setColWin((prev) => (prev && prev.first === next.first && prev.last === next.last ? prev : next))
   }, [colW, headerW, slotCount])
 
-  // Measure before paint (and whenever colW / column count / header width
-  // changes) so the first frame already shows the right slice, and track the
-  // container's own resizes.
-  useLayoutEffect(() => {
-    recomputeColWin()
-    const el = scrollRef.current
-    if (!el || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(() => recomputeColWin())
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [recomputeColWin])
-
-  // Scroll updates the window at most once per animation frame.
-  const scrollRaf = useRef<number | null>(null)
-  const onBoardScroll = (): void => {
-    hideCardHoverTip()
-    if (scrollRaf.current != null) return
-    scrollRaf.current = requestAnimationFrame(() => {
-      scrollRaf.current = null
-      recomputeColWin()
-    })
-  }
-  useEffect(
-    () => () => {
-      if (scrollRaf.current != null) cancelAnimationFrame(scrollRaf.current)
-    },
-    []
-  )
-
   // slot.index equals its position in cols.slots, so a slice is exactly the
-  // slots whose index is in the window.
+  // slots whose index is in the window; a null window renders them all.
   const visibleSlots = useMemo(
-    () => cols.slots.slice(colWin.first, colWin.last + 1),
-    [cols.slots, colWin.first, colWin.last]
+    () => (colWin ? cols.slots.slice(colWin.first, colWin.last + 1) : cols.slots),
+    [cols.slots, colWin]
   )
   /** True if a column span [startSlot, endSlot] touches the rendered window. */
   const inWindow = (startSlot: number, endSlot: number): boolean =>
-    startSlot <= colWin.last && endSlot >= colWin.first
+    !colWin || (startSlot <= colWin.last && endSlot >= colWin.first)
 
   useEffect(() => {
     if (!menu) return
@@ -526,6 +502,113 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     for (const pc of fullCards) if (isExpanded(pc.card.id)) s.add(pc.lineIndex)
     return s
   }, [fullCards, isExpanded])
+
+  // ── Row virtualization (#157) ──────────────────────────────────────────────
+  // Character ids whose row is auto-height right now (an expanded card or an
+  // expanded name). These are the only rows whose height isn't known up front,
+  // so they're the only ones that need measuring.
+  const expandedRowIds = useMemo(() => {
+    const s = new Set<string>()
+    for (const line of rows.lines)
+      if (line.kind === 'row' && (expandedLines.has(line.index) || isRowExpanded(line.char.id)))
+        s.add(line.char.id)
+    return s
+  }, [rows.lines, expandedLines, isRowExpanded])
+
+  const rowHeights = useRef(new Map<string, number>())
+  const [measureTick, setMeasureTick] = useState(0)
+
+  // Cumulative pixel top of each line in the grid's own coordinates: tops[0] is
+  // the sticky header band's height, tops[i]/tops[i+1] bound line i, tops[n] is
+  // the board's full height. Fixed-height lines are exact; an auto-height
+  // (expanded) row uses its measured height, falling back to the compact height
+  // until measured. The branch logic mirrors `rowTracks` below — keep them in
+  // step (rowTracks emits the CSS tracks; this gives the window the numbers).
+  const lineTops = useMemo(() => {
+    const tops = new Array<number>(rows.lines.length + 1)
+    tops[0] = cols.depth * GROUP_H + COLHEAD_H
+    for (let i = 0; i < rows.lines.length; i++) {
+      const line = rows.lines[i]
+      let h: number
+      if (line.kind === 'groupHeader') h = GROUPHEAD_LINE_H * zoom
+      else if (line.kind === 'row' && expandedRowIds.has(line.char.id))
+        h = rowHeights.current.get(line.char.id) ?? rowH
+      else {
+        const depth = line.kind === 'row' ? (stackDepth.get(line.index) ?? 1) : 1
+        h = depth > 1 ? depth * cardH + (depth + 1) * STACK_GAP : rowH
+      }
+      tops[i + 1] = tops[i] + h
+    }
+    return tops
+  }, [rows.lines, expandedRowIds, zoom, rowH, cardH, stackDepth, cols.depth, measureTick])
+
+  const [rowWin, setRowWin] = useState<Win | null>(null)
+  const recomputeRowWin = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const next = rowWindow(el.scrollTop, el.clientHeight, lineTops, OVERSCAN_ROWS)
+    setRowWin((prev) => (prev && prev.first === next.first && prev.last === next.last ? prev : next))
+  }, [lineTops])
+
+  // line.index equals its position in rows.lines, so a slice is exactly the
+  // lines whose index is in the window; a null window renders them all.
+  const visibleLines = useMemo(
+    () => (rowWin ? rows.lines.slice(rowWin.first, rowWin.last + 1) : rows.lines),
+    [rows.lines, rowWin]
+  )
+
+  // Recompute both windows before paint, on the container's own resizes, and on
+  // scroll (at most once per animation frame).
+  const recompute = useCallback(() => {
+    recomputeColWin()
+    recomputeRowWin()
+  }, [recomputeColWin, recomputeRowWin])
+
+  useLayoutEffect(() => {
+    recompute()
+    const el = scrollRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => recompute())
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [recompute])
+
+  const scrollRaf = useRef<number | null>(null)
+  const onBoardScroll = (): void => {
+    hideCardHoverTip()
+    if (scrollRaf.current != null) return
+    scrollRaf.current = requestAnimationFrame(() => {
+      scrollRaf.current = null
+      recompute()
+    })
+  }
+  useEffect(
+    () => () => {
+      if (scrollRaf.current != null) cancelAnimationFrame(scrollRaf.current)
+    },
+    []
+  )
+
+  // Measure the real height of the auto-height rows that are on screen and feed
+  // it back into `lineTops` (#157). The set is small (only expanded rows) and a
+  // row can only be expanded while it's visible, so its height is captured then
+  // and kept even after it scrolls away. jsdom reports 0 and never ticks, so the
+  // unmeasured fallback (render everything) stands in tests.
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el || expandedRowIds.size === 0) return
+    let changed = false
+    el.querySelectorAll<HTMLElement>('.row-head[data-rowid]').forEach((head) => {
+      const id = head.dataset.rowid
+      if (!id || !expandedRowIds.has(id)) return
+      const h = head.getBoundingClientRect().height
+      if (h > 0 && Math.abs((rowHeights.current.get(id) ?? -1) - h) > 0.5) {
+        rowHeights.current.set(id, h)
+        changed = true
+      }
+    })
+    if (changed) setMeasureTick((t) => t + 1)
+  }, [expandedRowIds, zoom, rowWin, colWin, measureTick])
 
   const rowTracks = rows.lines
     .map((line) => {
@@ -896,8 +979,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
             )
           )}
 
-          {/* rows */}
-          {rows.lines.map((line) => {
+          {/* rows (only the lines in the vertical window, #157) */}
+          {visibleLines.map((line) => {
             const gridRow = dataRowBase + line.index
 
             if (line.kind === 'groupHeader') {
@@ -966,6 +1049,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
               <Fragment key={char.id}>
                 <div
                   className={`row-head draggable${rowExpanded ? ' expanded' : ''}`}
+                  data-rowid={char.id}
                   style={{ gridColumn: 1, gridRow }}
                   draggable
                   onDragStart={(e) =>
