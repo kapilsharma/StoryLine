@@ -1,4 +1,4 @@
-import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { Board, Card, Character, ColumnGroup } from '@shared/types'
 import {
   ROW_HEADER_W_DEFAULT,
@@ -13,6 +13,7 @@ import { useBoardUi } from './BoardUiContext'
 import { CardHoverTipHost, showCardHoverTip, hideCardHoverTip } from './CardHoverTip'
 import {
   buildBoardLayout,
+  columnWindow,
   markerKey,
   noteForCard,
   orderedColumnIds,
@@ -37,6 +38,8 @@ const COLHEAD_H = 44
 const ZOOM_SAVE_DELAY = 150
 /** Vertical gap between stacked cards, and above/below the stack (#66). */
 const STACK_GAP = 6
+/** Columns rendered beyond each edge of the viewport, so a scroll shows no gap (#150). */
+const OVERSCAN_COLS = 6
 
 /**
  * Coalesce rapid pointer-move updates to at most one per animation frame (#152).
@@ -441,6 +444,62 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     [cols]
   )
 
+  // ── Column virtualization (#150) ───────────────────────────────────────────
+  // Only the columns in (or just beyond) the viewport are rendered. The full
+  // `gridTemplateColumns` is kept, so every track still exists and the scroll
+  // width and column positions are unchanged — off-screen cells, headers and
+  // cards are simply left out. Columns are a fixed width, so the visible range
+  // is arithmetic, no measuring. (Rows aren't windowed yet — #150 follow-up.)
+  const slotCount = cols.slots.length
+  const [colWin, setColWin] = useState({ first: 0, last: 0 })
+  const recomputeColWin = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    // An unmeasured container (first mount, or jsdom in tests) yields the full
+    // range, so nothing is ever missing when the board can't be measured.
+    const next = columnWindow(el.scrollLeft, el.clientWidth, headerW, colW, slotCount, OVERSCAN_COLS)
+    setColWin((prev) => (prev.first === next.first && prev.last === next.last ? prev : next))
+  }, [colW, headerW, slotCount])
+
+  // Measure before paint (and whenever colW / column count / header width
+  // changes) so the first frame already shows the right slice, and track the
+  // container's own resizes.
+  useLayoutEffect(() => {
+    recomputeColWin()
+    const el = scrollRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => recomputeColWin())
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [recomputeColWin])
+
+  // Scroll updates the window at most once per animation frame.
+  const scrollRaf = useRef<number | null>(null)
+  const onBoardScroll = (): void => {
+    hideCardHoverTip()
+    if (scrollRaf.current != null) return
+    scrollRaf.current = requestAnimationFrame(() => {
+      scrollRaf.current = null
+      recomputeColWin()
+    })
+  }
+  useEffect(
+    () => () => {
+      if (scrollRaf.current != null) cancelAnimationFrame(scrollRaf.current)
+    },
+    []
+  )
+
+  // slot.index equals its position in cols.slots, so a slice is exactly the
+  // slots whose index is in the window.
+  const visibleSlots = useMemo(
+    () => cols.slots.slice(colWin.first, colWin.last + 1),
+    [cols.slots, colWin.first, colWin.last]
+  )
+  /** True if a column span [startSlot, endSlot] touches the rendered window. */
+  const inWindow = (startSlot: number, endSlot: number): boolean =>
+    startSlot <= colWin.last && endSlot >= colWin.first
+
   useEffect(() => {
     if (!menu) return
     const close = (): void => setMenu(null)
@@ -705,7 +764,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const empty = cols.slots.length === 0 || rows.lines.length === 0
 
   return (
-    <div className="board-scroll" ref={scrollRef} onWheel={onWheel} onScroll={hideCardHoverTip}>
+    <div className="board-scroll" ref={scrollRef} onWheel={onWheel} onScroll={onBoardScroll}>
       {empty ? (
         <p className="muted placeholder">
           Add at least one column (timeline unit) and one row (character) to start plotting.
@@ -742,7 +801,9 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
               chevron collapses; the label opens the group's note — on a board
               that is the plotting surface, a group's note is read from here. */}
           {cols.headersByDepth.flatMap((row, depth) =>
-            row.map((h) => (
+            row
+              .filter((h) => inWindow(h.startIndex, h.startIndex + h.span - 1))
+              .map((h) => (
               <div
                 key={`gh-${h.node.id}`}
                 className={`col-group-head depth-${Math.min(depth, 2)}`}
@@ -779,7 +840,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
           )}
 
           {/* column headers (row colHeadRow) */}
-          {cols.slots.map((slot) =>
+          {visibleSlots.map((slot) =>
             slot.kind === 'col' ? (
               <div
                 key={slot.unit.id}
@@ -881,7 +942,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                       </span>
                     </span>
                   </div>
-                  {cols.slots.map((slot) => {
+                  {visibleSlots.map((slot) => {
                     const count = markers.get(markerKey(line.index, slot.index))
                     return (
                       <div
@@ -948,7 +1009,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                   }}
                 />
 
-                {cols.slots.map((slot) => {
+                {visibleSlots.map((slot) => {
                   if (slot.kind === 'colGroup') {
                     const count = markers.get(markerKey(line.index, slot.index))
                     return (
@@ -977,7 +1038,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                 })}
 
                 {fullCards
-                  .filter((pc) => pc.lineIndex === line.index)
+                  .filter((pc) => pc.lineIndex === line.index && inWindow(pc.startSlot, pc.endSlot))
                   .map((pc) => {
                     const note = pc.note
                     // A hidden card keeps its hint to itself too — it would give
