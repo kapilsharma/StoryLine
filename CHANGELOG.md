@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.10.0](https://github.com/kapilsharma/StoryLine/compare/2.9.0...2.10.0) (2026-10-14)
+
+
+### Features
+
+* **#164:** expand_collapse all ([9a24f8c](https://github.com/kapilsharma/StoryLine/commit/9a24f8cb9c1f8e6f500dd609221760e2cc2f8287))
+* **#164:** expand_collapse all ([7fd9da9](https://github.com/kapilsharma/StoryLine/commit/7fd9da9e40ae3040d9b4d4bd6f6d726ba836ddb1))
+
 ## [2.9.0](https://github.com/kapilsharma/StoryLine/compare/2.8.4...2.9.0) (2026-10-14)
 
 
