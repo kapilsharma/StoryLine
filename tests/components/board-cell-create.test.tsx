@@ -39,9 +39,13 @@ describe('empty-cell click (delegated to the grid, #133)', () => {
     render(<App bootRoot={snap.root} />)
     await screen.findByText('My Novel')
 
-    const cell = document.querySelector('.cell[data-row="aeri"][data-col="ch2"]')
-    expect(cell).toBeTruthy()
-    fireEvent.click(cell!)
+    // Wait for the grid cell to mount (it can render a tick after the title).
+    const cell = await waitFor(() => {
+      const el = document.querySelector('.cell[data-row="aeri"][data-col="ch2"]')
+      if (!el) throw new Error('cell not rendered yet')
+      return el as HTMLElement
+    })
+    fireEvent.click(cell)
 
     // The delegated handler ran: it opened the "New card" prompt.
     const input = await screen.findByPlaceholderText('Card title')

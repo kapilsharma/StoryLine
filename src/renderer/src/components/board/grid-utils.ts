@@ -178,6 +178,38 @@ export function columnWindow(
   return { first, last: Math.max(first, last) }
 }
 
+/**
+ * The inclusive range of row *lines* to render for a vertically-scrolled board
+ * (#157, follow-up to #150). Unlike columns, rows aren't a fixed height — an
+ * expanded card or name makes a row grow — so the caller passes `tops`, the
+ * cumulative pixel offsets of every line: `tops[i]` is line `i`'s top and
+ * `tops[i + 1]` its bottom, both in the grid's own (content) coordinates, with
+ * `tops[0]` the height of the sticky header band and `tops[n]` the full height.
+ * `overscan` extra lines are kept on each side so a scroll shows no gap.
+ *
+ * With no measured `clientHeight` (first mount, or a test environment that does
+ * no layout) every line is returned, so nothing is missing when unmeasurable.
+ */
+export function rowWindow(
+  scrollTop: number,
+  clientHeight: number,
+  tops: number[],
+  overscan: number
+): { first: number; last: number } {
+  const n = tops.length - 1
+  if (n <= 0) return { first: 0, last: -1 }
+  if (!clientHeight) return { first: 0, last: n - 1 }
+  const viewTop = scrollTop
+  const viewBottom = scrollTop + clientHeight
+  let first = 0
+  while (first < n && tops[first + 1] <= viewTop) first++
+  let last = n - 1
+  while (last > 0 && tops[last] >= viewBottom) last--
+  first = Math.max(0, first - overscan)
+  last = Math.min(n - 1, last + overscan)
+  return { first, last: Math.max(first, last) }
+}
+
 export function truncate(text: string, max = 60): string {
   return text.length > max ? text.slice(0, max - 1) + '…' : text
 }

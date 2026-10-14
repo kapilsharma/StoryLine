@@ -9,6 +9,7 @@ import {
   buildRowLayout,
   buildBoardLayout as buildBoardLayoutOf,
   columnWindow,
+  rowWindow,
   markerKey,
   reorderRowMember,
   reorderRowBlocks,
@@ -426,5 +427,36 @@ describe('columnWindow (#150 horizontal virtualization)', () => {
 
   it('is empty-safe when there are no columns', () => {
     expect(columnWindow(0, 1000, 200, 100, 0, 2)).toEqual({ first: 0, last: -1 })
+  })
+})
+
+describe('rowWindow (#157 vertical virtualization)', () => {
+  // A 44px sticky header band, then 10 rows of 50px each → tops = [44,94,...,544].
+  const tops = Array.from({ length: 11 }, (_, i) => 44 + i * 50)
+  const win = (scrollTop: number, clientHeight: number): { first: number; last: number } =>
+    rowWindow(scrollTop, clientHeight, tops, 1)
+
+  it('renders every line when the container is unmeasured', () => {
+    expect(win(0, 0)).toEqual({ first: 0, last: 9 })
+  })
+
+  it('at the top, covers the viewport plus one overscan line', () => {
+    // 150px tall viewport starting below the 44px header → ~3 rows, +1 overscan.
+    expect(win(0, 150)).toEqual({ first: 0, last: 3 })
+  })
+
+  it('scrolled down, returns a middle slice', () => {
+    // Viewport [244,394] covers rows 4–6 (each 50px); ±1 overscan → {3,7}.
+    expect(win(244, 150)).toEqual({ first: 3, last: 7 })
+  })
+
+  it('clamps to the last line at the bottom', () => {
+    expect(win(100000, 150).last).toBe(9)
+  })
+
+  it('never returns last before first, and is empty-safe', () => {
+    const w = win(100000, 150)
+    expect(w.last).toBeGreaterThanOrEqual(w.first)
+    expect(rowWindow(0, 150, [44], 1)).toEqual({ first: 0, last: -1 })
   })
 })
