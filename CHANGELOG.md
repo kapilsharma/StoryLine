@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.8.3](https://github.com/kapilsharma/StoryLine/compare/2.8.2...2.8.3) (2026-10-14)
+
+
+### Performance Improvements
+
+* **#150:** virtualize the board's column axis ([2e1e133](https://github.com/kapilsharma/StoryLine/commit/2e1e13375fedd05888b6ff948c4cbf715b52e092))
+* **#150:** virtualize the board's column axis ([5fb897f](https://github.com/kapilsharma/StoryLine/commit/5fb897f9b4a12fa02b508ec79eda1dda4c60f2bb))
+
 ## [2.8.2](https://github.com/kapilsharma/StoryLine/compare/2.8.1...2.8.2) (2026-10-14)
 
 
