@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.9.0](https://github.com/kapilsharma/StoryLine/compare/2.8.4...2.9.0) (2026-10-14)
+
+
+### Features
+
+* **#161:** Show single Card in collapsed row and col ([da7695c](https://github.com/kapilsharma/StoryLine/commit/da7695c6d0300db428e8b8a982116a5016853897))
+* **#161:** Show single Card in collapsed row and col ([4976137](https://github.com/kapilsharma/StoryLine/commit/49761370f44fef625f9ca81dda7d69332f11ca21))
+
 ## [2.8.4](https://github.com/kapilsharma/StoryLine/compare/2.8.3...2.8.4) (2026-10-14)
 
 
