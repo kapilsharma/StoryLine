@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.11.0](https://github.com/kapilsharma/StoryLine/compare/2.10.0...2.11.0) (2026-10-15)
+
+
+### Features
+
+* **#165:** Percent complete on cards ([85b7d06](https://github.com/kapilsharma/StoryLine/commit/85b7d065aed7aa9835da6aa1cf7ed5d9733bda2e))
+* **#165:** Percent complete on cards ([6dde2d2](https://github.com/kapilsharma/StoryLine/commit/6dde2d228d20870197095cc08bb6e83063bb1bb5))
+
 ## [2.10.0](https://github.com/kapilsharma/StoryLine/compare/2.9.0...2.10.0) (2026-10-14)
 
 
