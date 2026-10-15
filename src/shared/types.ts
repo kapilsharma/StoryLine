@@ -192,6 +192,11 @@ export interface Note {
    */
   status?: string
   /**
+   * How far along the scene is, 0–100 (Issue #165), drawn as a bar along the
+   * bottom of its card. Absent = not tracked, no bar.
+   */
+  progress?: number
+  /**
    * Hover text (Issue #111): a short reminder shown when the mouse rests on the
    * card on the board, so the author need not open the note. Plain text; line
    * breaks are kept. Absent = no tooltip.

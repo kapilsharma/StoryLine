@@ -7,6 +7,7 @@ import {
 } from '@shared/types'
 import type { BoardData } from '@shared/ipc'
 import { cardStatuses, findCardStatus } from '@shared/cardStatus'
+import { DEFAULT_SETTINGS } from '@shared/config'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
 import { useBoardUi } from './BoardUiContext'
@@ -209,6 +210,8 @@ interface BoardCardProps {
   hoverText?: string
   statusIcon?: string
   statusLabel?: string
+  /** % complete, 0–100 (#165); undefined = not tracked, no bar. */
+  progress?: number
   noteId?: string
   title: string
   hasBody: boolean
@@ -238,6 +241,7 @@ const BoardCard = memo(function BoardCard({
   hoverText,
   statusIcon,
   statusLabel,
+  progress,
   noteId,
   title,
   hasBody,
@@ -253,7 +257,7 @@ const BoardCard = memo(function BoardCard({
   const card = pc.card
   return (
     <div
-      className={`board-card${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}${readOnly ? ' read-only' : ''}`}
+      className={`board-card${progress !== undefined ? ' has-progress' : ''}${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}${readOnly ? ' read-only' : ''}`}
       draggable={!readOnly}
       onDragStart={
         readOnly
@@ -271,6 +275,8 @@ const BoardCard = memo(function BoardCard({
         gridRow,
         height: isExp ? 'auto' : `${cardH}px`,
         ['--card-border' as string]: pc.colour,
+        // Drawn by CSS (::after) so the bar adds no element to the board (#165).
+        ...(progress !== undefined ? { ['--pct' as string]: `${progress}%` } : {}),
         // Stacked rows lay their cards out from the top so the levels line up; a
         // lone card keeps centring (#66).
         ...(lineDepth > 1
@@ -641,7 +647,9 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: `${headerW}px repeat(${cols.slots.length}, ${colW}px)`,
     gridTemplateRows: `${`${GROUP_H}px `.repeat(cols.depth)}${COLHEAD_H}px ${rowTracks}`,
-    ['--card-font' as string]: `${cardFont}px`
+    ['--card-font' as string]: `${cardFont}px`,
+    ['--progress-0' as string]: config?.settings.progressColorStart ?? DEFAULT_SETTINGS.progressColorStart,
+    ['--progress-100' as string]: config?.settings.progressColorEnd ?? DEFAULT_SETTINGS.progressColorEnd
   }
 
   // ── Toggles ──
@@ -882,6 +890,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
         hoverText={masked ? undefined : note?.hover}
         statusIcon={status?.icon}
         statusLabel={status?.label}
+        // Hidden with the title in revision mode, like the status icon.
+        progress={masked ? undefined : note?.progress}
         noteId={note?.id}
         title={note?.title ?? '(missing note)'}
         hasBody={!!note?.hasBody}

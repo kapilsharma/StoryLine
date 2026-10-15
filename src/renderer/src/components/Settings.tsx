@@ -8,7 +8,7 @@ import type {
   Theme,
   ThemeColor
 } from '@shared/config'
-import { CARD_FONT_MIN, CARD_FONT_MAX, DEFAULT_EDITOR_STYLES } from '@shared/config'
+import { CARD_FONT_MIN, CARD_FONT_MAX, DEFAULT_EDITOR_STYLES, DEFAULT_SETTINGS } from '@shared/config'
 import type { ProjectKind } from '@shared/types'
 import { DEFAULT_CARD_STATUSES, cardStatuses } from '@shared/cardStatus'
 import {
@@ -361,6 +361,52 @@ export function Settings(): JSX.Element {
             onChange={(e) => updateSettings({ ...settings, cardFontSize: Number(e.target.value) })}
           />
           <span className="muted small">Base text size on board cards (scales with zoom).</span>
+        </div>
+        <div className="form-row">
+          <label>% complete bar</label>
+          <span className="progress-colors">
+            <label className="theme-color">
+              <input
+                type="color"
+                aria-label="Bar colour at 0%"
+                value={settings.progressColorStart}
+                onChange={(e) => updateSettings({ ...settings, progressColorStart: e.target.value })}
+              />
+              <span className="muted small">0%</span>
+            </label>
+            <span
+              className="progress-preview"
+              style={{
+                ['--progress-0' as string]: settings.progressColorStart,
+                ['--progress-100' as string]: settings.progressColorEnd
+              }}
+            />
+            <label className="theme-color">
+              <input
+                type="color"
+                aria-label="Bar colour at 100%"
+                value={settings.progressColorEnd}
+                onChange={(e) => updateSettings({ ...settings, progressColorEnd: e.target.value })}
+              />
+              <span className="muted small">100%</span>
+            </label>
+            <button
+              className="btn small"
+              onClick={() =>
+                updateSettings({
+                  ...settings,
+                  progressColorStart: DEFAULT_SETTINGS.progressColorStart,
+                  progressColorEnd: DEFAULT_SETTINGS.progressColorEnd
+                })
+              }
+            >
+              Reset
+            </button>
+          </span>
+          <span className="muted small">
+            The strip along the bottom of a card whose note has a % complete; its colour moves from
+            the first to the second as the scene nears done.
+          </span>
         </div>
         <div className="form-row">
           <label htmlFor="board-note-view">Note opened from a board</label>

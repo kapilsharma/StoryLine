@@ -38,6 +38,10 @@ export interface AppSettings {
   cardFontSize: number
   /** Side the preview pane sits on in the dedicated editor. */
   previewPosition: PreviewPosition
+  /** Bar colour on a card at 0% complete (Issue #165); blended toward the 100% one. */
+  progressColorStart: string
+  /** Bar colour on a card at 100% complete (Issue #165). */
+  progressColorEnd: string
   /** Popup over the board, or panel beside it, when a note is opened (#83). */
   boardNoteView: BoardNoteView
   /**
@@ -228,6 +232,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   obsidianVault: null,
   theme: 'light',
   cardFontSize: 13,
+  progressColorStart: '#d93a3a',
+  progressColorEnd: '#2e9e4f',
   previewPosition: 'left',
   // The view the app has always had. Someone who prefers the side panel says so
   // in Settings; nobody is moved off what they are used to by an update.
