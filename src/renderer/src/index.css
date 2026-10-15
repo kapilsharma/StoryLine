@@ -1129,6 +1129,18 @@ textarea {
   overflow: hidden;
   position: relative;
 }
+.board-card.has-progress::after {
+  /* % complete (#165): a strip along the bottom edge, red→green by value. A
+     pseudo-element so it costs the board no DOM; the card clips its corners. */
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: var(--pct);
+  background: color-mix(in oklch, var(--progress-100) var(--pct), var(--progress-0));
+  pointer-events: none;
+}
 .board-card.expanded {
   align-items: flex-start;
   background: var(--card-bg-expanded);
@@ -1220,6 +1232,32 @@ textarea {
    thing an author scans the board for. */
 .card-status-icon {
   font-size: 0.9em;
+}
+.card-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 1.2rem;
+  margin: 0 0 0.6rem;
+}
+.card-meta-row > .card-status-select {
+  margin: 0;
+}
+.progress-colors {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.progress-preview {
+  width: 8rem;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right in oklch, var(--progress-0), var(--progress-100));
+}
+.card-progress-select {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .card-status-select {
   display: flex;
@@ -1678,6 +1716,10 @@ textarea {
   font-size: 0.85rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+/* The status + % complete row lines up with the panel's other fields. */
+.note-panel .card-meta-row {
+  margin: 0.5rem 0.9rem 0;
 }
 .note-panel .note-hover-text {
   margin: 0.5rem 0.9rem 0;

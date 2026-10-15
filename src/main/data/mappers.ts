@@ -9,6 +9,7 @@ import type {
 } from '@shared/types'
 import { GENDERS, SCHEMA_VERSION, defaultView } from '@shared/types'
 import { toPartialDate } from '@shared/dates'
+import { normalizeProgress } from '@shared/cardProgress'
 
 /**
  * Conversion between parsed frontmatter (`Record<string, unknown>`) and typed
@@ -258,6 +259,8 @@ export function frontmatterToNote(data: Record<string, unknown>, id: string, bod
   if (related) note.related = related
   if (typeof data.created === 'string') note.created = data.created
   if (typeof data.status === 'string' && data.status.trim()) note.status = data.status.trim()
+  const progress = normalizeProgress(data.progress)
+  if (progress !== undefined) note.progress = progress
   // Trimmed at the ends only — inner line breaks are the author's layout.
   if (typeof data.hover === 'string' && data.hover.trim()) note.hover = data.hover.trim()
   return note
@@ -268,6 +271,7 @@ export function noteToFrontmatter(n: Note): Record<string, unknown> {
     ...(n.uid ? { uid: n.uid } : {}),
     title: n.title,
     ...(n.status ? { status: n.status } : {}),
+    ...(n.progress !== undefined ? { progress: n.progress } : {}),
     ...(n.hover?.trim() ? { hover: n.hover.trim() } : {}),
     ...(n.tags?.length ? { tags: n.tags } : {}),
     ...(n.boards?.length ? { boards: n.boards } : {}),

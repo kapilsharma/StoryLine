@@ -3,6 +3,7 @@ import type { Note } from '@shared/types'
 import { cardStatuses } from '@shared/cardStatus'
 import { useStore } from '../store'
 import { CardStatusSelect } from './CardStatusSelect'
+import { CardProgressSelect } from './CardProgressSelect'
 import { usePrompt } from './PromptModal'
 import { MarkdownPreview } from './MarkdownPreview'
 
@@ -25,9 +26,11 @@ export function NotePopup({ note, onClose, onOpenNote }: Props): JSX.Element {
 
   const [body, setBody] = useState(note.body)
   const [status, setStatus] = useState(note.status)
+  const [progress, setProgress] = useState(note.progress)
   // Not remounted when a related link swaps the note, and the file can change
   // underneath (watcher), so follow the prop.
   useEffect(() => setStatus(note.status), [note.id, note.status])
+  useEffect(() => setProgress(note.progress), [note.id, note.progress])
 
   // The popup is otherwise read-only, but a status is one click, not an edit
   // session — so it saves at once. `note` is the body-less meta, so the save
@@ -36,6 +39,13 @@ export function NotePopup({ note, onClose, onOpenNote }: Props): JSX.Element {
     setStatus(next)
     const full = await getNote(note.id)
     await saveNote({ ...full, status: next })
+  }
+
+  // Same for % complete (#165): one pick, saved at once.
+  const changeProgress = async (next: number | undefined): Promise<void> => {
+    setProgress(next)
+    const full = await getNote(note.id)
+    await saveNote({ ...full, progress: next })
   }
 
   // Body is lazy-loaded; fetch the full note for the preview.
@@ -91,12 +101,19 @@ export function NotePopup({ note, onClose, onOpenNote }: Props): JSX.Element {
           </div>
         </header>
 
-        <CardStatusSelect
-          statuses={statuses}
-          value={status}
-          disabled={readOnly}
-          onChange={(next) => void changeStatus(next)}
-        />
+        <div className="card-meta-row">
+          <CardStatusSelect
+            statuses={statuses}
+            value={status}
+            disabled={readOnly}
+            onChange={(next) => void changeStatus(next)}
+          />
+          <CardProgressSelect
+            value={progress}
+            disabled={readOnly}
+            onChange={(next) => void changeProgress(next)}
+          />
+        </div>
 
         {note.tags && note.tags.length > 0 && (
           <div className="tag-row">

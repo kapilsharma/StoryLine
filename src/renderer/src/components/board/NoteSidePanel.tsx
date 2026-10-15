@@ -3,6 +3,7 @@ import type { Note } from '@shared/types'
 import { cardStatuses } from '@shared/cardStatus'
 import { useStore } from '../../store'
 import { CardStatusSelect } from '../CardStatusSelect'
+import { CardProgressSelect } from '../CardProgressSelect'
 import { usePrompt } from '../PromptModal'
 import { LiveMarkdownEditor } from '../LiveMarkdownEditor'
 import type { PanelTarget } from './BoardUiContext'
@@ -52,6 +53,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
   const [hover, setHover] = useState('')
   const [body, setBody] = useState('')
   const [status, setStatus] = useState<string | undefined>(undefined)
+  const [progress, setProgress] = useState<number | undefined>(undefined)
   const [loaded, setLoaded] = useState(false)
   const noteRef = useRef<Note | null>(null)
   const dirty = useRef(false)
@@ -81,6 +83,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
           setHover(n.hover ?? '')
           setBody(n.body)
           setStatus(n.status)
+          setProgress(n.progress)
           setLoaded(true)
         })
         .catch(() => !cancelled && setLoaded(true))
@@ -132,8 +135,18 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
   // updated too, so the next debounced save carries it rather than undoing it.
   const changeStatus = (next: string | undefined): void => {
     setStatus(next)
+    saveMeta({ status: next })
+  }
+
+  // % complete (#165) is a pick too, saved the same way.
+  const changeProgress = (next: number | undefined): void => {
+    setProgress(next)
+    saveMeta({ progress: next })
+  }
+
+  const saveMeta = (patch: Partial<Pick<Note, 'status' | 'progress'>>): void => {
     if (target.kind !== 'note' || !noteRef.current) return
-    noteRef.current = { ...noteRef.current, status: next }
+    noteRef.current = { ...noteRef.current, ...patch }
     saveNote({
       ...noteRef.current,
       title: title.trim() || noteRef.current.title,
@@ -219,12 +232,15 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
       </header>
 
       {target.kind === 'note' && loaded && (
-        <CardStatusSelect
-          statuses={snapshot ? cardStatuses(snapshot.project) : []}
-          value={status}
-          disabled={readOnly}
-          onChange={changeStatus}
-        />
+        <div className="card-meta-row">
+          <CardStatusSelect
+            statuses={snapshot ? cardStatuses(snapshot.project) : []}
+            value={status}
+            disabled={readOnly}
+            onChange={changeStatus}
+          />
+          <CardProgressSelect value={progress} disabled={readOnly} onChange={changeProgress} />
+        </div>
       )}
 
       {target.kind === 'note' ? (
