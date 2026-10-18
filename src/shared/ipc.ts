@@ -26,6 +26,7 @@ import type { ProjectPatch } from './patch'
 import type { SearchHit, SearchScope } from './search'
 import type { AssetImport, AssetRef } from './assets'
 import type { ColumnRef } from './columns'
+import type { OutlineItem } from './outline'
 import type { MarkdownExportOptions } from './exportMarkdown'
 
 /**
@@ -190,6 +191,11 @@ export interface AppApi {
     label: string,
     moveNote: boolean
   ): Promise<ProjectSnapshot>
+  /**
+   * Create a whole outline of groups and columns at once ("Add multiple chapters",
+   * Issue #172), appended at the top level after what is already there.
+   */
+  addColumnOutline(root: string, boardId: string, items: OutlineItem[]): Promise<ProjectSnapshot>
 
   // ── Notes (per board) ──
   saveNote(root: string, boardId: string, note: Note): Promise<ProjectSnapshot>

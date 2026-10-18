@@ -32,6 +32,7 @@ import { markdownToPdf } from './data/renderPdf'
 import { ProjectNotInGroupError, resolveProjectGroup, type ResolvedProjectGroup } from './data/projectGroup'
 import { needsMigration } from './data/migrate'
 import { uniqueSlug } from './data/slug'
+import type { OutlineItem } from '@shared/outline'
 import { applyChildren, clearReferencesTo, retargetReferences, syncSpouses } from './data/relations'
 import {
   deleteBoard,
@@ -534,6 +535,39 @@ export function registerIpc(window: BrowserWindow): void {
         await writeEntityBody(root, boardId, 'colgroup', id, note)
         await writeEntityBody(root, boardId, 'timeline', unitId, '')
       }
+      return snap(root)
+    }
+  )
+
+  // "Add multiple chapters" (Issue #172): a whole pasted outline in one call, so
+  // 29 chapters cost one snapshot, not 29. New items land after what is there.
+  ipcMain.handle(
+    'columns:addOutline',
+    async (_e, root: string, boardId: string, items: OutlineItem[]) => {
+      const [groups, units] = await Promise.all([listColumnGroups(root, boardId), listTimeline(root, boardId)])
+      const tree = buildColumnTree(groups, units)
+      const groupIds = groups.map((g) => g.id)
+      const unitIds = units.map((u) => u.id)
+
+      const add = async (list: OutlineItem[], parent: string | null, firstOrder: number): Promise<void> => {
+        let order = firstOrder
+        for (const item of list) {
+          const label = item.label.trim()
+          if (!label) continue
+          const placed = { label, order: order++, ...(parent ? { parent } : {}) }
+          if (item.kind === 'unit') {
+            const id = uniqueSlug(label, unitIds)
+            unitIds.push(id)
+            await writeTimelineUnit(root, boardId, { id, ...placed })
+          } else {
+            const id = uniqueSlug(label, groupIds)
+            groupIds.push(id)
+            await writeColumnGroup(root, boardId, { id, type: 'colgroup', ...placed })
+            await add(item.children ?? [], id, 1)
+          }
+        }
+      }
+      await add(items, null, nextOrder(tree, null))
       return snap(root)
     }
   )

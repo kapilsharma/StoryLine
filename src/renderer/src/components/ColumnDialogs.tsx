@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ColumnGroup, TimelineUnit } from '@shared/types'
 import type { ColumnDescendant } from '@shared/columns'
+import { OUTLINE_INDENT, parseOutline, type OutlineItem } from '@shared/outline'
+import { pluralize } from '../lib/text'
 import { Modal } from './Modal'
 
 /**
@@ -114,6 +116,91 @@ export function WrapColumnModal({
           onClick={() => onConfirm(label.trim(), unit.hasNote ? moveNote : false)}
         >
           Break up
+        </button>
+        <button className="btn" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+/**
+ * "Add multiple chapters" (Issue #172): paste or type one label per line and add
+ * them all at once. In a project with levels (Chapter › Scene), indenting a line
+ * like Python puts it one level deeper, inside the line above it.
+ */
+export function AddOutlineModal({
+  levels,
+  onCancel,
+  onConfirm
+}: {
+  /** The project's column level names, outermost first — "Chapter", "Scene". */
+  levels: string[]
+  onCancel: () => void
+  onConfirm: (items: OutlineItem[]) => void
+}): JSX.Element {
+  const [text, setText] = useState('')
+  const parsed = useMemo(() => parseOutline(text, levels.length), [text, levels.length])
+  const nested = levels.length > 1
+  const top = levels[0].toLowerCase()
+
+  const summary = parsed.counts
+    .map((n, d) => (n ? `${n} ${(n === 1 ? levels[d] : pluralize(levels[d])).toLowerCase()}` : null))
+    .filter(Boolean)
+    .join(', ')
+  const canAdd = parsed.items.length > 0 && parsed.errors.length === 0
+
+  // Tab indents rather than leaving the box, so an outline can be typed, not just
+  // pasted. Only where indenting means something; Escape still closes the dialog.
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (!nested || e.key !== 'Tab' || e.shiftKey) return
+    e.preventDefault()
+    // Edit the DOM in place so the caret lands after the indent; React then
+    // finds its value already matching and leaves the caret alone.
+    const el = e.currentTarget
+    el.setRangeText(' '.repeat(OUTLINE_INDENT), el.selectionStart, el.selectionEnd, 'end')
+    setText(el.value)
+  }
+
+  return (
+    <Modal title={`Add multiple ${pluralize(top)}`} onClose={onCancel}>
+      <p className="muted small">
+        One {top} per line.
+        {nested &&
+          ` Indent a line by ${OUTLINE_INDENT} spaces (or Tab) to put it inside the line above: ${levels
+            .map((l) => l.toLowerCase())
+            .join(' › ')}.`}{' '}
+        They are added after what is already here.
+      </p>
+      <div className="form-row">
+        <label htmlFor="outline-text">{pluralize(levels[0])}</label>
+        <textarea
+          id="outline-text"
+          rows={12}
+          value={text}
+          spellCheck={false}
+          style={{ fontFamily: 'monospace' }}
+          placeholder={nested ? `${levels[0]} 1\n    ${levels[1]} 1\n    ${levels[1]} 2\n${levels[0]} 2` : `${levels[0]} 1\n${levels[0]} 2\n${levels[0]} 3`}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={onKeyDown}
+          autoFocus
+        />
+      </div>
+      {parsed.errors.length > 0 ? (
+        <ul className="outline-errors" role="alert" aria-label="Problems">
+          {parsed.errors.map((err) => (
+            <li key={err.line} className="small">
+              Line {err.line}: {err.message}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        summary && <p className="muted small">Will add {summary}.</p>
+      )}
+      <div className="form-actions">
+        <button className="btn primary" disabled={!canAdd} onClick={() => onConfirm(parsed.items)}>
+          Add {pluralize(top)}
         </button>
         <button className="btn" onClick={onCancel}>
           Cancel
