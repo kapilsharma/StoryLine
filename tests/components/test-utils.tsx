@@ -35,6 +35,7 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     reorderColumns: vi.fn(),
     moveColumn: vi.fn(),
     wrapColumnInGroup: vi.fn(),
+    addColumnOutline: vi.fn(),
     saveNote: vi.fn(),
     deleteNote: vi.fn(),
     getNote: vi.fn(),

@@ -405,3 +405,39 @@ describe('timeline:delete', () => {
     expect(board(snap).colGroups.map((g) => g.id)).toEqual(['part'])
   })
 })
+
+describe('columns:addOutline (Issue #172)', () => {
+  const add = (items: unknown[]): Promise<ProjectSnapshot> => invoke('columns:addOutline', root, 'main', items)
+  const u = (label: string) => ({ label, kind: 'unit', children: [] })
+
+  it('adds many top-level columns in order, after the ones already there', async () => {
+    await newUnit('Prologue')
+    const snap = await add([u('Chapter 1'), u('Chapter 2'), u('Chapter 1')])
+    expect(board(snap).timeline.map((t) => [t.id, t.label, t.order, t.parent])).toEqual([
+      ['prologue', 'Prologue', 1, undefined],
+      ['chapter-1', 'Chapter 1', 2, undefined],
+      ['chapter-2', 'Chapter 2', 3, undefined],
+      ['chapter-1-2', 'Chapter 1', 4, undefined]
+    ])
+    expect(await exists(unitFile('chapter-2'))).toBe(true)
+  })
+
+  it('creates groups with their columns inside, numbered among their own siblings', async () => {
+    await newGroup('Part One')
+    const snap = await add([
+      { label: 'Ch 1', kind: 'node', children: [u('Sc 1'), u('Sc 2')] },
+      { label: 'Ch 2', kind: 'node', children: [] }
+    ])
+    expect(group(snap, 'ch-1')).toMatchObject({ label: 'Ch 1', order: 2 })
+    expect(group(snap, 'ch-1')?.parent).toBeUndefined()
+    expect(group(snap, 'ch-2')).toMatchObject({ order: 3 })
+    expect(unit(snap, 'sc-1')).toMatchObject({ parent: 'ch-1', order: 1 })
+    expect(unit(snap, 'sc-2')).toMatchObject({ parent: 'ch-1', order: 2 })
+    expect(await exists(groupFile('ch-1'))).toBe(true)
+  })
+
+  it('skips blank labels', async () => {
+    const snap = await add([u('  '), u('Real')])
+    expect(board(snap).timeline.map((t) => t.label)).toEqual(['Real'])
+  })
+})

@@ -125,6 +125,7 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     reorderColumns: () => denied<ProjectSnapshot>(),
     moveColumn: () => denied<ProjectSnapshot>(),
     wrapColumnInGroup: () => denied<ProjectSnapshot>(),
+    addColumnOutline: () => denied<ProjectSnapshot>(),
     saveNote: () => denied<ProjectSnapshot>(),
     deleteNote: () => denied<ProjectSnapshot>(),
     renameNote: () => denied<ProjectSnapshot>(),

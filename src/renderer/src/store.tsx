@@ -32,6 +32,7 @@ import type {
   ViewMode
 } from '@shared/types'
 import type { ColumnRef } from '@shared/columns'
+import type { OutlineItem } from '@shared/outline'
 import type { ProjectChange } from '@shared/changes'
 import { applyProjectPatch, planReload } from '@shared/patch'
 import { buildGraph, type FamilyGraph } from '@shared/graph'
@@ -119,6 +120,7 @@ interface StoreValue {
   reorderColumns: (parentId: string | null, order: ColumnRef[]) => Promise<void>
   moveColumn: (ref: ColumnRef, newParentId: string | null, index?: number) => Promise<void>
   wrapColumnInGroup: (unitId: string, label: string, moveNote: boolean) => Promise<void>
+  addColumnOutline: (items: OutlineItem[]) => Promise<void>
   saveNote: (note: Note) => Promise<void>
   deleteNote: (id: string) => Promise<void>
   /** Fetch a note's full content (body is lazy-loaded) from the active board. */
@@ -509,6 +511,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
         mutateBoard((root, b) => api.moveColumn(root, b, ref, newParentId, index)),
       wrapColumnInGroup: (unitId, label, moveNote) =>
         mutateBoard((root, b) => api.wrapColumnInGroup(root, b, unitId, label, moveNote)),
+      addColumnOutline: (items) => mutateBoard((root, b) => api.addColumnOutline(root, b, items)),
       saveNote: (n) => mutateBoard((root, b) => api.saveNote(root, b, n)),
       deleteNote: (id) => mutateBoard((root, b) => api.deleteNote(root, b, id)),
       getNote,

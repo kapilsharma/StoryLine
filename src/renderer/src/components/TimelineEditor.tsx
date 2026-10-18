@@ -17,7 +17,7 @@ import { pluralize } from '../lib/text'
 import { BoardPicker } from './BoardPicker'
 import { TimelineForm } from './TimelineForm'
 import { ColumnGroupForm } from './ColumnGroupForm'
-import { DeleteGroupModal, WrapColumnModal } from './ColumnDialogs'
+import { AddOutlineModal, DeleteGroupModal, WrapColumnModal } from './ColumnDialogs'
 
 const MIME_COLUMN = 'application/x-znstoryline-column'
 
@@ -69,6 +69,7 @@ export function TimelineEditor(): JSX.Element {
     reorderColumns,
     moveColumn,
     wrapColumnInGroup,
+    addColumnOutline,
     openEditor
   } = useStore()
   const units = activeBoard?.timeline ?? NO_UNITS
@@ -85,6 +86,7 @@ export function TimelineEditor(): JSX.Element {
   const [creating, setCreating] = useState<Creating>(null)
   const [pendingDelete, setPendingDelete] = useState<ColumnGroup | null>(null)
   const [wrapping, setWrapping] = useState<TimelineUnit | null>(null)
+  const [addingMany, setAddingMany] = useState(false)
   // Dragging is held in a ref as well as state: the drop handlers need the value
   // synchronously, and `dataTransfer` is not readable during dragover.
   const dragRef = useRef<ColumnRef | null>(null)
@@ -215,6 +217,9 @@ export function TimelineEditor(): JSX.Element {
                   + Add {word(d).toLowerCase()}
                 </button>
               ))}
+              <button className="btn small" onClick={() => setAddingMany(true)}>
+                + Add multiple {pluralize(word(0).toLowerCase())}
+              </button>
             </div>
           </div>
           {rows.length === 0 ? (
@@ -380,6 +385,16 @@ export function TimelineEditor(): JSX.Element {
             setPendingDelete(null)
             setSelected(null)
             void deleteColumnGroup(id)
+          }}
+        />
+      )}
+      {addingMany && (
+        <AddOutlineModal
+          levels={levels}
+          onCancel={() => setAddingMany(false)}
+          onConfirm={(items) => {
+            setAddingMany(false)
+            void addColumnOutline(items)
           }}
         />
       )}

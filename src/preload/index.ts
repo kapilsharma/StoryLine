@@ -38,6 +38,7 @@ const api: AppApi = {
     ipcRenderer.invoke('columns:move', root, boardId, ref, newParentId, index),
   wrapColumnInGroup: (root, boardId, unitId, label, moveNote) =>
     ipcRenderer.invoke('colgroup:wrap', root, boardId, unitId, label, moveNote),
+  addColumnOutline: (root, boardId, items) => ipcRenderer.invoke('columns:addOutline', root, boardId, items),
 
   saveNote: (root, boardId, note) => ipcRenderer.invoke('note:save', root, boardId, note),
   deleteNote: (root, boardId, id) => ipcRenderer.invoke('note:delete', root, boardId, id),

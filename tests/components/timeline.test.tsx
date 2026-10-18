@@ -197,3 +197,64 @@ describe('TimelineEditor tab', () => {
     })
   })
 })
+
+describe('Add multiple chapters (Issue #172)', () => {
+  async function renderTab(project: Record<string, unknown> = { timelineLabel: 'Chapter' }) {
+    const snap = makeSnapshot({ timeline, colGroups, project })
+    const api = makeApi({
+      openProject: vi.fn().mockResolvedValue(snap),
+      addColumnOutline: vi.fn().mockResolvedValue(snap)
+    })
+    renderWithProviders(<TimelineEditor />, { bootRoot: '/project' })
+    await waitFor(() => expect(api.openProject).toHaveBeenCalled())
+    await screen.findByText('Chapter 1')
+    return api
+  }
+
+  it('adds one chapter per line in a single call', async () => {
+    const api = await renderTab()
+    await userEvent.click(screen.getByRole('button', { name: '+ Add multiple chapters' }))
+    const dialog = screen.getByRole('heading', { name: 'Add multiple chapters' }).parentElement!
+    const add = within(dialog).getByRole('button', { name: 'Add chapters' })
+    expect(add).toBeDisabled()
+
+    await userEvent.type(within(dialog).getByLabelText('Chapters'), 'One{enter}{enter}Two{enter}Three')
+    expect(within(dialog).getByText('Will add 3 chapters.')).toBeInTheDocument()
+    await userEvent.click(add)
+
+    await waitFor(() => expect(api.addColumnOutline).toHaveBeenCalledTimes(1))
+    const items = (api.addColumnOutline as ReturnType<typeof vi.fn>).mock.calls[0][2]
+    expect(items.map((i: { label: string; kind: string }) => [i.label, i.kind])).toEqual([
+      ['One', 'unit'],
+      ['Two', 'unit'],
+      ['Three', 'unit']
+    ])
+    expect(screen.queryByRole('heading', { name: 'Add multiple chapters' })).not.toBeInTheDocument()
+  })
+
+  it('nests indented lines one level down, with Tab typing the indent', async () => {
+    const api = await renderTab({ timelineLevelLabels: ['Chapter', 'Scene'], timelineLabel: 'Scene' })
+    await userEvent.click(screen.getByRole('button', { name: '+ Add multiple chapters' }))
+    const box = screen.getByLabelText('Chapters')
+    await userEvent.type(box, 'Ch A{enter}{tab}Sc 1{enter}    Sc 2')
+    expect(screen.getByText('Will add 1 chapter, 2 scenes.')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Add chapters' }))
+
+    await waitFor(() => expect(api.addColumnOutline).toHaveBeenCalled())
+    const [ch] = (api.addColumnOutline as ReturnType<typeof vi.fn>).mock.calls[0][2]
+    expect(ch).toMatchObject({ label: 'Ch A', kind: 'node' })
+    expect(ch.children.map((c: { label: string; kind: string }) => [c.label, c.kind])).toEqual([
+      ['Sc 1', 'unit'],
+      ['Sc 2', 'unit']
+    ])
+  })
+
+  it('names the bad line and will not add while there is a problem', async () => {
+    const api = await renderTab({ timelineLevelLabels: ['Chapter', 'Scene'], timelineLabel: 'Scene' })
+    await userEvent.click(screen.getByRole('button', { name: '+ Add multiple chapters' }))
+    await userEvent.type(screen.getByLabelText('Chapters'), 'One{enter}    Two{enter}        Three')
+    expect(screen.getByRole('alert')).toHaveTextContent(/Line 3:.*only 2 column levels/)
+    expect(screen.getByRole('button', { name: 'Add chapters' })).toBeDisabled()
+    expect(api.addColumnOutline).not.toHaveBeenCalled()
+  })
+})
