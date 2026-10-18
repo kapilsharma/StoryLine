@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.12.0](https://github.com/kapilsharma/StoryLine/compare/2.11.0...2.12.0) (2026-10-18)
+
+
+### Features
+
+* **#172:** Add multiple chapters ([8d51f4b](https://github.com/kapilsharma/StoryLine/commit/8d51f4b60667eae475bc49e8b6a8935cd6321fe4))
+* **#172:** Add multiple chapters ([2f64575](https://github.com/kapilsharma/StoryLine/commit/2f64575883b295a24ace19fd9020591ca354ded6))
+
 ## [2.11.0](https://github.com/kapilsharma/StoryLine/compare/2.10.0...2.11.0) (2026-10-15)
 
 
