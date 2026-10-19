@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.13.1](https://github.com/kapilsharma/StoryLine/compare/2.13.0...2.13.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **#176:** spawn npm via shell on Windows in export:static ([72b81ab](https://github.com/kapilsharma/StoryLine/commit/72b81ab664936873402d49a03b36249147fd923d))
+* **#176:** spawn npm via shell on Windows in export:static ([da78082](https://github.com/kapilsharma/StoryLine/commit/da78082893e9710c51a2f604b9045a9b7d39273d))
+
 ## [2.13.0](https://github.com/kapilsharma/StoryLine/compare/2.12.0...2.13.0) (2026-10-19)
 
 
