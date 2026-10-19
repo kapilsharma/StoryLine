@@ -106,6 +106,7 @@ interface StoreValue {
    * for the family tree stays off the plot.
    */
   saveCharacter: (character: Character, addToBoard?: boolean) => Promise<void>
+  addCharacters: (characters: Character[]) => Promise<void>
   deleteCharacter: (id: string) => Promise<void>
   /** Renames the character's file and retargets every reference to its old id. */
   renameCharacter: (id: string, newName: string) => Promise<void>
@@ -497,6 +498,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       exportDocument,
       saveFamilyColours: (families) => mutate((root) => api.saveFamilyColours(root, families)),
       saveCharacter: (c, addToBoard) => mutateBoard((root, b) => api.saveCharacter(root, b, c, addToBoard)),
+      addCharacters: (chars) => mutateBoard((root, b) => api.addCharacters(root, b, chars)),
       deleteCharacter: (id) => mutateBoard((root, b) => api.deleteCharacter(root, b, id)),
       renameCharacter: (id, newName) => mutateBoard((root, b) => api.renameCharacter(root, b, id, newName)),
       setChildren: (parentId, childIds) =>

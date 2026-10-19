@@ -6,6 +6,7 @@ import { useStore } from '../store'
 import { BoardPicker } from './BoardPicker'
 import { CharacterForm } from './CharacterForm'
 import { CharacterNotes } from './CharacterNotes'
+import { AddCharactersModal } from './AddCharactersModal'
 
 /**
  * Where a character turns up. Derived live from the board's `members` and each
@@ -26,11 +27,12 @@ const FILTERS: Array<{ key: Where; label: string; hint: string }> = [
 ]
 
 export function CharacterEditor(): JSX.Element {
-  const { activeBoard, graph, views, deleteCharacter, openEditor, revealTarget } = useStore()
+  const { activeBoard, graph, views, deleteCharacter, addCharacters, openEditor, revealTarget } = useStore()
   const characters = activeBoard?.characters ?? []
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [addingMany, setAddingMany] = useState(false)
   const [where, setWhere] = useState<Where>('all')
   const [query, setQuery] = useState('')
 
@@ -118,9 +120,14 @@ export function CharacterEditor(): JSX.Element {
         <aside className="entity-list">
           <div className="entity-list-head">
             <h2>Characters</h2>
-            <button className="btn small" onClick={startCreate}>
-              + Add
-            </button>
+            <div className="entity-list-actions">
+              <button className="btn small" onClick={startCreate}>
+                + Add
+              </button>
+              <button className="btn small" onClick={() => setAddingMany(true)}>
+                + Add multiple
+              </button>
+            </div>
           </div>
 
           <input
@@ -209,6 +216,16 @@ export function CharacterEditor(): JSX.Element {
           )}
         </section>
       </div>
+      {addingMany && (
+        <AddCharactersModal
+          existing={characters}
+          onCancel={() => setAddingMany(false)}
+          onConfirm={(chars) => {
+            setAddingMany(false)
+            void addCharacters(chars)
+          }}
+        />
+      )}
     </div>
   )
 }

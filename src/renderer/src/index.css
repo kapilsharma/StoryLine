@@ -2422,6 +2422,15 @@ ol.footnotes li {
   border-radius: 6px;
   font-size: 0.85rem;
 }
+.import-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.25rem 0 0.5rem;
+}
+.import-columns .tag-chip.custom {
+  border-style: dashed;
+}
 .outline-errors {
   max-height: 8rem;
   overflow: auto;

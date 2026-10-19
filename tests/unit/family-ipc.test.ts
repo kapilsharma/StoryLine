@@ -406,3 +406,38 @@ describe('board:delete', () => {
     await expect(fs.access(join(root, 'boards', 'second'))).rejects.toThrow()
   })
 })
+
+describe('character:addMany (Issue #175)', () => {
+  const many = (chars: Partial<Character>[]): Promise<ProjectSnapshot> =>
+    invoke(
+      'character:addMany',
+      root,
+      BID,
+      chars.map((c) => ({ id: '', type: 'character', colour: '#888888', ...c }))
+    )
+
+  it('creates every character, on the board, in order', async () => {
+    const snap = await many([{ name: 'Griffith Devoras', group: 'Council' }, { name: 'Thaddeus Stantorn' }])
+    expect(person(snap, 'griffith-devoras')).toMatchObject({ group: 'Council' })
+    expect(person(snap, 'thaddeus-stantorn')).toBeDefined()
+    expect(board(snap).board.members).toEqual(['griffith-devoras', 'thaddeus-stantorn'])
+  })
+
+  it('turns placeholders into the new ids, and marries into the existing cast both ways', async () => {
+    await add('Aeri')
+    const snap = await many([
+      { name: 'Kid', father: 'new:1', mother: 'aeri' },
+      { name: 'Dad', spouse: ['aeri'] }
+    ])
+    expect(person(snap, 'kid')).toMatchObject({ father: 'dad', mother: 'aeri' })
+    expect(person(snap, 'dad')?.spouse).toEqual(['aeri'])
+    expect(person(snap, 'aeri')?.spouse).toEqual(['dad'])
+  })
+
+  it('adds nothing when a name already exists', async () => {
+    await add('Aeri')
+    await expect(many([{ name: 'New' }, { name: 'aeri' }])).rejects.toThrow(/already exists/)
+    const snap = await invoke<ProjectSnapshot>('project:reload', root)
+    expect(cast(snap).map((c) => c.id)).toEqual(['aeri'])
+  })
+})

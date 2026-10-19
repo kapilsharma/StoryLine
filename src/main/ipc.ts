@@ -33,6 +33,7 @@ import { ProjectNotInGroupError, resolveProjectGroup, type ResolvedProjectGroup 
 import { needsMigration } from './data/migrate'
 import { uniqueSlug } from './data/slug'
 import type { OutlineItem } from '@shared/outline'
+import { newRefIndex } from '@shared/characterImport'
 import { applyChildren, clearReferencesTo, retargetReferences, syncSpouses } from './data/relations'
 import {
   deleteBoard,
@@ -363,6 +364,61 @@ export function registerIpc(window: BrowserWindow): void {
         if (board.members && !board.members.includes(toSave.id)) {
           await writeBoard(root, { ...board, members: [...board.members, toSave.id] }, mtimeMs)
         }
+      }
+      return snap(root)
+    }
+  )
+
+  // "Add multiple characters" (Issue #175): rows already validated by
+  // parseCharacterCsv. Family links between them arrive as newRef(i) and get
+  // their real ids here. All of them join the board as rows.
+  ipcMain.handle(
+    'character:addMany',
+    async (_e, root: string, boardId: string, incoming: Character[]) => {
+      const all = await listCharacters(root, boardId)
+      // Re-checked here: the list may have changed since the dialog validated it,
+      // and the rule is all-or-nothing.
+      const names = new Set(all.map((c) => c.name.trim().toLowerCase()))
+      for (const c of incoming) {
+        if (!c.name.trim()) throw new Error('Every character needs a name.')
+        if (names.has(c.name.trim().toLowerCase())) throw new Error(`"${c.name}" already exists.`)
+        names.add(c.name.trim().toLowerCase())
+      }
+
+      const taken = all.map((c) => c.id)
+      const ids = incoming.map((c) => {
+        const id = uniqueSlug(c.name, taken)
+        taken.push(id)
+        return id
+      })
+      const real = (ref: string): string => {
+        const i = newRefIndex(ref)
+        return i === null ? ref : ids[i]
+      }
+      const created = incoming.map((c, i): Character => {
+        const out: Character = { ...c, id: ids[i] }
+        if (c.father) out.father = real(c.father)
+        if (c.mother) out.mother = real(c.mother)
+        if (c.spouse) out.spouse = c.spouse.map(real)
+        return out
+      })
+
+      await writeAll(root, boardId, created)
+      // A new character married to an existing one: the existing side gains them too.
+      const current = new Map([...all, ...created].map((c) => [c.id, c]))
+      for (const c of created) {
+        // Compared against a list without `c`, so every spouse it names counts as new.
+        const others = [...current.values()].filter((o) => o.id !== c.id)
+        const partners = syncSpouses(others, current.get(c.id)!)
+        await writeAll(root, boardId, partners)
+        for (const p of partners) current.set(p.id, p)
+      }
+      await persistFamilyColours(root, [...current.values()])
+
+      const { value: board, mtimeMs } = await readBoard(root, boardId)
+      if (board.members) {
+        const add = created.map((c) => c.id).filter((id) => !board.members!.includes(id))
+        if (add.length) await writeBoard(root, { ...board, members: [...board.members, ...add] }, mtimeMs)
       }
       return snap(root)
     }

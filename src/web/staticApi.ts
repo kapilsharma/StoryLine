@@ -115,6 +115,7 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
 
     // ── Refused: anything backed by a file ──
     saveCharacter: () => denied<ProjectSnapshot>(),
+    addCharacters: () => denied<ProjectSnapshot>(),
     deleteCharacter: () => denied<ProjectSnapshot>(),
     renameCharacter: () => denied<ProjectSnapshot>(),
     setChildren: () => denied<ProjectSnapshot>(),

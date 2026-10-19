@@ -21,6 +21,8 @@ const api: AppApi = {
 
   saveCharacter: (root, boardId, character, addToBoard) =>
     ipcRenderer.invoke('character:save', root, boardId, character, addToBoard ?? false),
+  addCharacters: (root, boardId, characters) =>
+    ipcRenderer.invoke('character:addMany', root, boardId, characters),
   deleteCharacter: (root, boardId, id) => ipcRenderer.invoke('character:delete', root, boardId, id),
   renameCharacter: (root, boardId, oldId, newName) =>
     ipcRenderer.invoke('character:rename', root, boardId, oldId, newName),

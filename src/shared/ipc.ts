@@ -119,6 +119,11 @@ export interface AppApi {
     addToBoard?: boolean
   ): Promise<ProjectSnapshot>
   /** Removes the file, its cards, and every inbound father/mother/spouse ref. */
+  /**
+   * Create many characters at once ("Add multiple characters", Issue #175) and
+   * put them on the board. Family links between them use `newRef(i)` ids.
+   */
+  addCharacters(root: string, boardId: string, characters: Character[]): Promise<ProjectSnapshot>
   deleteCharacter(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
   /**
    * Renames the character's *file* and retargets every relation pointing at the
