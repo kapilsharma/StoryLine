@@ -25,6 +25,7 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     saveProjectMeta: vi.fn(),
     saveFamilyColours: vi.fn(),
     saveCharacter: vi.fn(),
+    addCharacters: vi.fn(),
     deleteCharacter: vi.fn(),
     renameCharacter: vi.fn(),
     setChildren: vi.fn(),
