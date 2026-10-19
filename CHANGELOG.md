@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.13.0](https://github.com/kapilsharma/StoryLine/compare/2.12.0...2.13.0) (2026-10-19)
+
+
+### Features
+
+* **#175:** Add multiple characters ([4d0c30e](https://github.com/kapilsharma/StoryLine/commit/4d0c30ee5091a8d0af91e81808ca055e4873fd62))
+* **#175:** Add multiple characters ([8e116c1](https://github.com/kapilsharma/StoryLine/commit/8e116c1739710f7399349df8d500bab27df28e6d))
+
 ## [2.12.0](https://github.com/kapilsharma/StoryLine/compare/2.11.0...2.12.0) (2026-10-18)
 
 
