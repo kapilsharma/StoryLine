@@ -112,8 +112,10 @@ function parseArgs(argv: string[]): Args {
 /** Build the web shell via the project's own npm script. */
 function buildShell(): Promise<void> {
   return new Promise((done, fail) => {
-    const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-    const child = spawn(npm, ['run', 'build:web'], { stdio: 'inherit', shell: false })
+    // Windows can't spawn `npm.cmd` without a shell since Node's CVE-2024-27980
+    // fix (spawn EINVAL). A single fixed command string needs no arg escaping,
+    // and avoids the DEP0190 warning for `shell: true` + an args array.
+    const child = spawn('npm run build:web', { stdio: 'inherit', shell: true })
     child.on('error', fail)
     child.on('exit', (code) =>
       code === 0 ? done() : fail(new Error(`build:web failed with exit code ${code}`))
