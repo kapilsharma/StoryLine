@@ -8,7 +8,14 @@ import type {
   Theme,
   ThemeColor
 } from '@shared/config'
-import { CARD_FONT_MIN, CARD_FONT_MAX, DEFAULT_EDITOR_STYLES, DEFAULT_SETTINGS } from '@shared/config'
+import {
+  BODY_SIZE_MAX,
+  BODY_SIZE_MIN,
+  CARD_FONT_MIN,
+  CARD_FONT_MAX,
+  DEFAULT_EDITOR_STYLES,
+  DEFAULT_SETTINGS
+} from '@shared/config'
 import type { ProjectKind } from '@shared/types'
 import { DEFAULT_CARD_STATUSES, cardStatuses } from '@shared/cardStatus'
 import {
@@ -512,6 +519,18 @@ export function Settings(): JSX.Element {
         ))}
 
         <h3 className="settings-subhead">Text</h3>
+        <div className="style-row">
+          <label>Normal text</label>
+          <input
+            type="number"
+            min={BODY_SIZE_MIN}
+            max={BODY_SIZE_MAX}
+            value={es.bodySize}
+            onChange={(e) => updateStyles({ bodySize: Number(e.target.value) })}
+          />
+          <span className="muted small">px</span>
+          {themeColorPickers(es.bodyColor, (theme, v) => setColor('bodyColor', theme, v))}
+        </div>
         {colorRow('Bold', 'bold')}
         {colorRow('Italic', 'italic')}
         {colorRow('Bold-italic', 'boldItalic')}

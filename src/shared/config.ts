@@ -125,11 +125,20 @@ export interface EditorStyles {
   /** Blockquote accent (left border + text tint). */
   blockquoteColor: ThemeColor
   bodyFont: PreviewFont
+  /** Normal (paragraph) text size in px (#193). Headings keep their own sizes. */
+  bodySize: number
+  /** Normal (paragraph) text colour (#193). */
+  bodyColor: ThemeColor
   lineHeight: number
 }
 
-/** Colour-valued keys of {@link EditorStyles} (everything except headings/font/line-height). */
+/** Clamp range for the normal-text size, shared by UI and normalisation. */
+export const BODY_SIZE_MIN = 10
+export const BODY_SIZE_MAX = 32
+
+/** Colour-valued keys of {@link EditorStyles} (everything except headings/font/sizes/line-height). */
 export type EditorColorKey =
+  | 'bodyColor'
   | 'bold'
   | 'italic'
   | 'boldItalic'
@@ -163,6 +172,9 @@ export const DEFAULT_EDITOR_STYLES: EditorStyles = {
   linkColor: { light: '#2563eb', dark: '#60a5fa' },
   blockquoteColor: { light: '#94a3b8', dark: '#64748b' },
   bodyFont: 'sans',
+  // Match the app's root font size and theme `--fg`, so the defaults look as before #193.
+  bodySize: 14,
+  bodyColor: { light: '#1c1c1e', dark: '#e8e8ea' },
   lineHeight: 1.6
 }
 
@@ -198,6 +210,7 @@ export function normalizeEditorStyles(raw: unknown): EditorStyles {
   })
 
   const colorKeys: EditorColorKey[] = [
+    'bodyColor',
     'bold',
     'italic',
     'boldItalic',
@@ -220,6 +233,10 @@ export function normalizeEditorStyles(raw: unknown): EditorStyles {
     headings,
     ...colors,
     bodyFont,
+    bodySize:
+      typeof src.bodySize === 'number' && Number.isFinite(src.bodySize)
+        ? Math.min(BODY_SIZE_MAX, Math.max(BODY_SIZE_MIN, src.bodySize))
+        : d.bodySize,
     lineHeight: typeof src.lineHeight === 'number' ? src.lineHeight : d.lineHeight
   }
 }

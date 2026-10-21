@@ -274,6 +274,8 @@ export function editorStyleVars(
     '--md-link': s.linkColor[theme],
     '--md-quote': s.blockquoteColor[theme],
     '--md-font': FONT_STACKS[s.bodyFont] ?? FONT_STACKS.sans,
+    '--md-body-size': `${s.bodySize}px`,
+    '--md-body-color': s.bodyColor[theme],
     '--md-line-height': String(s.lineHeight)
   }
   for (let i = 0; i < 6; i++) {
