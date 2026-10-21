@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { isEmptyEntityBody } from '@shared/entityBody'
 import { useStore } from '../store'
 import { MarkdownPreview } from './MarkdownPreview'
+import { WordCount } from './WordCount'
 
 /**
  * The notes column of the Characters tab (issue #33) — the markdown body of the
@@ -99,7 +100,10 @@ export function CharacterNotes({ characterId }: { characterId: string }): JSX.El
             placeholder="Write in Markdown…"
             autoFocus
           />
-          <p className="muted small autosave-hint">Auto-saves</p>
+          <div className="character-notes-foot">
+            <WordCount text={body} />
+            <span className="muted small autosave-hint">Auto-saves</span>
+          </div>
         </>
       ) : empty ? (
         <div className="character-notes-empty">

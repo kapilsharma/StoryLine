@@ -113,6 +113,15 @@ describe('the Characters tab notes column', () => {
     expect(screen.getByText(/Watchful\./)).toBeInTheDocument()
   })
 
+  it('counts the words while the note is edited (#194)', async () => {
+    await openCharacter('## Notes\n\nQuiet, precise.\n')
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit note' }))
+    // The heading counts too: it is text the writer wrote.
+    expect(await screen.findByText('3 words')).toBeInTheDocument()
+    await userEvent.type(screen.getByPlaceholderText('Write in Markdown…'), ' Watchful.')
+    expect(await screen.findByText('4 words')).toBeInTheDocument()
+  })
+
   it('is read-only in a published export', async () => {
     await openCharacter('## Notes\n\nQuiet, precise.\n', { readOnly: true })
     expect(await screen.findByText('Quiet, precise.')).toBeInTheDocument()

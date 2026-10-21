@@ -94,6 +94,13 @@ describe('the board’s note side panel', () => {
     expect(document.querySelector('.modal-overlay')).not.toBeInTheDocument()
   })
 
+  it('counts the note’s words at the foot of the panel (#194)', async () => {
+    await boot()
+    await openCardNote()
+    // "Wolf tracks the pigs. Second paragraph." — the whole note, not one block.
+    expect(await within(panel()).findByText('6 words')).toBeInTheDocument()
+  })
+
   it('opens a row header’s character note in the same panel', async () => {
     await boot()
     await userEvent.click(await screen.findByTitle('Read Aeri’s note'))

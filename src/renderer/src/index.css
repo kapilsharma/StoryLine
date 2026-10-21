@@ -382,6 +382,13 @@ h2 {
   font-size: 0.9rem;
   line-height: 1.6;
 }
+/* Word count + "Auto-saves" under the note while it is edited (#194). */
+.character-notes-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.4rem;
+}
 .character-notes-textarea:focus {
   outline: none;
   border-color: var(--accent);
@@ -2286,6 +2293,23 @@ ol.footnotes li {
   gap: 0.6rem;
   padding: 0.5rem 0.9rem;
   border-top: 1px solid var(--border);
+}
+/* Word count (#194): bottom left of every note editor. Tabular figures so the
+   number doesn't jiggle as it changes while typing. */
+.word-count {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.editor-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.35rem 1rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.editor-foot:empty {
+  display: none;
 }
 .note-panel-foot code {
   background: var(--panel);

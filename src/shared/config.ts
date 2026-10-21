@@ -52,6 +52,8 @@ export interface AppSettings {
   notePanelFraction: number
   /** Colours/sizes for the markdown preview. */
   editorStyles: EditorStyles
+  /** Word count at the bottom left of every note editor (#194). Ctrl+Alt+W toggles it. */
+  showWordCount: boolean
 
   // ── Family tree geometry (v0.6.0) ──
   /** Node box width in world units at zoom 1. */
@@ -240,6 +242,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   boardNoteView: 'popup',
   notePanelFraction: NOTE_PANEL_FRACTION_DEFAULT,
   editorStyles: DEFAULT_EDITOR_STYLES,
+  showWordCount: true,
   nodeWidth: 180,
   nodeHeight: 64,
   generationGap: 90,
