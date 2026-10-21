@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.16.0](https://github.com/kapilsharma/StoryLine/compare/2.15.0...2.16.0) (2026-10-21)
+
+
+### Features
+
+* **#182:** filter board cards by status and % complete ([14e3036](https://github.com/kapilsharma/StoryLine/commit/14e3036261b9289f796aba08391d9a2211dbc533))
+* **#182:** filter board cards by status and % complete ([c8bea01](https://github.com/kapilsharma/StoryLine/commit/c8bea016d1c90111dcfb3e8771ea6fafb42d6fc3))
+
 ## [2.15.0](https://github.com/kapilsharma/StoryLine/compare/2.14.1...2.15.0) (2026-10-21)
 
 
