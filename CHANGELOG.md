@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.15.0](https://github.com/kapilsharma/StoryLine/compare/2.14.1...2.15.0) (2026-10-21)
+
+
+### Features
+
+* **#193:** Font setting for normal text ([31e0e13](https://github.com/kapilsharma/StoryLine/commit/31e0e13fe70b4d9212bbc6c6d742bf9c7361eb04))
+* **#193:** Font setting for normal text ([ed827e6](https://github.com/kapilsharma/StoryLine/commit/ed827e6c81b275502b3619faa3140932967e240d))
+
 ## [2.14.1](https://github.com/kapilsharma/StoryLine/compare/2.14.0...2.14.1) (2026-10-21)
 
 
