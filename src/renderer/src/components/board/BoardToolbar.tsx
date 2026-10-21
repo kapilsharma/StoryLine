@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { isPlotRow } from '@shared/types'
+import { manuscriptLevel } from '@shared/manuscript'
 import { useStore } from '../../store'
 import { useBoardUi } from './BoardUiContext'
 import { ExportDialog } from './ExportDialog'
@@ -100,7 +101,7 @@ function GroupsMenu(): JSX.Element {
 export function BoardToolbar(): JSX.Element {
   const { allExpanded, setAll, cardIds, revising, setRevising, revealAll, filtersOpen, setFiltersOpen, filterActive } =
     useBoardUi()
-  const { activeBoard, saveBoard, readOnly } = useStore()
+  const { activeBoard, saveBoard, readOnly, snapshot } = useStore()
   const [exporting, setExporting] = useState(false)
   const empty = cardIds.length === 0
 
@@ -111,10 +112,16 @@ export function BoardToolbar(): JSX.Element {
   const hasPlotRows = (activeBoard?.characters ?? []).some(isPlotRow)
   const hidePlot = board?.hidePlotRows ?? false
   const hideChars = board?.hideCharacterRows ?? false
+  // The Manuscript-row toggle (#204) appears once the project has the row.
+  const hasManuscript = !!snapshot && manuscriptLevel(snapshot.project) !== null
+  const hideManuscript = board?.hideManuscriptRow ?? false
 
   // Write the flag only when true, so a board left in the default state keeps a
   // clean board.json (matching how `normalizeBoard` drops the keys on read).
-  const setFlag = (key: 'hidePlotRows' | 'hideCharacterRows', on: boolean): void => {
+  const setFlag = (
+    key: 'hidePlotRows' | 'hideCharacterRows' | 'hideManuscriptRow',
+    on: boolean
+  ): void => {
     if (!board) return
     const next = { ...board }
     if (on) next[key] = true
@@ -124,6 +131,16 @@ export function BoardToolbar(): JSX.Element {
 
   return (
     <div className="header-toolbar">
+      {board && hasManuscript && (
+        <button
+          className={`toolbar-btn${hideManuscript ? ' active' : ''}`}
+          disabled={readOnly}
+          title={hideManuscript ? 'Show the Manuscript row' : 'Hide the Manuscript row'}
+          onClick={() => setFlag('hideManuscriptRow', !hideManuscript)}
+        >
+          📖
+        </button>
+      )}
       {board && hasPlotRows && (
         <>
           <button

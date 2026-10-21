@@ -14,6 +14,7 @@ import type {
   Card,
   Character,
   ColumnGroup,
+  ManuscriptCellRef,
   Note,
   Problem,
   Project,
@@ -95,6 +96,8 @@ export interface NewCardInput {
   rowId: string
   colStart: string
   colEnd: string
+  /** A Manuscript-row cell (#204): the column the new note is the prose of. */
+  cell?: ManuscriptCellRef
 }
 
 export interface AppApi {

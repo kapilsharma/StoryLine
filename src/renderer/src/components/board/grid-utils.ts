@@ -2,6 +2,13 @@ import type { Board, Card, Character, ColumnGroup, Note, Project, TimelineUnit }
 import { timelineLevelLabels } from '@shared/project'
 import { isPlotRow } from '@shared/types'
 import { buildColumnTree, orderedLeaves } from '@shared/columns'
+import {
+  MANUSCRIPT_ROW_ID,
+  cellKey,
+  isManuscriptCard,
+  manuscriptCells,
+  type ManuscriptCell
+} from '@shared/manuscript'
 
 // Every column function takes the board's `colGroups` last, defaulting to none: a
 // flat board (no groups) is the common case and is the same walk with nothing to
@@ -474,6 +481,8 @@ export function buildColumnLayout(
 
 export type RowLine =
   | { kind: 'row'; index: number; char: Character; group: string | null }
+  /** The built-in Manuscript row (#204) — always line 0 when shown. */
+  | { kind: 'manuscript'; index: number }
   | { kind: 'groupHeader'; index: number; group: string }
   | { kind: 'groupRow'; index: number; group: string; members: Character[] }
 
@@ -615,6 +624,45 @@ export interface BoardLayout {
    * `lineIndex`; absent means one. The grid uses it to grow the row track.
    */
   stackDepth: Map<number, number>
+  /** The Manuscript row's cells (#204); null when the row isn't shown. */
+  manuscript: ManuscriptLayout | null
+}
+
+/** A Manuscript-row cell placed on the board's slots (#204). */
+export interface PlacedManuscriptCell extends ManuscriptCell {
+  key: string
+  startSlot: number
+  endSlot: number
+  /**
+   * Every slot it covers is a collapsed group, so it is drawn as part of that
+   * group's collapsed cell — counted or shown as a lone card — not on its own.
+   */
+  folded: boolean
+  /** A card already holds this cell's prose; it is drawn instead of the empty cell. */
+  filled: boolean
+}
+
+export interface ManuscriptLayout {
+  lineIndex: number
+  /** Cells with at least one visible column, in board order. */
+  cells: PlacedManuscriptCell[]
+  /**
+   * Collapsed-group slots that an unfolded cell spans across — a Novel cell over
+   * a collapsed Chapter. The cell is drawn over them, so they get no collapsed
+   * cell of their own on this row.
+   */
+  coveredSlots: Set<number>
+}
+
+/** Put the Manuscript row on top of the rows, shifting every other line down one. */
+function withManuscriptLine(rows: RowLayout): RowLayout {
+  const lines: RowLine[] = [
+    { kind: 'manuscript', index: 0 },
+    ...rows.lines.map((line) => ({ ...line, index: line.index + 1 }))
+  ]
+  const lineOfChar = new Map([...rows.lineOfChar].map(([id, i]) => [id, i + 1]))
+  lineOfChar.set(MANUSCRIPT_ROW_ID, 0)
+  return { lines, lineOfChar, hasGroups: rows.hasGroups }
 }
 
 export const markerKey = (lineIndex: number, slotIndex: number): string => `${lineIndex}:${slotIndex}`
@@ -647,16 +695,24 @@ function assignStackLevels(cards: PlacedCard[]): number {
 /**
  * Compute the full board layout: column slots/headers, row lines, placed cards,
  * and marker counts for cards that fall inside a collapsed group.
+ *
+ * `manuscriptLevel` is the project's Manuscript-row depth (#204); null, or a
+ * board that hides the row, leaves it out.
  */
 export function buildBoardLayout(
   board: Board,
   characters: Character[],
   timeline: TimelineUnit[],
   notes: Note[],
-  colGroups: ColumnGroup[] = []
+  colGroups: ColumnGroup[] = [],
+  manuscriptLevel: number | null = null
 ): BoardLayout {
   const cols = buildColumnLayout(board, timeline, colGroups)
-  const rows = buildRowLayout(board, characters)
+  const showManuscript = manuscriptLevel !== null && !board.hideManuscriptRow
+  const baseRows = buildRowLayout(board, characters)
+  const rows = showManuscript ? withManuscriptLine(baseRows) : baseRows
+  const cells = showManuscript ? manuscriptCells(colGroups, timeline, manuscriptLevel) : []
+  const cellByKey = new Map(cells.map((c) => [cellKey(c.ref), c]))
   const positions = timelinePositions(timeline, colGroups)
   const visible = visibleColumns(board, timeline, colGroups)
   // Lookups built once, so the per-card loop stays O(1) in notes and O(log cols)
@@ -667,6 +723,10 @@ export function buildBoardLayout(
   const collapsedColSlot = new Set(
     cols.slots.filter((s) => s.kind === 'colGroup').map((s) => s.index)
   )
+  // The Manuscript row has no character to take a colour from (#204); it has a
+  // theme colour of its own.
+  const colourOf = (rowId: string): string =>
+    rowId === MANUSCRIPT_ROW_ID ? 'var(--manuscript-colour)' : (charById.get(rowId)?.colour ?? '#888')
 
   const fullCards: PlacedCard[] = []
   const markers = new Map<string, number>()
@@ -677,7 +737,16 @@ export function buildBoardLayout(
   /** Cards that fell into collapsed cells, with the collapsed slots they cover. */
   const collapsedHits: { card: Card; lineIndex: number; slots: number[] }[] = []
 
-  for (const card of board.cards) {
+  for (const stored of board.cards) {
+    // A manuscript card spans its cell as the columns stand now, not where it
+    // sat when created; one whose cell is not at the current level isn't drawn.
+    let card = stored
+    const manuscript = isManuscriptCard(stored)
+    if (manuscript) {
+      const cell = stored.cell && cellByKey.get(cellKey(stored.cell))
+      if (!cell) continue
+      card = { ...stored, colStart: cell.unitIds[0], colEnd: cell.unitIds[cell.unitIds.length - 1] }
+    }
     const lineIndex = rows.lineOfChar.get(card.rowId)
     if (lineIndex == null) continue // character hidden
     const within = unitsInSpan(card.colStart, card.colEnd, visible, positions, visPositions)
@@ -689,7 +758,11 @@ export function buildBoardLayout(
     const endSlot = Math.max(...slotIdxs)
 
     const rowCollapsed = rows.lines[lineIndex].kind === 'groupRow'
-    const colCollapsed = slotIdxs.some((i) => collapsedColSlot.has(i))
+    // A manuscript cell is coarser than a collapse inside it (a Novel over a
+    // folded Chapter), so it folds away only once every slot it covers has.
+    const colCollapsed = manuscript
+      ? slotIdxs.every((i) => collapsedColSlot.has(i))
+      : slotIdxs.some((i) => collapsedColSlot.has(i))
 
     if (rowCollapsed || colCollapsed) {
       // A collapsed row hides the whole card, so it counts across its span; on
@@ -700,14 +773,13 @@ export function buildBoardLayout(
       slots.forEach((i) => addMarker(lineIndex, i))
       collapsedHits.push({ card, lineIndex, slots })
     } else {
-      const char = charById.get(card.rowId)
       fullCards.push({
         card,
         note: noteByUid.get(card.noteUid),
         lineIndex,
         startSlot,
         endSlot,
-        colour: char?.colour ?? '#888',
+        colour: colourOf(card.rowId),
         stackIndex: 0
       })
     }
@@ -741,7 +813,7 @@ export function buildBoardLayout(
         lineIndex: hit.lineIndex,
         startSlot: runStart,
         endSlot: prev,
-        colour: charById.get(hit.card.rowId)?.colour ?? '#888',
+        colour: colourOf(hit.card.rowId),
         stackIndex: 0
       })
       runStart = -1
@@ -755,7 +827,34 @@ export function buildBoardLayout(
     flush()
   }
 
-  return { cols, rows, fullCards, markers, loneCards, stackDepth }
+  let manuscriptLayout: ManuscriptLayout | null = null
+  if (showManuscript) {
+    const filled = new Set(
+      fullCards.flatMap((pc) => (isManuscriptCard(pc.card) && pc.card.cell ? [cellKey(pc.card.cell)] : []))
+    )
+    const placed: PlacedManuscriptCell[] = []
+    const coveredSlots = new Set<number>()
+    for (const cell of cells) {
+      const within = unitsInSpan(
+        cell.unitIds[0],
+        cell.unitIds[cell.unitIds.length - 1],
+        visible,
+        positions,
+        visPositions
+      )
+      if (within.length === 0) continue // every column of the cell is hidden
+      const slots = within.map((u) => cols.slotOfUnit.get(u.id)!)
+      const startSlot = Math.min(...slots)
+      const endSlot = Math.max(...slots)
+      const folded = slots.every((i) => collapsedColSlot.has(i))
+      if (!folded) slots.filter((i) => collapsedColSlot.has(i)).forEach((i) => coveredSlots.add(i))
+      const key = cellKey(cell.ref)
+      placed.push({ ...cell, key, startSlot, endSlot, folded, filled: filled.has(key) })
+    }
+    manuscriptLayout = { lineIndex: 0, cells: placed, coveredSlots }
+  }
+
+  return { cols, rows, fullCards, markers, loneCards, stackDepth, manuscript: manuscriptLayout }
 }
 
 // ── Reordering (custom row/group sort, persisted in board JSON) ──────────────

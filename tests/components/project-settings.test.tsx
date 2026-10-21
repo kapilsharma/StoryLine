@@ -70,7 +70,8 @@ describe('Settings — project metadata', () => {
         timelineLevelLabels: ['Chapter'],
         rowLabel: 'Topic',
         kind: 'general',
-        cardStatuses: DEFAULT_CARD_STATUSES
+        cardStatuses: DEFAULT_CARD_STATUSES,
+        manuscriptLevel: null
       })
     )
   })
@@ -112,7 +113,8 @@ describe('Settings — project metadata', () => {
           timelineLevelLabels: ['Part', 'Chapter'],
           rowLabel: 'Character',
           kind: 'story',
-          cardStatuses: DEFAULT_CARD_STATUSES
+          cardStatuses: DEFAULT_CARD_STATUSES,
+          manuscriptLevel: null
         })
       )
     })

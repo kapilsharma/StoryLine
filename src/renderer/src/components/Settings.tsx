@@ -59,7 +59,8 @@ export function Settings(): JSX.Element {
     timelineLevelLabels: [''],
     rowLabel: '',
     kind: 'story',
-    cardStatuses: []
+    cardStatuses: [],
+    manuscriptLevel: null
   })
 
   // The levels are an array, so the effect depends on a string of them rather than
@@ -73,7 +74,8 @@ export function Settings(): JSX.Element {
     savedLevels,
     savedStatuses,
     snapshot?.project.rowLabel,
-    snapshot?.project.kind
+    snapshot?.project.kind,
+    snapshot?.project.manuscriptLevel
   ])
 
   const settings = config?.settings
@@ -85,6 +87,7 @@ export function Settings(): JSX.Element {
     JSON.stringify(meta.timelineLevelLabels) !== JSON.stringify(saved.timelineLevelLabels) ||
     meta.rowLabel !== saved.rowLabel ||
     meta.kind !== saved.kind ||
+    meta.manuscriptLevel !== saved.manuscriptLevel ||
     JSON.stringify(meta.cardStatuses) !== JSON.stringify(saved.cardStatuses)
   const setField = <K extends keyof ProjectMeta>(key: K, value: ProjectMeta[K]): void =>
     setMeta((m) => ({ ...m, [key]: value }))
@@ -206,6 +209,32 @@ export function Settings(): JSX.Element {
             Outermost first — "Novel", "Part", "Chapter", "Scene". The last level is what cards sit
             on; the others group it and can each carry a note. One level is a plain list. A level is
             named by its depth, so adding one above renames what is already at the top.
+          </span>
+        </div>
+        <div className="form-row">
+          <label htmlFor="project-manuscript">Manuscript row</label>
+          <select
+            id="project-manuscript"
+            value={meta.manuscriptLevel === null ? '' : String(meta.manuscriptLevel)}
+            onChange={(e) =>
+              setField('manuscriptLevel', e.target.value === '' ? null : Number(e.target.value))
+            }
+          >
+            <option value="">Off</option>
+            {levels.map((label, i) => (
+              <option key={i} value={String(i)}>
+                {label.trim() || (i === levels.length - 1 ? DEFAULT_TIMELINE_LABEL : `Level ${i + 1}`)}
+              </option>
+            ))}
+            {/* A level since removed from the list stays selectable as it is, so
+                opening Settings never silently changes what the row snaps to. */}
+            {meta.manuscriptLevel !== null && meta.manuscriptLevel >= levels.length && (
+              <option value={String(meta.manuscriptLevel)}>Level {meta.manuscriptLevel + 1}</option>
+            )}
+          </select>
+          <span className="muted small">
+            A row on top of every board for the novel itself, one cell per column at this level —
+            per Chapter, say, each spanning its scenes. Show or hide it per board with 📖.
           </span>
         </div>
         <div className="form-row">
