@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.17.0](https://github.com/kapilsharma/StoryLine/compare/2.16.0...2.17.0) (2026-10-21)
+
+
+### Features
+
+* **#201:** highlight the cursors paragraph in the editor preview ([58b931d](https://github.com/kapilsharma/StoryLine/commit/58b931d6b0bfb4297d5fe48820c93aa7760b7191))
+* **#201:** highlight the cursors paragraph in the editor preview ([d70e789](https://github.com/kapilsharma/StoryLine/commit/d70e789cf61038c984d89e4b3ab5d2ddc7d355d2))
+
 ## [2.16.0](https://github.com/kapilsharma/StoryLine/compare/2.15.0...2.16.0) (2026-10-21)
 
 
