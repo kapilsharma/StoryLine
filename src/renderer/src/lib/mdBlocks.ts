@@ -29,7 +29,7 @@ export interface MdBlock {
 }
 
 /** An opening (or closing) code fence, indented by up to three spaces. */
-const FENCE = /^ {0,3}(`{3,}|~{3,})/
+export const FENCE = /^ {0,3}(`{3,}|~{3,})/
 
 const isBlank = (line: string): boolean => line.trim() === ''
 
@@ -89,10 +89,19 @@ export function splitBlocks(src: string): MdBlock[] {
  * I clicked" resolves to. `-1` when there are no blocks at all.
  */
 export function blockIndexAt(blocks: MdBlock[], offset: number): number {
+  // Binary search: the fullscreen editor's preview (#201) calls this on every
+  // caret move, and a novel draft can be hundreds of blocks long.
   let found = -1
-  for (let i = 0; i < blocks.length; i++) {
-    if (blocks[i].start > offset) break
-    found = i
+  let lo = 0
+  let hi = blocks.length - 1
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1
+    if (blocks[mid].start <= offset) {
+      found = mid
+      lo = mid + 1
+    } else {
+      hi = mid - 1
+    }
   }
   return found
 }

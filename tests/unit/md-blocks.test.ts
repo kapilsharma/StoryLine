@@ -108,6 +108,19 @@ describe('blockIndexAt', () => {
   it('reports nothing when there are no blocks', () => {
     expect(blockIndexAt([], 3)).toBe(-1)
   })
+
+  it('reports nothing before the first block', () => {
+    expect(blockIndexAt(splitBlocks('\n\nfirst'), 0)).toBe(-1)
+  })
+
+  it('agrees with a linear scan across a long note (#201)', () => {
+    const src = Array.from({ length: 101 }, (_, i) => `Paragraph ${i}.`).join('\n\n')
+    const many = splitBlocks(src)
+    for (let offset = 0; offset <= src.length; offset += 7) {
+      const linear = many.filter((b) => b.start <= offset).length - 1
+      expect(blockIndexAt(many, offset)).toBe(linear)
+    }
+  })
 })
 
 describe('withTrailingGap', () => {

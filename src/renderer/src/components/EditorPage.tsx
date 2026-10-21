@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Note } from '@shared/types'
 import type { EntityBodyKind } from '@shared/ipc'
 import { useStore, type EditorTarget } from '../store'
-import { MarkdownPreview } from './MarkdownPreview'
+import { BlockPreview } from './BlockPreview'
 import { WordCount } from './WordCount'
 import { useAssetInsert } from './useAssetInsert'
 import {
@@ -47,6 +47,9 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
   // the level of the line you are on. The textarea itself stays uncontrolled
   // where the selection is concerned.
   const [caret, setCaret] = useState(0)
+  // The moving end of the selection — where the cursor actually is. The preview
+  // highlights and follows its paragraph (Issue #201), as VS Code's does.
+  const [head, setHead] = useState(0)
   const noteRef = useRef<Note | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const dirty = useRef(false)
@@ -131,12 +134,19 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
     dirty.current = true
     setBody(next.text)
     setCaret(next.start)
+    setHead(next.end)
     requestAnimationFrame(() => {
       const el = textareaRef.current
       if (!el) return
       el.focus()
       el.setSelectionRange(next.start, next.end)
     })
+  }
+
+  /** Mirror the textarea's selection into state after a change or caret move. */
+  const trackCaret = (el: HTMLTextAreaElement): void => {
+    setCaret(el.selectionStart)
+    setHead(el.selectionDirection === 'backward' ? el.selectionStart : el.selectionEnd)
   }
 
   /** Put markdown for an imported asset into the text at the caret (Issue #61). */
@@ -196,9 +206,9 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
         onChange={(e) => {
           dirty.current = true
           setBody(e.target.value)
-          setCaret(e.target.selectionStart)
+          trackCaret(e.target)
         }}
-        onSelect={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart)}
+        onSelect={(e) => trackCaret(e.target as HTMLTextAreaElement)}
         onPaste={(e) => {
           const files = Array.from(e.clipboardData.files)
           if (files.length === 0 || readOnly) return
@@ -220,7 +230,7 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
   )
   const previewPane = (
     <div className="editor-pane">
-      <MarkdownPreview markdown={body} className="editor-preview" />
+      <BlockPreview markdown={body} caret={head} className="editor-preview" />
     </div>
   )
 

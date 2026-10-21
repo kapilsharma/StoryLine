@@ -1,7 +1,7 @@
 import { useCallback, useMemo, type MouseEvent, type RefObject } from 'react'
 import { desktopAssetResolver, staticAssetResolver } from '@shared/assets'
 import { useStore } from '../store'
-import { renderMarkdown } from '../lib/markdown'
+import { markBrokenWikiLinks, renderMarkdown } from '../lib/markdown'
 
 interface Props {
   markdown: string
@@ -48,18 +48,32 @@ export function MarkdownPreview({
       boardId: activeBoardId ?? undefined,
       resolveAsset: readOnly ? staticAssetResolver : desktopAssetResolver
     })
-    // Mark links whose target is not a note on this board, so a typo looks wrong
-    // rather than silently doing nothing. Done here rather than in the markdown
-    // layer because it depends on which board is open.
-    const known = new Set((activeBoard?.notes ?? []).map((n) => n.id))
-    return rendered.replace(
-      /<a href="#" class="wikilink" data-note-id="([^"]*)">/g,
-      (whole, id: string) =>
-        known.has(id) ? whole : whole.replace('class="wikilink"', 'class="wikilink broken"')
-    )
+    // Mark links whose target is not a note on this board. Done here rather than
+    // in the markdown layer because it depends on which board is open.
+    return markBrokenWikiLinks(rendered, new Set((activeBoard?.notes ?? []).map((n) => n.id)))
   }, [markdown, activeBoardId, activeBoard?.notes, readOnly])
 
-  const onClick = useCallback(
+  const onClick = usePreviewClick(onOpenNote, scrollRoot)
+
+  return (
+    <div
+      className={className ? `${className} markdown` : 'markdown'}
+      onClick={onClick}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  )
+}
+
+/**
+ * Click handling for rendered markdown: wiki-links navigate in-app (#65) and
+ * footnote links scroll within the preview (#64). Shared with the fullscreen
+ * editor's block-by-block preview (#201) so the two cannot drift.
+ */
+export function usePreviewClick(
+  onOpenNote?: (noteId: string) => void,
+  scrollRoot?: RefObject<HTMLElement | null>
+): (e: MouseEvent<HTMLDivElement>) => void {
+  return useCallback(
     (e: MouseEvent<HTMLDivElement>): void => {
       const anchor = (e.target as HTMLElement).closest('a')
       if (!anchor) return
@@ -81,13 +95,5 @@ export function MarkdownPreview({
       }
     },
     [onOpenNote, scrollRoot]
-  )
-
-  return (
-    <div
-      className={className ? `${className} markdown` : 'markdown'}
-      onClick={onClick}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
   )
 }

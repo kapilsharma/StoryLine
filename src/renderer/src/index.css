@@ -16,6 +16,10 @@
   --tip-bg: #2c2d31;
   --tip-fg: #f2f2f4;
   --tip-border: transparent;
+  /* The paragraph under the editor's caret, in the preview (issue #201). A faint
+     wash of the accent — enough to find your place, not enough to read as a
+     selection. */
+  --preview-active-bg: rgba(74, 144, 217, 0.08);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   font-size: 14px;
@@ -34,6 +38,7 @@
   --tip-bg: #f2f2f4;
   --tip-fg: #1c1c1e;
   --tip-border: #c9c9ce;
+  --preview-active-bg: rgba(90, 155, 224, 0.13);
 }
 
 * {
@@ -1780,6 +1785,13 @@ textarea {
   overflow: auto;
   padding: 1rem 1.4rem;
   line-height: 1.6;
+}
+/* The block under the caret (issue #201). Shadow rather than padding, so the
+   tint gets breathing room without moving a single line of the layout. */
+.preview-block.active {
+  background: var(--preview-active-bg);
+  box-shadow: 0 0 0 0.4rem var(--preview-active-bg);
+  border-radius: 2px;
 }
 
 /* ── Editor settings (Feature 13) ── */
