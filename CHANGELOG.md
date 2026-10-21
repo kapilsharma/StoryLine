@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.13.2](https://github.com/kapilsharma/StoryLine/compare/2.13.1...2.13.2) (2026-10-21)
+
+
+### Performance Improvements
+
+* **#184:** in-memory project index — edits cost the files they touch ([47d4df5](https://github.com/kapilsharma/StoryLine/commit/47d4df545c054d5ff70deb2c56e74accfebefe56))
+* **#184:** in-memory project index — edits cost the files they touch ([bf0bfae](https://github.com/kapilsharma/StoryLine/commit/bf0bfae21e817c5bc957a25459aa9130da4bfc8a))
+
 ## [2.13.1](https://github.com/kapilsharma/StoryLine/compare/2.13.0...2.13.1) (2026-10-19)
 
 
