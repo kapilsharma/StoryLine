@@ -19,6 +19,7 @@ import type {
   EntityBodyKind,
   NewCardInput,
   ProjectSnapshot,
+  SnapshotReply,
   StaticExportResult
 } from '@shared/ipc'
 import type {
@@ -34,7 +35,7 @@ import type {
 import type { ColumnRef } from '@shared/columns'
 import type { OutlineItem } from '@shared/outline'
 import type { ProjectChange } from '@shared/changes'
-import { applyProjectPatch, planReload } from '@shared/patch'
+import { applyReply, planReload } from '@shared/patch'
 import { buildGraph, type FamilyGraph } from '@shared/graph'
 import { api } from './api'
 import { editorStyleVars } from './lib/markdown'
@@ -207,6 +208,9 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
   // reads the current snapshot through a ref rather than closing over stale state.
   const snapshotRef = useRef<ProjectSnapshot | null>(null)
   snapshotRef.current = snapshot
+  // Which numbered state of the project `snapshot` is (#188): replies from the
+  // main process are patches from one version to the next.
+  const versionRef = useRef<number | null>(null)
 
   const boards = useMemo(() => (snapshot?.boards ?? []).map((bd) => bd.board), [snapshot])
   const activeBoard = useMemo(
@@ -268,6 +272,25 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
   // single note re-reads that one file instead of every board in the project. A
   // change that alters the board set (a board folder added or removed) falls back
   // to a full reload, which is also the backstop if anything can't be patched.
+  /**
+   * Take a reply from the main process (#188): a whole snapshot, or the patch
+   * from the version we hold to the next. The refs move at once rather than on
+   * the next render, so a second reply arriving before React re-renders patches
+   * the first one's result, not the state before it. A patch for a version we
+   * don't hold is a gap — the project is read again whole rather than guessed at.
+   */
+  const receive = useCallback(async (reply: SnapshotReply): Promise<void> => {
+    const held = snapshotRef.current && versionRef.current !== null
+      ? { snapshot: snapshotRef.current, version: versionRef.current }
+      : null
+    let next = applyReply(held, reply)
+    if (!next && reply.kind === 'patch') next = applyReply(null, await api.reloadProject(reply.root))
+    if (!next) return
+    snapshotRef.current = next.snapshot
+    versionRef.current = next.version
+    setSnapshot(next.snapshot)
+  }, [])
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
     let pending: ProjectChange[] = []
@@ -288,15 +311,11 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
         if (!root || !snap) return
         const plan = planReload(snap, batch)
         if (plan.mode === 'full') {
-          api.reloadProject(root).then(setSnapshot).catch(warn)
+          api.reloadProject(root).then(receive).catch(warn)
         } else if (plan.changes.length > 0) {
-          api
-            .reloadChanges(root, plan.changes)
-            // Apply against the *current* snapshot: an in-app edit may have landed
-            // while the focused read was in flight, and the patch merges cleanly
-            // onto it (a board the patch names but no longer exists is skipped).
-            .then((patch) => setSnapshot((cur) => (cur ? applyProjectPatch(cur, patch) : cur)))
-            .catch(warn)
+          // The reply patches from whatever version we hold by then, so an in-app
+          // edit that landed while the read was in flight is accounted for.
+          api.reloadChanges(root, plan.changes).then(receive).catch(warn)
         }
       }, 150)
     })
@@ -304,7 +323,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       if (timer) clearTimeout(timer)
       unsubscribe()
     }
-  }, [])
+  }, [receive])
 
   const run = useCallback(async (fn: () => Promise<void>): Promise<void> => {
     setError(null)
@@ -318,27 +337,27 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
     }
   }, [])
 
-  /** Mutation that returns the fresh snapshot; applies it. */
+  /** Mutation that returns what changed in the project; applies it. */
   const mutate = useCallback(
-    (fn: (root: string) => Promise<ProjectSnapshot>): Promise<void> =>
+    (fn: (root: string) => Promise<SnapshotReply>): Promise<void> =>
       run(async () => {
         const root = rootRef.current
         if (!root) return
-        setSnapshot(await fn(root))
+        await receive(await fn(root))
       }),
-    [run]
+    [run, receive]
   )
 
   /** Mutation that also needs the active board id. */
   const mutateBoard = useCallback(
-    (fn: (root: string, boardId: string) => Promise<ProjectSnapshot>): Promise<void> =>
+    (fn: (root: string, boardId: string) => Promise<SnapshotReply>): Promise<void> =>
       run(async () => {
         const root = rootRef.current
         const boardId = activeBoardRef.current
         if (!root || !boardId) return
-        setSnapshot(await fn(root, boardId))
+        await receive(await fn(root, boardId))
       }),
-    [run]
+    [run, receive]
   )
 
   const clearError = useCallback(() => setError(null), [])
@@ -346,10 +365,10 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
   const openByPath = useCallback(
     (root: string) =>
       run(async () => {
-        setSnapshot(await api.openProject(root))
+        await receive(await api.openProject(root))
         setConfig(await api.getConfig())
       }),
-    [run]
+    [run, receive]
   )
 
   // Static build: open the bundled project immediately. Guarded by a ref because
@@ -366,11 +385,11 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       run(async () => {
         const path = await api.createProject()
         if (path) {
-          setSnapshot(await api.openProject(path))
+          await receive(await api.openProject(path))
           setConfig(await api.getConfig())
         }
       }),
-    [run]
+    [run, receive]
   )
 
   const openPicker = useCallback(
@@ -378,11 +397,11 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       run(async () => {
         const path = await api.pickProject()
         if (path) {
-          setSnapshot(await api.openProject(path))
+          await receive(await api.openProject(path))
           setConfig(await api.getConfig())
         }
       }),
-    [run]
+    [run, receive]
   )
 
   const removeRecent = useCallback(
@@ -390,7 +409,11 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
     [run]
   )
 
-  const closeProject = useCallback(() => setSnapshot(null), [])
+  const closeProject = useCallback(() => {
+    snapshotRef.current = null
+    versionRef.current = null
+    setSnapshot(null)
+  }, [])
 
   const updateSettings = useCallback(
     (settings: AppSettings) => run(async () => setConfig(await api.updateSettings(settings))),

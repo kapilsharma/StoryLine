@@ -5,7 +5,7 @@ import { basename, join } from 'path'
 import type { Card, Character, ColumnGroup, Note, TimelineUnit, View } from '@shared/types'
 import { defaultView } from '@shared/types'
 import type { AppSettings } from '@shared/config'
-import type { DocExportOptions, EntityBodyKind, NewCardInput, ProjectSnapshot } from '@shared/ipc'
+import type { DocExportOptions, EntityBodyKind, NewCardInput, SnapshotReply } from '@shared/ipc'
 import type { ProjectChange } from '@shared/changes'
 import type { ProjectMeta } from '@shared/project'
 import { applyMeta } from '@shared/project'
@@ -26,7 +26,7 @@ import {
   type ColumnRef
 } from '@shared/columns'
 import { readConfig, removeRecent, touchRecent, updateConfig } from './appConfig'
-import { createProject, defaultBoard, loadChanges, loadSnapshot } from './projectService'
+import { createProject, defaultBoard, loadSnapshot } from './projectService'
 import { assembleStaticSite, buildExportBundle } from './data/exportBundle'
 import { markdownToPdf } from './data/renderPdf'
 import { ProjectNotInGroupError, resolveProjectGroup, type ResolvedProjectGroup } from './data/projectGroup'
@@ -46,7 +46,7 @@ import {
   listBoardIds,
   listCharacters,
   listColumnGroups,
-  listNoteMetas,
+  noteExists,
   listNotes,
   listTimeline,
   listViews,
@@ -69,6 +69,7 @@ import {
 } from './data/repository'
 import { uniqueNoteUid } from './data/uid'
 import { invalidateSearchIndex, searchProject } from './data/searchIndex'
+import { applyChanges, dropIndex, indexReply, indexSnapshot, noteKeys, openIndex, rebuildIndex } from './projectIndex'
 import { ProjectWatcher } from './data/watcher'
 import { clearOwnWrites } from './data/ownWrites'
 
@@ -270,17 +271,37 @@ async function writeViewOrder(root: string, boardId: string, views: string[]): P
 }
 
 export function registerIpc(window: BrowserWindow): void {
+  // A fresh start: no project is open yet, so nothing is held (#184).
+  dropIndex()
+
   // Every mutating handler funnels through here, which makes it the one place
   // the search index (Issue #59) has to be invalidated after an in-app write.
-  const snap = async (root: string): Promise<ProjectSnapshot> => {
+  //
+  // The snapshot comes from the in-memory project index (#184): it re-reads only
+  // the files written since the last call, not the whole project.
+  const snap = async (root: string): Promise<SnapshotReply> => {
     invalidateSearchIndex(root)
     try {
-      return await loadSnapshot(root, false)
+      return await indexReply(root)
     } catch {
       // Google Drive can transiently return an empty/partial file immediately
       // after a write while it syncs. Retry once after a short pause.
       await new Promise<void>((r) => setTimeout(r, 500))
-      return loadSnapshot(root, false)
+      return indexReply(root)
+    }
+  }
+
+  /**
+   * A note id on the board that nothing uses: unique among the indexed notes, and
+   * — the index can lag an external add by the watcher's debounce — checked on
+   * disk too, so a new note can never overwrite a file it didn't know about.
+   */
+  const freeNoteId = async (root: string, boardId: string, base: string, taken: string[]): Promise<string> => {
+    const used = [...taken]
+    for (;;) {
+      const id = uniqueSlug(base, used)
+      if (!(await noteExists(root, boardId, id))) return id
+      used.push(id)
     }
   }
 
@@ -313,18 +334,24 @@ export function registerIpc(window: BrowserWindow): void {
   })
 
   ipcMain.handle('project:open', async (_e, root: string) => {
-    const snapshot = await loadSnapshot(root, true)
+    const reply = await openIndex(root)
+    const { snapshot } = reply
     await touchRecent({ name: snapshot.project.name, path: root, lastOpened: snapshot.project.lastOpened })
     await startWatching(root, window)
-    return snapshot
+    return reply
   })
 
-  ipcMain.handle('project:reload', (_e, root: string) => snap(root))
+  // A full reload is the backstop for anything a focused one can't patch, so it
+  // reads the project from disk afresh rather than trusting the index.
+  ipcMain.handle('project:reload', (_e, root: string) => {
+    invalidateSearchIndex(root)
+    return rebuildIndex(root)
+  })
   // Focused live-reload (#131): read only the changed entities. A pure read, so
   // no search-index invalidation here — `pushChange` already did that when the
   // watcher event arrived.
   ipcMain.handle('project:reloadChanges', (_e, root: string, changes: ProjectChange[]) =>
-    loadChanges(root, changes)
+    applyChanges(root, changes)
   )
   ipcMain.handle('project:removeRecent', (_e, root: string) => removeRecent(root))
 
@@ -630,15 +657,14 @@ export function registerIpc(window: BrowserWindow): void {
 
   // ── Notes (per board) ──
   ipcMain.handle('note:save', async (_e, root: string, boardId: string, note: Note) => {
-    const metas = await listNoteMetas(root, boardId)
     let toSave = note
-    if (!note.id) {
-      toSave = { ...toSave, id: uniqueSlug(note.title || 'note', metas.map((n) => n.id)) }
-    }
-    if (!toSave.uid) {
+    // Only a new note, or one without a uid, needs to know what else is there —
+    // an ordinary autosave goes straight to the write.
+    if (!note.id || !note.uid) {
+      const { ids, uids } = await noteKeys(root, boardId)
+      if (!note.id) toSave = { ...toSave, id: await freeNoteId(root, boardId, note.title || 'note', ids) }
       // Lazy uid assignment (e.g. first in-app write of an externally-created note).
-      const uids = metas.map((n) => n.uid).filter((u): u is string => Boolean(u))
-      toSave = { ...toSave, uid: uniqueNoteUid(uids) }
+      if (!toSave.uid) toSave = { ...toSave, uid: uniqueNoteUid(uids) }
     }
     await writeNote(root, boardId, toSave)
     return snap(root)
@@ -661,14 +687,17 @@ export function registerIpc(window: BrowserWindow): void {
   })
 
   ipcMain.handle('note:rename', async (_e, root: string, boardId: string, oldId: string, newName: string) => {
-    const metas = await listNoteMetas(root, boardId)
+    const metas = (await indexSnapshot(root)).boards.find((b) => b.board.id === boardId)?.notes ?? []
     const others = metas.map((n) => n.id).filter((nid) => nid !== oldId)
-    const newId = uniqueSlug(newName || oldId, others)
+    const wanted = uniqueSlug(newName || oldId, others)
+    const newId = wanted === oldId ? oldId : await freeNoteId(root, boardId, newName || oldId, others)
     if (newId !== oldId) {
       await renameNoteFile(root, boardId, oldId, newId)
-      // Fix filename-based `related:` links in the board's other notes (§6).
+      // Fix filename-based `related:` links in the board's other notes (§6). The
+      // index holds every note's `related:`, so only the notes that link here
+      // are read whole.
       for (const meta of metas) {
-        if (meta.id === oldId) continue
+        if (meta.id === oldId || !meta.related?.some((r) => r.file === `${oldId}.md`)) continue
         const { value: n } = await readNote(root, boardId, meta.id)
         if (n.related?.some((r) => r.file === `${oldId}.md`)) {
           const related = n.related.map((r) => (r.file === `${oldId}.md` ? { ...r, file: `${newId}.md` } : r))
@@ -814,9 +843,9 @@ export function registerIpc(window: BrowserWindow): void {
 
   // ── Cards ──
   ipcMain.handle('card:create', async (_e, root: string, input: NewCardInput) => {
-    const metas = await listNoteMetas(root, input.boardId)
-    const noteId = uniqueSlug(input.title || 'note', metas.map((n) => n.id))
-    const uid = uniqueNoteUid(metas.map((n) => n.uid).filter((u): u is string => Boolean(u)))
+    const { ids, uids } = await noteKeys(root, input.boardId)
+    const noteId = await freeNoteId(root, input.boardId, input.title || 'note', ids)
+    const uid = uniqueNoteUid(uids)
     await writeNote(root, input.boardId, {
       id: noteId,
       uid,
@@ -1107,6 +1136,11 @@ export function registerIpc(window: BrowserWindow): void {
     await fsp.writeFile(result.filePath, markdown, 'utf8')
     return { path: result.filePath, bytes: Buffer.byteLength(markdown, 'utf8') }
   })
+}
+
+/** Settles when the open project's watcher has finished its first crawl (benchmarks, #185). */
+export function watcherReady(): Promise<void> {
+  return activeWatcher?.ready ?? Promise.resolve()
 }
 
 /** Stop watching on shutdown. */

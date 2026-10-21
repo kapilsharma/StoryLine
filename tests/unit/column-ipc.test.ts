@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { replyReader } from '../replies'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -32,10 +33,12 @@ import { createProject } from '@main/projectService'
 
 let root: string
 
+/** Handlers reply with patches (#188); follow them as the store does. */
+const asSnapshot = replyReader()
 const invoke = <T = ProjectSnapshot>(channel: string, ...args: unknown[]): Promise<T> => {
   const fn = handlers.get(channel)
   if (!fn) throw new Error(`no handler registered for ${channel}`)
-  return Promise.resolve(fn({}, ...args) as T)
+  return Promise.resolve(fn({}, ...args) as T).then(asSnapshot)
 }
 const exists = (p: string): Promise<boolean> => fs.access(p).then(() => true).catch(() => false)
 const groupFile = (id: string): string => join(root, 'boards', 'main', 'colgroups', `${id}.md`)

@@ -5,7 +5,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EditorPage } from '@renderer/components/EditorPage'
 import { useStore } from '@renderer/store'
-import { makeApi, makeSnapshot, renderWithProviders } from './test-utils'
+import { makeApi, makeSnapshot, renderWithProviders, wholeReply } from './test-utils'
 
 /**
  * The editor's formatting toolbar (Issue #72).
@@ -33,7 +33,7 @@ function Harness(): JSX.Element {
 async function renderEditor(body = '', readOnly = false) {
   const api = makeApi()
   Object.assign(api, {
-    openProject: vi.fn().mockResolvedValue(snapshot),
+    openProject: vi.fn().mockResolvedValue(wholeReply(snapshot)),
     getNote: vi.fn().mockResolvedValue({ id: 'note-1', uid: 'n_1', title: 'A note', body })
   })
   ;(window as unknown as { api: typeof api }).api = api

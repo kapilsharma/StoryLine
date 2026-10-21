@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { snapshotOf } from '../replies'
 import { SNAPSHOT_GLOBAL, entityBodyKey, EXPORT_FORMAT_VERSION, type ExportBundle } from '@shared/export'
 import { DEFAULT_SETTINGS } from '@shared/config'
 import { SCHEMA_VERSION, defaultView, type Board, type View } from '@shared/types'
@@ -79,7 +80,7 @@ describe('readBundle', () => {
 describe('static api — reads', () => {
   it('serves the project snapshot without touching a filesystem', async () => {
     const api = createStaticApi(bundle)
-    const snap = await api.openProject(STATIC_ROOT)
+    const snap = await snapshotOf(api.openProject(STATIC_ROOT))
     expect(snap.root).toBe(STATIC_ROOT)
     expect(snap.project.name).toBe('My Novel')
     expect(snap.boards[0].board.cards).toHaveLength(1)
@@ -87,7 +88,7 @@ describe('static api — reads', () => {
 
   it('strips note bodies from the snapshot, matching the desktop contract', async () => {
     const api = createStaticApi(bundle)
-    const snap = await api.reloadProject(STATIC_ROOT)
+    const snap = await snapshotOf(api.reloadProject(STATIC_ROOT))
     expect(snap.boards[0].notes[0].body).toBe('')
   })
 
@@ -123,31 +124,31 @@ describe('static api — allowed in-session changes', () => {
 
   it('keeps board view state — zoom, collapse, hide — via saveBoard', async () => {
     const api = createStaticApi(bundle)
-    const snap = await api.saveBoard(STATIC_ROOT, {
+    const snap = await snapshotOf(api.saveBoard(STATIC_ROOT, {
       ...board,
       zoom: 0.6,
       collapsedRowGroups: ['Family'],
       hiddenCols: ['ch1']
-    })
+    }))
     expect(snap.boards[0].board.zoom).toBe(0.6)
     expect(snap.boards[0].board.collapsedRowGroups).toEqual(['Family'])
     // And it persists for the rest of the session.
-    expect((await api.reloadProject(STATIC_ROOT)).boards[0].board.hiddenCols).toEqual(['ch1'])
+    expect((await snapshotOf(api.reloadProject(STATIC_ROOT))).boards[0].board.hiddenCols).toEqual(['ch1'])
   })
 
   it('keeps family-tree view state — camera, arrangement, routes — via saveView', async () => {
     const api = createStaticApi(bundle)
-    const snap = await api.saveView(STATIC_ROOT, 'main', {
+    const snap = await snapshotOf(api.saveView(STATIC_ROOT, 'main', {
       ...view,
       zoom: 0.5,
       panX: 40,
       arranged: true,
       overrides: { aeri: { x: 10, y: 20 } }
-    })
+    }))
     expect(snap.boards[0].views[0].zoom).toBe(0.5)
     expect(snap.boards[0].views[0].overrides).toEqual({ aeri: { x: 10, y: 20 } })
     // And it persists for the rest of the session.
-    expect((await api.reloadProject(STATIC_ROOT)).boards[0].views[0].panX).toBe(40)
+    expect((await snapshotOf(api.reloadProject(STATIC_ROOT))).boards[0].views[0].panX).toBe(40)
   })
 
   it('does not mutate the bundle it was given', async () => {
@@ -164,7 +165,7 @@ describe('static api — bundles from before v0.6.0', () => {
   it('loads a board with no views or problems rather than crashing', async () => {
     const { views: _views, problems: _problems, colGroups: _groups, ...legacyBoard } = bundle.boards[0]
     const legacy = { ...bundle, boards: [legacyBoard] } as ExportBundle
-    const snap = await createStaticApi(legacy).openProject(STATIC_ROOT)
+    const snap = await snapshotOf(createStaticApi(legacy).openProject(STATIC_ROOT))
     expect(snap.boards[0].views).toEqual([])
     expect(snap.boards[0].problems).toEqual([])
     // Before schema v4 there were no column groups, and a flat board is right.
@@ -223,7 +224,7 @@ describe('static api — refused writes', () => {
 
   it('leaves the data untouched after a refused write', async () => {
     await api.deleteCard(STATIC_ROOT, 'main', 'card-1').catch(() => {})
-    expect((await api.reloadProject(STATIC_ROOT)).boards[0].board.cards).toHaveLength(1)
+    expect((await snapshotOf(api.reloadProject(STATIC_ROOT))).boards[0].board.cards).toHaveLength(1)
   })
 })
 

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { markOwnWrite, claimOwnWrite, clearOwnWrites } from '@main/data/ownWrites'
 
 /**
@@ -40,5 +40,30 @@ describe('ownWrites (#130 watcher own-write suppression)', () => {
     markOwnWrite('/proj/a.json')
     clearOwnWrites()
     expect(claimOwnWrite('/proj/a.json')).toBe(false)
+  })
+})
+
+// #190: one settled watcher event can cover our write *and* an external edit just
+// after it. The mtime our write left tells them apart.
+describe('ownWrites — matching the mtime the write left', () => {
+  beforeEach(() => clearOwnWrites())
+
+  it('claims the file while it is exactly as our write left it', () => {
+    markOwnWrite('/proj/notes/a.md', 1000)
+    expect(claimOwnWrite('/proj/notes/a.md', 1000.4)).toBe(true)
+  })
+
+  it('does not claim it once someone has written after us', () => {
+    markOwnWrite('/proj/notes/a.md', 1000)
+    expect(claimOwnWrite('/proj/notes/a.md', 1250)).toBe(false)
+    // …and the claim is spent, so it can't swallow a later event either.
+    expect(claimOwnWrite('/proj/notes/a.md', 1000)).toBe(false)
+  })
+
+  it('falls back to the path alone when either side has no mtime', () => {
+    markOwnWrite('/proj/notes/a.md')
+    expect(claimOwnWrite('/proj/notes/a.md', 1250)).toBe(true)
+    markOwnWrite('/proj/notes/b.md', 1000)
+    expect(claimOwnWrite('/proj/notes/b.md')).toBe(true)
   })
 })

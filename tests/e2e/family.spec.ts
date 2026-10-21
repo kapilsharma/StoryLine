@@ -389,7 +389,7 @@ test('a tree does not pick up a character created on the Characters tab', async 
   const treeBefore = await window.locator('.node').count()
 
   await window.getByRole('button', { name: 'Characters' }).click()
-  await window.getByRole('button', { name: '+ Add' }).click()
+  await window.getByRole('button', { name: '+ Add', exact: true }).click()
   await window.locator('.entity-form input').first().fill('Reference Person')
   await window.getByRole('button', { name: 'Create' }).click()
   await window.waitForTimeout(600)

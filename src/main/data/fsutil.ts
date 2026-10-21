@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs'
 import { dirname } from 'path'
 import { markOwnWrite } from './ownWrites'
+import { recordTouch } from './journal'
 
 /**
  * Filesystem helpers with an mtime guard to avoid clobbering external edits.
@@ -58,11 +59,14 @@ export async function writeTextGuarded(
 
   await fs.mkdir(dirname(filePath), { recursive: true })
   await fs.writeFile(filePath, text, 'utf8')
-  // Tag the write so the watcher can tell it apart from an external edit and
-  // skip the redundant full reload (#130). Done before the post-write stat so
-  // the claim is in place well ahead of the watcher's (delayed) event.
-  markOwnWrite(filePath)
   const stat = await fs.stat(filePath)
+  // Tag the write — with the mtime it left, so an external edit landing just
+  // after it is not mistaken for ours (#190) — so the watcher can tell it apart
+  // and skip the redundant reload (#130). The watcher only acts once a path has
+  // been quiet for ~200 ms, well after this.
+  markOwnWrite(filePath, stat.mtimeMs)
+  // And so the project index re-reads this one file instead of the project (#187).
+  recordTouch(filePath, 'change')
   return stat.mtimeMs
 }
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { replyReader } from '../replies'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -36,10 +37,12 @@ import { createProject } from '@main/projectService'
 let root: string
 const BID = 'main'
 
+/** Handlers reply with patches (#188); follow them as the store does. */
+const asSnapshot = replyReader()
 const invoke = <T = ProjectSnapshot>(channel: string, ...args: unknown[]): Promise<T> => {
   const fn = handlers.get(channel)
   if (!fn) throw new Error(`no handler registered for ${channel}`)
-  return Promise.resolve(fn({}, ...args) as T)
+  return Promise.resolve(fn({}, ...args) as T).then(asSnapshot)
 }
 
 const board = (snap: ProjectSnapshot) => snap.boards.find((b) => b.board.id === BID)!

@@ -11,9 +11,10 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
-        // gray-matter is CJS and safe to require externally. chokidar v4 is
-        // ESM-only, so it must be bundled (Rollup converts it to CJS) rather
-        // than left as a require() in the CJS main bundle.
+        // gray-matter is CJS and safe to require externally. An ESM-only
+        // dependency must not be listed here: it has to be bundled (Rollup
+        // converts it to CJS) rather than left as a require() in the CJS main
+        // bundle.
         external: ['gray-matter']
       }
     }
