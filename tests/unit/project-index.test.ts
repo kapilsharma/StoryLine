@@ -246,16 +246,21 @@ describe('external edits (#189)', () => {
 })
 
 describe('serialised updates', () => {
-  it('concurrent edits all land, and the last reply has every one of them', async () => {
+  // "Last" by arrival, not by call: the third call's reply can be built before the
+  // second call's (slower) write has landed. The reply that arrives last was
+  // built after every write, and the renderer applies replies as they arrive.
+  it('concurrent edits all land, and the last reply to arrive has every one of them', async () => {
     const s = await invoke('card:create', root, { boardId: BOARD, title: 'Base', rowId: 'tessa-ashvale', colStart: 'ch1', colEnd: 'ch1' })
     const id = board(s).notes.find((n) => n.title === 'Base')!.id
     const note = await invoke<Note>('note:get', root, BOARD, id)
-    const replies = await Promise.all([
-      invoke('note:save', root, BOARD, { ...note, body: 'One.' }),
-      invoke('note:save', root, BOARD, { id: '', title: 'Second', boards: [BOARD], body: 'Two.' }),
-      invoke('note:save', root, BOARD, { id: '', title: 'Third', boards: [BOARD], body: 'Three.' })
+    const arrived: ProjectSnapshot[] = []
+    const track = (p: Promise<ProjectSnapshot>): Promise<number> => p.then((r) => arrived.push(r))
+    await Promise.all([
+      track(invoke('note:save', root, BOARD, { ...note, body: 'One.' })),
+      track(invoke('note:save', root, BOARD, { id: '', title: 'Second', boards: [BOARD], body: 'Two.' })),
+      track(invoke('note:save', root, BOARD, { id: '', title: 'Third', boards: [BOARD], body: 'Three.' }))
     ])
-    const titles = board(replies[2]).notes.map((n) => n.title)
+    const titles = board(arrived[2]).notes.map((n) => n.title)
     expect(titles).toEqual(expect.arrayContaining(['Base', 'Second', 'Third']))
     expect(await indexSnapshot(root)).toEqual(await loadSnapshot(root))
   })

@@ -420,6 +420,23 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
     [run]
   )
 
+  // Ctrl+Alt+W (Cmd+Alt+W on a Mac) shows or hides the editors' word count
+  // anywhere in the app (#194). By key position, not character: with Alt held a
+  // Mac types "∑" for W. Read through a ref so the listener is attached once.
+  const configRef = useRef(config)
+  configRef.current = config
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (!(e.ctrlKey || e.metaKey) || !e.altKey || e.shiftKey || e.code !== 'KeyW') return
+      const settings = configRef.current?.settings
+      if (!settings) return
+      e.preventDefault()
+      void updateSettings({ ...settings, showWordCount: !settings.showWordCount })
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [updateSettings])
+
   const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null)
   const openEditor = useCallback((kind: EditorKind, id: string) => {
     const boardId = activeBoardRef.current

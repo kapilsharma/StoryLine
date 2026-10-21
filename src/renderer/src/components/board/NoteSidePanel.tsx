@@ -6,6 +6,7 @@ import { CardStatusSelect } from '../CardStatusSelect'
 import { CardProgressSelect } from '../CardProgressSelect'
 import { usePrompt } from '../PromptModal'
 import { LiveMarkdownEditor } from '../LiveMarkdownEditor'
+import { WordCount } from '../WordCount'
 import type { PanelTarget } from './BoardUiContext'
 
 interface Props {
@@ -339,6 +340,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
       </div>
 
       <footer className="note-panel-foot">
+        {loaded && <WordCount text={body} />}
         <span className="muted small autosave-hint">
           {readOnly ? 'Read-only' : 'Auto-saves'} · <code>{filePath}</code>
         </span>

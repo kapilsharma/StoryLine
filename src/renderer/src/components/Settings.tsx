@@ -439,6 +439,21 @@ export function Settings(): JSX.Element {
           </select>
           <span className="muted small">Which side the rendered preview sits on in the editor.</span>
         </div>
+        <div className="form-row">
+          <label htmlFor="word-count">Word count in editors</label>
+          <select
+            id="word-count"
+            value={settings.showWordCount ? 'shown' : 'hidden'}
+            onChange={(e) => updateSettings({ ...settings, showWordCount: e.target.value === 'shown' })}
+          >
+            <option value="shown">Shown</option>
+            <option value="hidden">Hidden</option>
+          </select>
+          <span className="muted small">
+            The note's word count, at the bottom left of the editor. <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+
+            <kbd>W</kbd> switches it anywhere in the app.
+          </span>
+        </div>
       </section>
 
       <section className="settings-group">

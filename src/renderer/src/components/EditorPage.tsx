@@ -3,6 +3,7 @@ import type { Note } from '@shared/types'
 import type { EntityBodyKind } from '@shared/ipc'
 import { useStore, type EditorTarget } from '../store'
 import { MarkdownPreview } from './MarkdownPreview'
+import { WordCount } from './WordCount'
 import { useAssetInsert } from './useAssetInsert'
 import {
   HEADING_LEVELS,
@@ -290,6 +291,10 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
           </>
         )}
       </div>
+
+      <footer className="editor-foot">
+        <WordCount text={body} />
+      </footer>
     </div>
   )
 }
