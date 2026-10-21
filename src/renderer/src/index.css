@@ -668,6 +668,8 @@ textarea {
 /* Configurable markdown preview (Feature 13) — coloured via --md-* variables. */
 .markdown {
   font-family: var(--md-font, inherit);
+  font-size: var(--md-body-size, inherit);
+  color: var(--md-body-color, inherit);
   line-height: var(--md-line-height, 1.55);
 }
 .markdown h1,

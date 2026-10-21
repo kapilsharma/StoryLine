@@ -50,6 +50,28 @@ describe('editorStyleVars', () => {
     expect(editorStyleVars(legacy, 'light')['--md-bold']).toBe('#123456')
     expect(editorStyleVars(legacy, 'dark')['--md-bold']).toBe('#123456')
   })
+  it('emits normal-text size and per-theme colour (#193)', () => {
+    const styles = {
+      ...DEFAULT_EDITOR_STYLES,
+      bodySize: 18,
+      bodyColor: { light: '#111111', dark: '#eeeeee' }
+    }
+    expect(editorStyleVars(styles, 'light')['--md-body-size']).toBe('18px')
+    expect(editorStyleVars(styles, 'light')['--md-body-color']).toBe('#111111')
+    expect(editorStyleVars(styles, 'dark')['--md-body-color']).toBe('#eeeeee')
+  })
+
+  it('defaults normal text to the app root size and theme foreground (#193)', () => {
+    // Configs saved before #193 have no body fields; they must render as before.
+    expect(editorStyleVars({}, 'light')['--md-body-size']).toBe('14px')
+    expect(editorStyleVars({}, 'light')['--md-body-color']).toBe('#1c1c1e')
+    expect(editorStyleVars({}, 'dark')['--md-body-color']).toBe('#e8e8ea')
+  })
+
+  it('clamps an out-of-range normal-text size (#193)', () => {
+    expect(editorStyleVars({ bodySize: 0 }, 'light')['--md-body-size']).toBe('10px')
+    expect(editorStyleVars({ bodySize: 99 }, 'light')['--md-body-size']).toBe('32px')
+  })
 })
 
 /**
