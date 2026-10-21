@@ -142,6 +142,35 @@ test('the heading dropdown turns the caret’s line into a heading', async () =>
   await expect.poll(noteFile, { timeout: 5000 }).toContain('## Rain follows.')
 })
 
+test('the preview highlights the caret’s paragraph and scrolls it into view (#201)', async () => {
+  const draft = Array.from({ length: 60 }, (_, i) => `Paragraph ${i + 1} of a long draft.`).join('\n\n')
+  await textarea().fill(draft)
+  const preview = window.locator('.editor-preview')
+  const active = preview.locator('.preview-block.active')
+
+  // Caret on the first line: its paragraph is the one highlighted. Moved with
+  // real keys — a scripted setSelectionRange fires no select event.
+  await textarea().focus()
+  await window.keyboard.press('ControlOrMeta+Home')
+  await window.keyboard.press('ArrowRight')
+  await expect(active).toHaveCount(1)
+  await expect(active).toHaveText('Paragraph 1 of a long draft.')
+
+  // Jumping to the end brings the last paragraph, far below the fold, on screen.
+  await window.keyboard.press('ControlOrMeta+End')
+  await expect(active).toHaveText('Paragraph 60 of a long draft.')
+  await expect
+    .poll(async () => {
+      const box = (await active.boundingBox())!
+      const view = (await preview.boundingBox())!
+      return box.y >= view.y - 1 && box.y + box.height <= view.y + view.height + 1
+    })
+    .toBe(true)
+  // The tint is there, and faint: a background, not a selection colour.
+  const bg = await active.evaluate((el) => getComputedStyle(el).backgroundColor)
+  expect(bg).toMatch(/rgba\(.+, 0\.\d+\)/)
+})
+
 test('hover text written here reaches the card on the board', async () => {
   await window.getByLabel('Hover text').fill('Remember the rain')
   await expect.poll(noteFile, { timeout: 5000 }).toMatch(/hover: Remember the rain/)

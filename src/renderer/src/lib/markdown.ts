@@ -153,7 +153,7 @@ marked.use({
 })
 
 /** A footnote definition lifted out of the source before parsing. */
-interface Footnote {
+export interface Footnote {
   label: string
   body: string
 }
@@ -215,21 +215,40 @@ export function renderMarkdown(md: string, options: RenderOptions = {}): string 
     html = resolveAssetUrls(html, options.boardId, options.resolveAsset)
   }
 
-  if (notes.length > 0) {
-    const items = notes
-      .map((n) => {
-        const id = esc(n.label)
-        const inner = marked.parseInline(n.body, { async: false }) as string
-        return (
-          `<li id="fn-${id}">${inner} ` +
-          `<a href="#fnref-${id}" class="footnote-back" aria-label="Back to reference">↩</a></li>`
-        )
-      })
-      .join('\n')
-    html += `\n<hr class="footnotes-sep" />\n<ol class="footnotes">\n${items}\n</ol>\n`
-  }
+  return html + renderFootnotes(notes)
+}
 
-  return html
+/**
+ * The footnote list that closes a rendered note — empty when there are none.
+ * Separate from {@link renderMarkdown} so a preview rendered block by block
+ * (#201) can list a whole note's footnotes once, at the end.
+ */
+export function renderFootnotes(notes: Footnote[]): string {
+  if (notes.length === 0) return ''
+  const items = notes
+    .map((n) => {
+      const id = esc(n.label)
+      const inner = marked.parseInline(n.body, { async: false }) as string
+      return (
+        `<li id="fn-${id}">${inner} ` +
+        `<a href="#fnref-${id}" class="footnote-back" aria-label="Back to reference">↩</a></li>`
+      )
+    })
+    .join('\n')
+  return `\n<hr class="footnotes-sep" />\n<ol class="footnotes">\n${items}\n</ol>\n`
+}
+
+/**
+ * Mark wiki-links whose target is not a note on this board, so a typo looks
+ * wrong rather than silently doing nothing. Takes the known note ids rather than
+ * a board because this layer is board-agnostic.
+ */
+export function markBrokenWikiLinks(html: string, known: ReadonlySet<string>): string {
+  return html.replace(
+    /<a href="#" class="wikilink" data-note-id="([^"]*)">/g,
+    (whole, id: string) =>
+      known.has(id) ? whole : whole.replace('class="wikilink"', 'class="wikilink broken"')
+  )
 }
 
 /**
