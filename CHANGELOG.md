@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.18.0](https://github.com/kapilsharma/StoryLine/compare/2.17.0...2.18.0) (2026-10-21)
+
+
+### Features
+
+* **#204:** add a Manuscript row for writing the novel on the board ([4364e49](https://github.com/kapilsharma/StoryLine/commit/4364e49f5b695f8fb1b935ba5d8839a831351862))
+* **#204:** add a Manuscript row for writing the novel on the board ([c4f01ba](https://github.com/kapilsharma/StoryLine/commit/c4f01ba11c6263f240a0ca047daf5c040b03df94))
+
 ## [2.17.0](https://github.com/kapilsharma/StoryLine/compare/2.16.0...2.17.0) (2026-10-21)
 
 
