@@ -169,6 +169,50 @@ export function withFilters(
 }
 
 /**
+ * The filter key for "no value" in the Status and % complete filters (#182). Not
+ * a status id anyone could pick: ids are slugs, and this has a space in it.
+ */
+export const FILTER_NONE = 'none '
+
+/**
+ * Which Status / % complete filter entry a card's note falls under (#182). A
+ * status the project no longer defines shows no icon, so it counts as none. An
+ * off-step progress someone typed by hand (35) goes to its nearest step.
+ */
+export function cardFilterKeys(
+  note: Pick<Note, 'status' | 'progress'> | undefined,
+  statusIds: Set<string>
+): { status: string; progress: string } {
+  const status = note?.status && statusIds.has(note.status) ? note.status : FILTER_NONE
+  const progress = note?.progress == null ? FILTER_NONE : String(Math.round(note.progress / 10) * 10)
+  return { status, progress }
+}
+
+/**
+ * The board minus the cards whose note is filtered out by Status or % complete
+ * (#182). Unlike {@link withFilters} this hides single cards, not whole rows or
+ * columns, so the plot keeps its shape and a filtered-out card leaves an empty
+ * cell. Returns the same board object when nothing is filtered.
+ */
+export function withCardFilters(
+  board: Board,
+  notes: Note[],
+  statusIds: Set<string>,
+  statusFilter: Set<string>,
+  progressFilter: Set<string>
+): Board {
+  if (statusFilter.size === 0 && progressFilter.size === 0) return board
+  const byUid = new Map(notes.map((n) => [n.uid, n]))
+  return {
+    ...board,
+    cards: board.cards.filter((c) => {
+      const keys = cardFilterKeys(byUid.get(c.noteUid), statusIds)
+      return !statusFilter.has(keys.status) && !progressFilter.has(keys.progress)
+    })
+  }
+}
+
+/**
  * The board with `members` turned into a concrete list, so the first curating
  * action on a legacy board converts it rather than silently doing nothing.
  * Returns the board unchanged when it already has a list.

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Board } from '@shared/types'
 import { clampNotePanelFraction, NOTE_PANEL_FRACTION_DEFAULT } from '@shared/config'
 import { useStore } from '../../store'
+import { cardStatuses } from '@shared/cardStatus'
 import { usePrompt } from '../PromptModal'
 import { moveAfter, moveBefore } from '../../lib/reorder'
 import { Modal } from '../Modal'
@@ -259,7 +260,9 @@ export function BoardsView(): JSX.Element {
       ) : (
         <>
           {/* Filters sit just below the tabs (#140), shown by the toolbar's 🔍. */}
-          {filtersOpen && activeBoard && <BoardFilterBar data={activeBoard} />}
+          {filtersOpen && activeBoard && (
+            <BoardFilterBar data={activeBoard} statuses={snapshot ? cardStatuses(snapshot.project) : []} />
+          )}
 
           <div className="board-toolbar">
             {board.presets.length > 0 && (

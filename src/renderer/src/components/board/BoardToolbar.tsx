@@ -183,12 +183,12 @@ export function BoardToolbar(): JSX.Element {
       >
         {allExpanded ? '⤡' : '⤢'}
       </button>
-      {/* Open the filter bar below the tabs (#140). Stays lit while a filter is
-          applied, so a board showing only some of its rows/columns says why. */}
+      {/* Open the filter bar below the tabs (#140, #182). Stays lit while a filter
+          is applied, so a board showing only some of its rows/columns/cards says why. */}
       <button
         className={`toolbar-btn${filtersOpen || filterActive ? ' active' : ''}`}
         disabled={!board}
-        title={filtersOpen ? 'Hide filters' : 'Filter rows and columns'}
+        title={filtersOpen ? 'Hide filters' : 'Filters'}
         onClick={() => setFiltersOpen(!filtersOpen)}
       >
         🔍

@@ -22,7 +22,8 @@ import {
   reorderRowBlocks,
   reorderRowMember,
   rowWindow,
-  withFilters
+  withFilters,
+  withCardFilters
 } from './grid-utils'
 import type { PlacedCard } from './grid-utils'
 
@@ -378,6 +379,8 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     openPanel,
     rowFilter,
     colFilter,
+    statusFilter,
+    progressFilter,
     revising,
     isRevealed,
     toggleRevealed,
@@ -441,11 +444,20 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   // across zoom levels; base size is the user's setting.
   const cardFont = (config?.settings.cardFontSize ?? 13) * zoom
 
-  // Apply the transient filters (#140), then any live resize preview, before
-  // computing layout. Filtering goes first so the preview still edits the one
-  // card by id; both just return the board unchanged when there's nothing to do.
+  // Apply the transient filters (#140 rows/columns, #182 cards), then any live
+  // resize preview, before computing layout. Filtering goes first so the preview
+  // still edits the one card by id; each just returns the board unchanged when
+  // there's nothing to do.
+  // `statuses` is a fresh array every render; key the memo on the ids instead.
+  const statusIdsKey = statuses.map((s) => s.id).join('\n')
   const effectiveBoard = useMemo<Board>(() => {
-    const filtered = withFilters(board, rowFilter, colFilter)
+    const filtered = withCardFilters(
+      withFilters(board, rowFilter, colFilter),
+      notes,
+      new Set(statusIdsKey.split('\n')),
+      statusFilter,
+      progressFilter
+    )
     if (!preview) return filtered
     return {
       ...filtered,
@@ -453,7 +465,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
         c.id === preview.cardId ? { ...c, colStart: preview.colStart, colEnd: preview.colEnd } : c
       )
     }
-  }, [board, preview, rowFilter, colFilter])
+  }, [board, preview, rowFilter, colFilter, notes, statusIdsKey, statusFilter, progressFilter])
 
   const layout = useMemo(
     () => buildBoardLayout(effectiveBoard, characters, timeline, notes, colGroups),

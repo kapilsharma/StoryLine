@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BoardData } from '@shared/ipc'
+import type { CardStatus } from '@shared/types'
 import { orderedLeaves } from '@shared/columns'
+import { PROGRESS_STEPS } from '@shared/cardProgress'
 import { useBoardUi } from './BoardUiContext'
-import { boardMembers } from './grid-utils'
+import { FILTER_NONE, boardMembers } from './grid-utils'
 
 interface Item {
   id: string
@@ -165,13 +167,39 @@ function toSections(items: Item[], groupOf: (item: Item) => { key: string; label
   return sections
 }
 
+/** The % complete entries (#182): the editor dropdown's steps, then "Not set". */
+const PROGRESS_SECTIONS: Section[] = [
+  ...PROGRESS_STEPS.map((p): Section => ({ kind: 'item', item: { id: String(p), label: `${p}%` } })),
+  { kind: 'item', item: { id: FILTER_NONE, label: 'Not set' } }
+]
+const PROGRESS_IDS = PROGRESS_SECTIONS.map((s) => (s.kind === 'item' ? s.item.id : s.key))
+
 /**
  * The filter bar below the board tabs (Issue #140): a momentary lens on a
- * crowded board. Two checkbox dropdowns narrow which rows (characters) and
- * columns (scenes) are drawn, without touching what's on disk.
+ * crowded board. Checkbox dropdowns narrow which rows (characters) and columns
+ * (scenes) are drawn, and which cards by Status and % complete (#182), without
+ * touching what's on disk.
  */
-export function BoardFilterBar({ data }: { data: BoardData }): JSX.Element {
-  const { rowFilter, colFilter, setRowFilter, setColFilter, clearFilters, filterActive } = useBoardUi()
+export function BoardFilterBar({
+  data,
+  statuses = []
+}: {
+  data: BoardData
+  /** The project's card statuses (#108), in display order. */
+  statuses?: CardStatus[]
+}): JSX.Element {
+  const {
+    rowFilter,
+    colFilter,
+    setRowFilter,
+    setColFilter,
+    statusFilter,
+    progressFilter,
+    setStatusFilter,
+    setProgressFilter,
+    clearFilters,
+    filterActive
+  } = useBoardUi()
 
   // The board's full cast and column list — filtering chooses *among* these, so
   // it offers everything on the board, hidden-for-now rows included.
@@ -205,6 +233,19 @@ export function BoardFilterBar({ data }: { data: BoardData }): JSX.Element {
     [data.colGroups, data.timeline]
   )
 
+  const statusSections = useMemo<Section[]>(
+    () => [
+      ...statuses.map((st): Section => ({
+        kind: 'item',
+        item: { id: st.id, label: st.icon ? `${st.icon} ${st.label}` : st.label }
+      })),
+      { kind: 'item', item: { id: FILTER_NONE, label: 'No status' } }
+    ],
+    [statuses]
+  )
+  const statusIds = useMemo(() => [...statuses.map((st) => st.id), FILTER_NONE], [statuses])
+  const hasCards = data.board.cards.length > 0
+
   return (
     <div className="board-filter-bar">
       <span className="muted small">Show:</span>
@@ -226,7 +267,25 @@ export function BoardFilterBar({ data }: { data: BoardData }): JSX.Element {
           onChange={setColFilter}
         />
       )}
-      {charIds.length === 0 && colIds.length === 0 && (
+      {hasCards && (
+        <MultiSelect
+          label="Status"
+          sections={statusSections}
+          allIds={statusIds}
+          excluded={statusFilter}
+          onChange={setStatusFilter}
+        />
+      )}
+      {hasCards && (
+        <MultiSelect
+          label="% complete"
+          sections={PROGRESS_SECTIONS}
+          allIds={PROGRESS_IDS}
+          excluded={progressFilter}
+          onChange={setProgressFilter}
+        />
+      )}
+      {charIds.length === 0 && colIds.length === 0 && !hasCards && (
         <span className="muted small">Nothing to filter yet — add rows and columns first.</span>
       )}
       {filterActive && (

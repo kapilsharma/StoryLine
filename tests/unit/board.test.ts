@@ -15,6 +15,9 @@ import {
   reorderRowBlocks,
   orderedRowBlockKeys,
   withFilters,
+  withCardFilters,
+  cardFilterKeys,
+  FILTER_NONE,
   rowGroupNames,
   colGroupDepths,
   colGroupLevels,
@@ -475,6 +478,50 @@ describe('withFilters (#140)', () => {
     const b = board({ cards: [at('c1', 'a', 'ch3')] })
     const layout = buildBoardLayout(withFilters(b, new Set(), new Set(['ch3'])), chars, timeline, note)
     expect(layout.fullCards).toHaveLength(0)
+  })
+})
+
+describe('withCardFilters (#182)', () => {
+  const notes: Note[] = [
+    { id: 'n1', uid: 'n_1', title: 'Drafted', body: '', status: 'draft', progress: 40 },
+    { id: 'n2', uid: 'n_2', title: 'Done', body: '', status: 'done', progress: 100 },
+    { id: 'n3', uid: 'n_3', title: 'Untracked', body: '' },
+    { id: 'n4', uid: 'n_4', title: 'Old status', body: '', status: 'gone', progress: 35 }
+  ]
+  const statusIds = new Set(['draft', 'done'])
+  const card = (id: string, noteUid: string): Card => ({ id, noteUid, rowId: 'a', colStart: 'ch1', colEnd: 'ch1' })
+  const b = board({ cards: [card('k1', 'n_1'), card('k2', 'n_2'), card('k3', 'n_3'), card('k4', 'n_4')] })
+  const ids = (x: Board): string[] => x.cards.map((c) => c.id)
+
+  it('returns the same board object when nothing is filtered', () => {
+    expect(withCardFilters(b, notes, statusIds, new Set(), new Set())).toBe(b)
+  })
+
+  it('hides cards whose status is filtered out, keeping rows and columns', () => {
+    const filtered = withCardFilters(b, notes, statusIds, new Set(['done']), new Set())
+    expect(ids(filtered)).toEqual(['k1', 'k3', 'k4'])
+    expect(filtered.hiddenRows).toEqual(b.hiddenRows)
+    expect(filtered.hiddenCols).toEqual(b.hiddenCols)
+  })
+
+  it('treats no status and a status the project no longer defines as "none"', () => {
+    expect(ids(withCardFilters(b, notes, statusIds, new Set([FILTER_NONE]), new Set()))).toEqual(['k1', 'k2'])
+  })
+
+  it('filters by % complete, with "not set" and off-step values bucketed', () => {
+    expect(ids(withCardFilters(b, notes, statusIds, new Set(), new Set([FILTER_NONE])))).toEqual(['k1', 'k2', 'k4'])
+    // 35 (typed by hand) rounds to the 40 step.
+    expect(ids(withCardFilters(b, notes, statusIds, new Set(), new Set(['40'])))).toEqual(['k2', 'k3'])
+  })
+
+  it('a card must pass both filters to stay', () => {
+    expect(ids(withCardFilters(b, notes, statusIds, new Set(['draft']), new Set(['100'])))).toEqual(['k3', 'k4'])
+  })
+
+  it('a card whose note is missing counts as none on both', () => {
+    const lost = board({ cards: [card('k9', 'n_missing')] })
+    expect(cardFilterKeys(undefined, statusIds)).toEqual({ status: FILTER_NONE, progress: FILTER_NONE })
+    expect(ids(withCardFilters(lost, notes, statusIds, new Set([FILTER_NONE]), new Set()))).toEqual([])
   })
 })
 
