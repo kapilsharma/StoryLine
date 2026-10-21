@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.14.1](https://github.com/kapilsharma/StoryLine/compare/2.14.0...2.14.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **169:** build before e2e, isolate app config, cover 2.x features ([5e2ad6a](https://github.com/kapilsharma/StoryLine/commit/5e2ad6a840b4239fdf56b84226f247cb7af27d44))
+* **169:** build before e2e, isolate app config, cover 2.x features ([c1403db](https://github.com/kapilsharma/StoryLine/commit/c1403db03bb9ba1a82432eaa642a4211c76a219c))
+
 ## [2.14.0](https://github.com/kapilsharma/StoryLine/compare/2.13.2...2.14.0) (2026-10-21)
 
 
