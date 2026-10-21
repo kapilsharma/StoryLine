@@ -1,11 +1,12 @@
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { launchApp, openProject } from './launch-app'
 
 /**
  * The character note on the board (Issue 41), now shown in the side panel and
- * editable in place (Issue #83). Run `npm run build` first.
+ * editable in place (Issue #83).
  *
  * Here rather than in jsdom because the thing worth proving is the round trip:
  * a note written on the Characters tab has to reach the board's row header as
@@ -31,18 +32,8 @@ test.beforeAll(async () => {
     '---\nid: ch1\nlabel: Chapter 1\norder: 1\n---\n\n'
   )
 
-  const env: Record<string, string> = { ...process.env } as Record<string, string>
-  // Clear or Electron starts as plain Node (a quirk of some dev shells).
-  delete env.ELECTRON_RUN_AS_NODE
-  app = await electron.launch({ args: [join(__dirname, '../../out/main/index.js')], env })
-
-  await app.evaluate(({ dialog }, dir) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [dir] })
-  }, projectDir)
-
-  window = await app.firstWindow()
-  await window.setViewportSize({ width: 1400, height: 900 })
-  await window.getByText('Open project…').click()
+  app = await launchApp()
+  window = await openProject(app, projectDir)
   await expect(window.locator('.project-title')).toHaveText(/Ashvale Family/)
 })
 

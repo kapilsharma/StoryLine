@@ -1,11 +1,12 @@
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { launchApp, openProject } from './launch-app'
 
 /**
  * End-to-end coverage for the study-notes features (Issues #59–#67), against a
- * real Electron app and a real project on disk. Run `npm run build` first.
+ * real Electron app and a real project on disk.
  *
  * These live here rather than in jsdom because each one crosses a boundary that
  * a component test stubs out: search runs in the main process over files, the
@@ -136,16 +137,8 @@ test.beforeAll(async () => {
   projectDir = join(await fs.mkdtemp(join(tmpdir(), 'zn-study-e2e-')), 'study-project')
   await scaffold(projectDir)
 
-  const env: Record<string, string> = { ...process.env } as Record<string, string>
-  delete env.ELECTRON_RUN_AS_NODE
-  app = await electron.launch({ args: [join(__dirname, '../../out/main/index.js')], env })
-  await app.evaluate(({ dialog }, dir) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [dir] })
-  }, projectDir)
-
-  window = await app.firstWindow()
-  await window.setViewportSize({ width: 1400, height: 900 })
-  await window.getByText('Open project…').click()
+  app = await launchApp()
+  window = await openProject(app, projectDir)
   await expect(window.locator('.project-title')).toHaveText('Study Project')
 })
 

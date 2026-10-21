@@ -19,7 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
+    "test:e2e": "electron-vite build && playwright test",
     "bench:index": "vitest run --config vitest.bench.config.ts",
     "typecheck:test": "tsc --noEmit -p tsconfig.test.json"
   },

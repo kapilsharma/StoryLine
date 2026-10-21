@@ -1,23 +1,14 @@
-import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test'
-import { join } from 'path'
+import { test, expect, type ElectronApplication } from '@playwright/test'
+import { launchApp } from './launch-app'
 
 /**
  * Layer 3 smoke test: launch the built Electron app and confirm the dashboard
- * renders. Run `npm run build` first.
- *
- * Note: ELECTRON_RUN_AS_NODE must be cleared or Electron starts as plain Node
- * (a quirk of some dev shells). Deeper flows (create/open project) need the
- * native folder dialog stubbed, so they're intentionally left out for now.
+ * renders. Deeper flows live in the other specs.
  */
 let app: ElectronApplication
 
 test.beforeAll(async () => {
-  const env: Record<string, string> = { ...process.env } as Record<string, string>
-  delete env.ELECTRON_RUN_AS_NODE
-  app = await electron.launch({
-    args: [join(__dirname, '../../out/main/index.js')],
-    env
-  })
+  app = await launchApp()
 })
 
 test.afterAll(async () => {

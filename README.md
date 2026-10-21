@@ -144,7 +144,7 @@ cross-project dropdown.
 | `npm run typecheck` | Type-check main + renderer. |
 | `npm test` | Run unit + component tests (Vitest). |
 | `npm run test:coverage` | Run tests with a coverage report (`coverage/`). |
-| `npm run test:e2e` | Run end-to-end tests (Playwright). |
+| `npm run test:e2e` | Build, then run end-to-end tests (Playwright) against the built app. |
 
 ## Using ZN Story Line with an AI assistant
 

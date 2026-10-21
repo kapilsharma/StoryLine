@@ -1,10 +1,11 @@
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { launchApp, openProject } from './launch-app'
 
 /**
- * The column hierarchy (issue #104), in the real app. Run `npm run build` first.
+ * The column hierarchy (issue #104), in the real app.
  *
  * It starts from a **schema-v3 project** — columns grouped by a `group` string —
  * so opening it is also the migration running for real. After that it is the
@@ -80,16 +81,8 @@ test.beforeAll(async () => {
   projectDir = join(await fs.mkdtemp(join(tmpdir(), 'zn-columns-e2e-')), 'grouped')
   await scaffold(projectDir)
 
-  const env: Record<string, string> = { ...process.env } as Record<string, string>
-  delete env.ELECTRON_RUN_AS_NODE
-  app = await electron.launch({ args: [join(__dirname, '../../out/main/index.js')], env })
-  await app.evaluate(({ dialog }, dir) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [dir] })
-  }, projectDir)
-
-  window = await app.firstWindow()
-  await window.setViewportSize({ width: 1400, height: 900 })
-  await window.getByText('Open project…').click()
+  app = await launchApp()
+  window = await openProject(app, projectDir)
   await expect(window.locator('.project-title')).toHaveText('Grouped')
   await expect(window.locator('.board-card').first()).toBeVisible()
 })

@@ -1,13 +1,13 @@
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { launchApp, openProject } from './launch-app'
 
 /**
  * Live reload through the in-memory project index (#184): files changed outside
  * the app reach the board through the native recursive watcher (#190), the index
  * and a patch reply (#188), and the app's own edits keep working alongside them.
- * Run `npm run build` first.
  */
 
 let app: ElectronApplication
@@ -64,15 +64,8 @@ test.describe.configure({ mode: 'serial' })
 test.beforeAll(async () => {
   projectDir = join(await fs.mkdtemp(join(tmpdir(), 'zn-live-e2e-')), 'live')
   await scaffold(projectDir)
-  const env: Record<string, string> = { ...process.env } as Record<string, string>
-  delete env.ELECTRON_RUN_AS_NODE
-  app = await electron.launch({ args: [join(__dirname, '../../out/main/index.js')], env })
-  await app.evaluate(({ dialog }, dir) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [dir] })
-  }, projectDir)
-  window = await app.firstWindow()
-  await window.setViewportSize({ width: 1400, height: 900 })
-  await window.getByText('Open project…').click()
+  app = await launchApp()
+  window = await openProject(app, projectDir)
   await expect(card('Opening')).toBeVisible()
 })
 
