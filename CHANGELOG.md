@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.14.0](https://github.com/kapilsharma/StoryLine/compare/2.13.2...2.14.0) (2026-10-21)
+
+
+### Features
+
+* **#194:** word count in the editors ([f286d71](https://github.com/kapilsharma/StoryLine/commit/f286d719a060534f3b6b01e314405bb7a6279570))
+* **#194:** word count in the editors ([757c68a](https://github.com/kapilsharma/StoryLine/commit/757c68ae4ebb38719e4c85231a179063741abd87))
+
 ## [2.13.2](https://github.com/kapilsharma/StoryLine/compare/2.13.1...2.13.2) (2026-10-21)
 
 
