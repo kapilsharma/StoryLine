@@ -33,6 +33,7 @@ interface Args {
   settingsPath?: string
   skipBuild: boolean
   force: boolean
+  includeManuscript: boolean
 }
 
 const USAGE = `
@@ -50,13 +51,16 @@ Options
                       machine's local ZN Story Line settings automatically.
   --skip-build       Reuse the existing out/web shell instead of rebuilding it.
   --force            Allow writing into a non-empty folder this tool didn't create.
+  --include-manuscript
+                      Publish the Manuscript row and its notes. Default: left out,
+                      so a published board never gives away the draft by accident.
   --help             Show this message.
 `.trim()
 
 function parseArgs(argv: string[]): Args {
   // Dark by default: a published board is read on a website, where dark reads
   // better than the desktop app's light default.
-  const args: Args = { project: '', out: '', boards: [], theme: 'dark', skipBuild: false, force: false }
+  const args: Args = { project: '', out: '', boards: [], theme: 'dark', skipBuild: false, force: false, includeManuscript: false }
 
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i]
@@ -94,6 +98,9 @@ function parseArgs(argv: string[]): Args {
         break
       case '--force':
         args.force = true
+        break
+      case '--include-manuscript':
+        args.includeManuscript = true
         break
       case '--help':
       case '-h':
@@ -159,7 +166,8 @@ async function main(): Promise<void> {
     boards: args.boards,
     settings: { ...localSettings, theme: args.theme },
     appVersion: pkg.version,
-    generatedAt: new Date().toISOString()
+    generatedAt: new Date().toISOString(),
+    includeManuscript: args.includeManuscript
   })
 
   const noteCount = bundle.boards.reduce((n, bd) => n + bd.notes.length, 0)
@@ -168,6 +176,7 @@ async function main(): Promise<void> {
       `${noteCount} note(s): ${bundle.project.boards.join(', ')}`
   )
   console.log(`  theme: ${args.theme}`)
+  console.log(`  manuscript: ${args.includeManuscript ? 'included' : 'left out (pass --include-manuscript to publish it)'}`)
 
   if (args.skipBuild) {
     await fs.access(join(SHELL_DIR, 'index.html')).catch(() => {

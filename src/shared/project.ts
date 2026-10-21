@@ -13,6 +13,7 @@ import {
   finalizeCardStatuses,
   sameCardStatuses
 } from './cardStatus'
+import { manuscriptLevel } from './manuscript'
 
 export const DEFAULT_ROW_LABEL = 'Character'
 export const DEFAULT_TIMELINE_LABEL = 'Chapter'
@@ -29,6 +30,8 @@ export interface ProjectMeta {
   kind: ProjectKind
   /** Card statuses in display order (Issue #108). A new row has an empty id. */
   cardStatuses: CardStatus[]
+  /** Depth the Manuscript row snaps to (Issue #204); null = no Manuscript row. */
+  manuscriptLevel: number | null
 }
 
 /** What a board row is called here — "Character", "Topic", "Phase"… */
@@ -91,7 +94,8 @@ export function readMeta(project: Project): ProjectMeta {
     timelineLevelLabels: timelineLevelLabels(project),
     rowLabel: rowLabel(project),
     kind: projectKind(project),
-    cardStatuses: cardStatuses(project)
+    cardStatuses: cardStatuses(project),
+    manuscriptLevel: manuscriptLevel(project)
   }
 }
 
@@ -117,6 +121,8 @@ export function applyMeta(project: Project, meta: ProjectMeta): Project {
     rowLabel: meta.rowLabel.trim() && meta.rowLabel.trim() !== DEFAULT_ROW_LABEL ? meta.rowLabel.trim() : undefined,
     kind: meta.kind === 'general' ? 'general' : undefined,
     // The built-in set is the absent key; anything else — including none — is written.
-    cardStatuses: sameCardStatuses(statuses, DEFAULT_CARD_STATUSES) ? undefined : statuses
+    cardStatuses: sameCardStatuses(statuses, DEFAULT_CARD_STATUSES) ? undefined : statuses,
+    // Off is the absent key, so a project that never turned it on round-trips unchanged.
+    manuscriptLevel: manuscriptLevel({ manuscriptLevel: meta.manuscriptLevel ?? undefined }) ?? undefined
   }
 }

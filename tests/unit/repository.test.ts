@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { isEmptyEntityBody } from '@shared/entityBody'
 import type { Board } from '@shared/types'
-import { ROW_HEADER_W_MIN, normalizeRowHeaderWidth } from '@shared/types'
+import { MANUSCRIPT_ROW_ID, ROW_HEADER_W_MIN, normalizeRowHeaderWidth } from '@shared/types'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -17,7 +17,8 @@ import {
   readBoard,
   listBoardIds,
   readEntityBody,
-  writeEntityBody
+  writeEntityBody,
+  readProject
 } from '@main/data/repository'
 
 let root: string
@@ -235,6 +236,63 @@ describe('board repository', () => {
     // with a lower floor — comes back at the floor rather than unusably narrow.
     await writeBoard(root, { ...base, rowHeaderWidth: 10 })
     expect((await readBoard(root, 'wide')).value.rowHeaderWidth).toBe(ROW_HEADER_W_MIN)
+  })
+})
+
+describe('Manuscript row on disk (#204)', () => {
+  const blank: Board = {
+    id: BID,
+    name: 'Main',
+    cards: [],
+    hiddenRows: [],
+    hiddenCols: [],
+    presets: [],
+    rowOrder: [],
+    rowGroupOrder: [],
+    colOrder: [],
+    collapsedRowGroups: [],
+    collapsedColGroups: [],
+    zoom: 1,
+    members: null,
+    views: []
+  }
+
+  it('round-trips a manuscript card with its cell, and the row toggle', async () => {
+    const card = {
+      id: 'm1',
+      noteUid: 'n_ms',
+      rowId: MANUSCRIPT_ROW_ID,
+      colStart: 's1',
+      colEnd: 's2',
+      cell: { kind: 'node' as const, id: 'ch-1' }
+    }
+    await writeBoard(root, { ...blank, cards: [card], hideManuscriptRow: true })
+    const { value } = await readBoard(root, BID)
+    expect(value.cards[0]).toEqual(card)
+    expect(value.hideManuscriptRow).toBe(true)
+  })
+
+  it('keeps a board that never hid the row free of the key', async () => {
+    await writeBoard(root, blank)
+    expect('hideManuscriptRow' in (await readBoard(root, BID)).value).toBe(false)
+  })
+
+  const projectWith = async (extra: Record<string, unknown>): Promise<void> =>
+    fs.writeFile(
+      join(root, 'project.json'),
+      JSON.stringify({ schemaVersion: 4, name: 'P', boards: [BID], ...extra })
+    )
+
+  it('reads the level from project.json', async () => {
+    await projectWith({ manuscriptLevel: 1 })
+    expect((await readProject(root)).value.manuscriptLevel).toBe(1)
+  })
+
+  it('reads a missing or nonsense level as no Manuscript row', async () => {
+    await projectWith({})
+    expect('manuscriptLevel' in (await readProject(root)).value).toBe(false)
+    await projectWith({ manuscriptLevel: 'chapter' })
+    expect('manuscriptLevel' in (await readProject(root)).value).toBe(false)
   })
 })
 

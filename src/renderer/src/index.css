@@ -20,6 +20,9 @@
      wash of the accent — enough to find your place, not enough to read as a
      selection. */
   --preview-active-bg: rgba(74, 144, 217, 0.08);
+  /* The Manuscript row (issue #204): a warm, paper-ish brown, so the prose row
+     never reads as one more character. */
+  --manuscript-colour: #9a7444;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   font-size: 14px;
@@ -39,6 +42,7 @@
   --tip-fg: #1c1c1e;
   --tip-border: #c9c9ce;
   --preview-active-bg: rgba(90, 155, 224, 0.13);
+  --manuscript-colour: #c9a06a;
 }
 
 * {
@@ -1116,6 +1120,33 @@ textarea {
 }
 .cell:hover {
   background: var(--panel);
+}
+/* The Manuscript row (issue #204): set apart from the rows below by a heavier
+   rule, and an empty cell says what a click does. */
+.row-head.manuscript-head {
+  cursor: default;
+  font-weight: 600;
+  border-bottom: 2px solid var(--manuscript-colour);
+}
+.manuscript-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 2px solid var(--manuscript-colour);
+}
+.manuscript-cell:hover::after {
+  content: '+ Write';
+  color: var(--manuscript-colour);
+  font-size: 0.85rem;
+}
+.manuscript-cell.read-only {
+  cursor: default;
+}
+.manuscript-cell.read-only:hover {
+  background: none;
+}
+.manuscript-cell.read-only:hover::after {
+  content: none;
 }
 .thread {
   align-self: center;

@@ -104,6 +104,7 @@ row** to get each character's arc.
 | `boards` | Board ids in display (tab) order. A board folder on disk that is missing here still exists — it comes after the listed ones. |
 | `families` | Family name → colour for the family tree. Not plot. |
 | `cardStatuses` | The status list for cards (see §8). **Absent = the five built-in statuses.** `[]` = statuses turned off. |
+| `manuscriptLevel` | Turns on the **Manuscript row** (see §6, Card): the column depth its cells snap to — `0` = the top level (a Novel), `1` = the next (a Chapter)… A number, not a name, so renaming a level never changes it. **Absent = no Manuscript row.** |
 
 ## 4. `board.json`
 
@@ -142,6 +143,7 @@ row** to get each character's arc.
 | `rowGroupOrder` | Order of row *blocks*: a group label (see character `group`), or a character id for an ungrouped row. |
 | `hiddenRows`, `hiddenCols`, `presets`, `collapsed*`, `zoom`, `rowHeaderWidth` | **View state only.** Hidden or collapsed things are still part of the story — never treat them as deleted. |
 | `hidePlotRows`, `hideCharacterRows` | **View state only** (booleans; absent = `false`). Hide a whole kind of row (`plot` vs character) at once — never treat the hidden rows as deleted. |
+| `hideManuscriptRow` | **View state only** (boolean; absent = `false`). Hides the Manuscript row on this board; its cards and prose are untouched. |
 | `colOrder` | Legacy, ignore it. Column order comes from the column tree (§5). |
 | `views` | Family-tree tab order. |
 
@@ -217,10 +219,20 @@ can sit beside a part that has them).
 |---|---|
 | `id` | `card-` + 8 hex. Only identifies the card. |
 | `noteUid` | Links to the note whose frontmatter **`uid`** equals this — **not** the filename. |
-| `rowId` | Character id (the row). |
+| `rowId` | Character id (the row) — or `@manuscript` for the Manuscript row. |
 | `colStart`, `colEnd` | Timeline **unit** ids. The card covers every unit from `colStart` to `colEnd` in the column sequence (equal = one column). |
+| `cell` | **Manuscript-row cards only**: `{ "kind": "node" | "unit", "id": … }` — the column group (`node`) or unit this card is the prose of. |
 
 Several cards may share one cell.
+
+**The Manuscript row.** When `project.json` has `manuscriptLevel`, every board has a built-in
+row on top called *Manuscript* — the novel's prose, not a character, so it has no character
+file and is never in `members`. Its cards have `rowId: "@manuscript"` and a `cell`; each covers
+the whole of its column (a Chapter's cell spans all that chapter's scenes), worked out from the
+column tree — **ignore `colStart`/`colEnd` on these cards**, they only record where it sat when
+created. The cells are the columns at depth `manuscriptLevel`, plus any shallower unit with nothing
+under it. A card whose `cell` is not at the current level is kept but not shown. Its note is an
+ordinary note, named `manuscript-<title>.md`; its body is the chapter's text.
 
 ### Note (`notes/<noteId>.md`)
 

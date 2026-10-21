@@ -4,6 +4,7 @@ import { promises as fsp } from 'fs'
 import { basename, join } from 'path'
 import type { Card, Character, ColumnGroup, Note, TimelineUnit, View } from '@shared/types'
 import { defaultView } from '@shared/types'
+import { isManuscriptCard } from '@shared/manuscript'
 import type { AppSettings } from '@shared/config'
 import type { DocExportOptions, EntityBodyKind, NewCardInput, SnapshotReply } from '@shared/ipc'
 import type { ProjectChange } from '@shared/changes'
@@ -177,10 +178,17 @@ async function purgeTimelineFromBoard(
 ): Promise<void> {
   const gone = new Set(unitIds)
   const goneGroups = new Set(groupIds)
+  // A manuscript card (#204) belongs to its cell, not to the units it happened
+  // to span when created: deleting a chapter's first scene must not take the
+  // chapter's prose with it. It goes only when its own column does.
+  const keep = (c: Card): boolean =>
+    isManuscriptCard(c) && c.cell
+      ? !(c.cell.kind === 'unit' ? gone : goneGroups).has(c.cell.id)
+      : !gone.has(c.colStart) && !gone.has(c.colEnd)
   const { value: board } = await readBoard(root, boardId)
   await writeBoard(root, {
     ...board,
-    cards: board.cards.filter((c) => !gone.has(c.colStart) && !gone.has(c.colEnd)),
+    cards: board.cards.filter(keep),
     colOrder: board.colOrder.filter((c) => !gone.has(c)),
     hiddenCols: board.hiddenCols.filter((c) => !gone.has(c)),
     collapsedColGroups: board.collapsedColGroups.filter((g) => !goneGroups.has(g))
@@ -844,7 +852,10 @@ export function registerIpc(window: BrowserWindow): void {
   // ── Cards ──
   ipcMain.handle('card:create', async (_e, root: string, input: NewCardInput) => {
     const { ids, uids } = await noteKeys(root, input.boardId)
-    const noteId = await freeNoteId(root, input.boardId, input.title || 'note', ids)
+    // A manuscript note says so in its filename (#204), so the prose is easy to
+    // tell apart from planning notes in the folder: `manuscript-chapter-3.md`.
+    const base = input.title || 'note'
+    const noteId = await freeNoteId(root, input.boardId, input.cell ? `manuscript ${base}` : base, ids)
     const uid = uniqueNoteUid(uids)
     await writeNote(root, input.boardId, {
       id: noteId,
@@ -861,7 +872,8 @@ export function registerIpc(window: BrowserWindow): void {
       noteUid: uid,
       rowId: input.rowId,
       colStart: input.colStart,
-      colEnd: input.colEnd
+      colEnd: input.colEnd,
+      ...(input.cell ? { cell: { kind: input.cell.kind, id: input.cell.id } } : {})
     }
     await writeBoard(root, { ...board, cards: [...board.cards, card] })
     return snap(root)

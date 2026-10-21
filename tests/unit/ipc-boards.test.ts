@@ -78,3 +78,79 @@ describe('board IPC handlers', () => {
     await expect(fs.access(join(root, 'boards', 'second-board'))).rejects.toBeTruthy()
   })
 })
+
+describe('card:create on the Manuscript row (#204)', () => {
+  it('names the note manuscript-… and stores the cell it belongs to', async () => {
+    const snap = await invoke('card:create', root, {
+      boardId: 'main',
+      title: 'Chapter 3',
+      rowId: '@manuscript',
+      colStart: 's1',
+      colEnd: 's4',
+      cell: { kind: 'node', id: 'ch-3' }
+    })
+    const main = snap.boards.find((b) => b.board.id === 'main')!
+    const card = main.board.cards.at(-1)!
+    expect(card).toMatchObject({ rowId: '@manuscript', cell: { kind: 'node', id: 'ch-3' } })
+    const note = main.notes.find((n) => n.uid === card.noteUid)!
+    expect(note.id).toBe('manuscript-chapter-3')
+    expect(note.title).toBe('Chapter 3')
+  })
+
+  it('leaves an ordinary card without a cell or a prefix', async () => {
+    const snap = await invoke('card:create', root, {
+      boardId: 'main',
+      title: 'Chapter 3',
+      rowId: 'someone',
+      colStart: 's1',
+      colEnd: 's1'
+    })
+    const main = snap.boards.find((b) => b.board.id === 'main')!
+    const card = main.board.cards.at(-1)!
+    expect('cell' in card).toBe(false)
+    expect(main.notes.find((n) => n.uid === card.noteUid)!.id).toBe('chapter-3')
+  })
+})
+
+describe('deleting columns under the Manuscript row (#204)', () => {
+  /** Chapter 1 (s1, s2) with its manuscript card, stored over s1–s2, beside a scene card on s1. */
+  async function seed(): Promise<void> {
+    const repo = await import('@main/data/repository')
+    await repo.writeColumnGroup(root, 'main', { id: 'ch-1', type: 'colgroup', label: 'Chapter 1', order: 1 })
+    await repo.writeTimelineUnit(root, 'main', { id: 's1', label: 'Scene 1', order: 1, parent: 'ch-1' })
+    await repo.writeTimelineUnit(root, 'main', { id: 's2', label: 'Scene 2', order: 2, parent: 'ch-1' })
+    const { value: board, mtimeMs } = await repo.readBoard(root, 'main')
+    await repo.writeBoard(
+      root,
+      {
+        ...board,
+        cards: [
+          { id: 'k1', noteUid: 'n_k1', rowId: 'someone', colStart: 's1', colEnd: 's1' },
+          {
+            id: 'm1',
+            noteUid: 'n_m1',
+            rowId: '@manuscript',
+            colStart: 's1',
+            colEnd: 's2',
+            cell: { kind: 'node', id: 'ch-1' }
+          }
+        ]
+      },
+      mtimeMs
+    )
+  }
+  const cardIds = (snap: ProjectSnapshot): string[] =>
+    snap.boards.find((b) => b.board.id === 'main')!.board.cards.map((c) => c.id)
+
+  it('keeps a chapter’s prose when the scene it started on is deleted', async () => {
+    await seed()
+    const snap = await invoke('timeline:delete', root, 'main', 's1')
+    expect(cardIds(snap)).toEqual(['m1'])
+  })
+
+  it('removes it along with its chapter', async () => {
+    await seed()
+    const snap = await invoke('colgroup:delete', root, 'main', 'ch-1')
+    expect(cardIds(snap)).toEqual([])
+  })
+})

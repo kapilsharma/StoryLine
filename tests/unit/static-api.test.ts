@@ -182,7 +182,7 @@ describe('static api — refused writes', () => {
   const writes: Array<[string, () => Promise<unknown>]> = [
     ['createProject', () => api.createProject()],
     ['pickProject', () => api.pickProject()],
-    ['saveProjectMeta', () => api.saveProjectMeta(STATIC_ROOT, { name: 'Nope', timelineLevelLabels: ['Chapter'], rowLabel: 'Character', kind: 'story', cardStatuses: [] })],
+    ['saveProjectMeta', () => api.saveProjectMeta(STATIC_ROOT, { name: 'Nope', timelineLevelLabels: ['Chapter'], rowLabel: 'Character', kind: 'story', cardStatuses: [], manuscriptLevel: null })],
     ['saveFamilyColours', () => api.saveFamilyColours(STATIC_ROOT, { Aeri: '#000000' })],
     ['saveCharacter', () => api.saveCharacter(STATIC_ROOT, 'main', bundle.boards[0].characters[0])],
     ['deleteCharacter', () => api.deleteCharacter(STATIC_ROOT, 'main', 'aeri')],

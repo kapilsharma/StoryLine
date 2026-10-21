@@ -4,6 +4,7 @@ import type { Board, Character, ColumnGroup, Note, Project, TimelineUnit, View }
 import { normalizeRowHeaderWidth } from '@shared/types'
 import { isEmptyEntityBody, normalizeEntityBody } from '@shared/entityBody'
 import { normalizeCardStatuses } from '@shared/cardStatus'
+import { manuscriptLevel } from '@shared/manuscript'
 import {
   ASSETS_DIR,
   MAX_ASSET_BYTES,
@@ -152,9 +153,14 @@ function normalizeProject(raw: Partial<Project>): Project {
     // Additive (#108): absent means the built-in set; `[]` stays an explicit none.
     ...(Array.isArray(raw.cardStatuses)
       ? { cardStatuses: normalizeCardStatuses(raw.cardStatuses) }
-      : {})
+      : {}),
+    // Additive (#204): absent — or anything but a whole number ≥ 0 — means no Manuscript row.
+    ...withManuscriptLevel(manuscriptLevel(raw))
   }
 }
+
+const withManuscriptLevel = (level: number | null): { manuscriptLevel?: number } =>
+  level === null ? {} : { manuscriptLevel: level }
 
 export async function readProject(root: string): Promise<Loaded<Project>> {
   const { text, mtimeMs } = await readText(projectFile(root))
@@ -470,6 +476,7 @@ function normalizeBoard(raw: Partial<Board> & { id: string; name: string }): Boa
     // toggles is written back without the keys (Issue #119).
     ...(raw.hidePlotRows ? { hidePlotRows: true } : {}),
     ...(raw.hideCharacterRows ? { hideCharacterRows: true } : {}),
+    ...(raw.hideManuscriptRow ? { hideManuscriptRow: true } : {}),
     zoom: raw.zoom ?? 1,
     views: raw.views ?? [],
     rowHeaderWidth: normalizeRowHeaderWidth(raw.rowHeaderWidth)

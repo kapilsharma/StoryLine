@@ -4,6 +4,7 @@ import { EXPORT_FORMAT_VERSION, SNAPSHOT_GLOBAL, entityBodyKey, type ExportBundl
 import { DEFAULT_SETTINGS, type AppSettings, type Theme } from '@shared/config'
 import { ASSETS_DIR } from '@shared/assets'
 import type { BoardData } from '@shared/ipc'
+import { withoutManuscript } from '@shared/manuscript'
 import { loadSnapshot } from '../projectService'
 import { listNotes, readEntityBody } from './repository'
 import {
@@ -33,6 +34,12 @@ export interface ExportOptions {
   appVersion: string
   /** ISO timestamp; injected so tests and reproducible builds can pin it. */
   generatedAt: string
+  /**
+   * Publish the Manuscript row and its notes (Issue #204). Off by default: the
+   * row holds the draft novel, which a published planning board should not give
+   * away by accident.
+   */
+  includeManuscript?: boolean
 }
 
 /**
@@ -99,7 +106,8 @@ export async function buildExportBundle(root: string, options: ExportOptions): P
     // Snapshot notes are metadata-only (bodies are lazy in the app); the export
     // needs them in full.
     const notes = await listNotes(root, boardId)
-    boards.push({ ...boardData, notes })
+    const full = { ...boardData, notes }
+    boards.push(options.includeManuscript ? full : withoutManuscript(full))
 
     for (const character of boardData.characters) {
       entityBodies[entityBodyKey(boardId, 'character', character.id)] = await readEntityBody(
@@ -132,7 +140,10 @@ export async function buildExportBundle(root: string, options: ExportOptions): P
     formatVersion: EXPORT_FORMAT_VERSION,
     generatedAt: options.generatedAt,
     appVersion: options.appVersion,
-    project: { ...snapshot.project, boards: selected },
+    // Without its cards the row would only be a strip of empty cells.
+    project: options.includeManuscript
+      ? { ...snapshot.project, boards: selected }
+      : { ...snapshot.project, boards: selected, manuscriptLevel: undefined },
     boards,
     entityBodies,
     settings: options.settings ?? { ...DEFAULT_SETTINGS }

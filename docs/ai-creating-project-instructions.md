@@ -78,6 +78,9 @@ add `-2`, `-3`… **The filename stem must equal the id.**
   - `"cardStatuses"` — omit to get the built-in set (`idea` 💡, `doc` ⚡,
     `draft` 🌓, `stuck` 🚩, `done` ✅). Or supply your own list:
     `[{ "id": "todo", "icon": "⬜", "label": "To do" }, …]`.
+  - `"manuscriptLevel": 1` — only if the author wants a **Manuscript row** for the
+    novel's prose (see §7): the column depth its cells snap to, `0` = top level.
+    Omit it otherwise.
 
 ## 4. `boards/<boardId>/board.json`
 
@@ -247,6 +250,12 @@ The beat in detail: what happens, why it matters, what changes.
 Typically one card per row per column where that character matters; leave gaps
 where they are absent — gaps are meaningful.
 
+**Manuscript-row cards** (only with `manuscriptLevel` set) hold prose, one per column at that
+level. Give them `"rowId": "@manuscript"`, a `"cell": { "kind": "node", "id": "<group id>" }`
+(or `"kind": "unit"` for a column with nothing under it), and `colStart`/`colEnd` set to the first
+and last unit under it. Name the note `manuscript-<slug-of-title>.md`. Don't add `@manuscript` to
+`members` — it is not a character. Only create these if the author asked for drafted prose.
+
 ## 8. YAML and JSON rules
 
 - Frontmatter goes between two `---` lines at the very top, then a blank line,
@@ -276,7 +285,7 @@ Before you finish, verify:
 - [ ] Sibling `order`s are 1, 2, 3… under each parent.
 - [ ] `timelineLevelLabels` has one entry per nesting depth, and its last entry equals `timelineLabel`.
 - [ ] Every row character is in `members` and `rowOrder`.
-- [ ] Every card: `noteUid` matches exactly one note `uid`; `rowId` is in `members`; `colStart`/`colEnd` are timeline unit ids.
+- [ ] Every card: `noteUid` matches exactly one note `uid`; `rowId` is in `members` (or is `@manuscript`, with a `cell`); `colStart`/`colEnd` are timeline unit ids.
 - [ ] Every note has a card (unless deliberately loose), and all `uid`s and card ids are unique.
 - [ ] Colours and dates are quoted in YAML.
 

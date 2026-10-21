@@ -214,17 +214,41 @@ export interface Note {
   hasBody?: boolean
 }
 
+/**
+ * The row id of the built-in Manuscript row (Issue #204). Not a slug, so no
+ * character can ever have it, and a reader that predates the row skips its cards
+ * as belonging to a row it can't find.
+ */
+export const MANUSCRIPT_ROW_ID = '@manuscript'
+
+/**
+ * Which column a manuscript card belongs to (Issue #204): a group (a Chapter
+ * with scenes) or a unit (a chapter with none, or a scene). Same shape as
+ * `ColumnRef` in `columns.ts`, which imports from here.
+ */
+export interface ManuscriptCellRef {
+  kind: 'node' | 'unit'
+  id: string
+}
+
 /** A card placed on a board grid. */
 export interface Card {
   id: string
   /** Stable uid of the backing note (see Note.uid) — rename-safe reference. */
   noteUid: string
-  /** Character id — the row this card sits on. */
+  /** Character id — the row this card sits on. {@link MANUSCRIPT_ROW_ID} for the Manuscript row. */
   rowId: string
   /** Timeline unit id where the span starts. */
   colStart: string
   /** Timeline unit id where the span ends (equal to colStart for single-column). */
   colEnd: string
+  /**
+   * Manuscript cards only (Issue #204): the column this card is the prose of.
+   * Its span is worked out from the column tree when the board is drawn, so
+   * `colStart`/`colEnd` are only where it sat when created — moving a scene to
+   * another chapter can't leave the cell misaligned.
+   */
+  cell?: ManuscriptCellRef
 }
 
 /** A saved show/hide configuration for a board. */
@@ -273,6 +297,8 @@ export interface Board {
   hidePlotRows?: boolean
   /** Hide all character rows on this board (Issue #119). Absent/false = show. */
   hideCharacterRows?: boolean
+  /** Hide the Manuscript row on this board (Issue #204). Absent/false = show. */
+  hideManuscriptRow?: boolean
   /** Ids of collapsed {@link ColumnGroup}s (view state, per board). Labels before v4. */
   collapsedColGroups: string[]
   /** Persisted zoom level for this board. */
@@ -460,6 +486,13 @@ export interface Project {
    * resolves wherever the folder is opened.
    */
   cardStatuses?: CardStatus[]
+  /**
+   * The column depth the Manuscript row's cells snap to (Issue #204): 0 for the
+   * top level (a Novel), 1 for the next (a Chapter), and so on. Absent means the
+   * project has no Manuscript row. Stored as a number so renaming a level never
+   * changes what the row means.
+   */
+  manuscriptLevel?: number
 }
 
 /**

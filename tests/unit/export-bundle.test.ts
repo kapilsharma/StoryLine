@@ -326,3 +326,56 @@ describe('static export assets (#61)', () => {
     expect(await copyAssetsForTest(root, out, ['main'])).toBe(1)
   })
 })
+
+describe('the Manuscript row in a published site (#204)', () => {
+  /** A board with one planning card and one Manuscript-row card, and the row turned on. */
+  async function seedManuscript(): Promise<void> {
+    await seedMain()
+    await writeNote(root, 'main', {
+      id: 'manuscript-chapter-1',
+      uid: 'n_ms000001',
+      title: 'Chapter 1',
+      body: '\nIt was a dark and stormy night.\n'
+    })
+    const { value: board, mtimeMs } = await readBoard(root, 'main')
+    await writeBoard(
+      root,
+      {
+        ...board,
+        cards: [
+          { id: 'k1', noteUid: 'n_abc12345', rowId: 'aeri', colStart: 'ch1', colEnd: 'ch1' },
+          {
+            id: 'm1',
+            noteUid: 'n_ms000001',
+            rowId: '@manuscript',
+            colStart: 'ch1',
+            colEnd: 'ch1',
+            cell: { kind: 'unit', id: 'ch1' }
+          }
+        ]
+      },
+      mtimeMs
+    )
+    const { value: project, mtimeMs: pm } = await readProject(root)
+    await writeProject(root, { ...project, manuscriptLevel: 0 }, pm)
+  }
+
+  it('leaves the draft out by default: no row, no cards, no prose', async () => {
+    await seedManuscript()
+    const bundle = await buildExportBundle(root, options)
+    const main = bundle.boards[0]
+    expect(main.board.cards.map((c) => c.id)).toEqual(['k1'])
+    expect(main.notes.map((n) => n.id)).toEqual(['the-discovery'])
+    expect(bundle.project.manuscriptLevel).toBeUndefined()
+    expect(JSON.stringify(bundle)).not.toContain('dark and stormy')
+  })
+
+  it('publishes it when asked', async () => {
+    await seedManuscript()
+    const bundle = await buildExportBundle(root, { ...options, includeManuscript: true })
+    const main = bundle.boards[0]
+    expect(main.board.cards.map((c) => c.id)).toEqual(['k1', 'm1'])
+    expect(main.notes.find((n) => n.id === 'manuscript-chapter-1')?.body).toContain('dark and stormy')
+    expect(bundle.project.manuscriptLevel).toBe(0)
+  })
+})

@@ -72,7 +72,8 @@ describe('readMeta / applyMeta', () => {
       timelineLevelLabels: ['Chapter'],
       rowLabel: 'Character',
       kind: 'story',
-      cardStatuses: DEFAULT_CARD_STATUSES
+      cardStatuses: DEFAULT_CARD_STATUSES,
+      manuscriptLevel: null
     })
   })
 
@@ -92,7 +93,8 @@ describe('readMeta / applyMeta', () => {
       timelineLevelLabels: ['Section'],
       rowLabel: 'Phase',
       kind: 'general',
-      cardStatuses: DEFAULT_CARD_STATUSES
+      cardStatuses: DEFAULT_CARD_STATUSES,
+      manuscriptLevel: null
     })
     expect(after.rowLabel).toBe('Phase')
     expect(after.kind).toBe('general')
@@ -140,5 +142,26 @@ describe('readMeta / applyMeta', () => {
   it('keeps the existing name rather than blanking it', () => {
     const after = applyMeta(project(), { ...readMeta(project()), name: '   ' })
     expect(after.name).toBe('Thettana')
+  })
+})
+
+describe('Manuscript row level (#204)', () => {
+  it('reads as off when the project has none', () => {
+    expect(readMeta(project()).manuscriptLevel).toBeNull()
+  })
+
+  it('writes the level when on, and drops the key when turned off', () => {
+    const on = applyMeta(project(), { ...readMeta(project()), manuscriptLevel: 1 })
+    expect(on.manuscriptLevel).toBe(1)
+    expect(readMeta(on).manuscriptLevel).toBe(1)
+
+    const off = applyMeta(on, { ...readMeta(on), manuscriptLevel: null })
+    expect('manuscriptLevel' in JSON.parse(JSON.stringify(off))).toBe(false)
+  })
+
+  it('keeps the level when the levels are renamed — it is a depth, not a name', () => {
+    const on = project({ timelineLevelLabels: ['Novel', 'Chapter', 'Scene'], manuscriptLevel: 1 })
+    const renamed = applyMeta(on, { ...readMeta(on), timelineLevelLabels: ['Book', 'Part', 'Scene'] })
+    expect(renamed.manuscriptLevel).toBe(1)
   })
 })

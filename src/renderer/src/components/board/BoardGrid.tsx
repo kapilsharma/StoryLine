@@ -8,6 +8,7 @@ import {
 import type { BoardData } from '@shared/ipc'
 import { cardStatuses, findCardStatus } from '@shared/cardStatus'
 import { DEFAULT_SETTINGS } from '@shared/config'
+import { MANUSCRIPT_ROW_ID, cellKey, isManuscriptCard, manuscriptLevel } from '@shared/manuscript'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
 import { useBoardUi } from './BoardUiContext'
@@ -25,7 +26,7 @@ import {
   withFilters,
   withCardFilters
 } from './grid-utils'
-import type { PlacedCard } from './grid-utils'
+import type { PlacedCard, PlacedManuscriptCell, RowLine } from './grid-utils'
 
 const MIME_MEMBER = 'application/x-znstoryline-row-member'
 const MIME_BLOCK = 'application/x-znstoryline-row-block'
@@ -101,6 +102,13 @@ function rafThrottle<E>(fn: (e: E) => void): {
 
 /** Stable empty list, so a board without groups doesn't re-run the layout memo every render. */
 const NO_GROUPS: ColumnGroup[] = []
+
+/**
+ * The id a line's height is tracked under — a character's, or the Manuscript
+ * row's (#204) — or null for the lines that are always one fixed height.
+ */
+const lineRowId = (line: RowLine): string | null =>
+  line.kind === 'row' ? line.char.id : line.kind === 'manuscript' ? MANUSCRIPT_ROW_ID : null
 
 interface ContextMenu {
   cardId: string
@@ -223,6 +231,11 @@ interface BoardCardProps {
    * the cell under it stands for a whole group rather than one column.
    */
   readOnly?: boolean
+  /**
+   * A Manuscript-row card (#204): it snaps to its column, so it can't be dragged
+   * or resized — but it opens, expands and has its menu like any other card.
+   */
+  fixed?: boolean
   onOpenNote: (noteId: string) => void
   onToggleReveal: (cardId: string) => void
   onToggleExpand: (cardId: string) => void
@@ -248,6 +261,7 @@ const BoardCard = memo(function BoardCard({
   hasBody,
   hasLinks,
   readOnly = false,
+  fixed = false,
   onOpenNote,
   onToggleReveal,
   onToggleExpand,
@@ -256,12 +270,13 @@ const BoardCard = memo(function BoardCard({
   onOpenMenu
 }: BoardCardProps): JSX.Element {
   const card = pc.card
+  const movable = !readOnly && !fixed
   return (
     <div
-      className={`board-card${progress !== undefined ? ' has-progress' : ''}${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}${readOnly ? ' read-only' : ''}`}
-      draggable={!readOnly}
+      className={`board-card${progress !== undefined ? ' has-progress' : ''}${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}${readOnly ? ' read-only' : ''}${fixed ? ' manuscript-card' : ''}`}
+      draggable={movable}
       onDragStart={
-        readOnly
+        !movable
           ? undefined
           : (e) => {
               hideCardHoverTip()
@@ -298,7 +313,7 @@ const BoardCard = memo(function BoardCard({
       }}
       onContextMenu={readOnly ? (e) => e.preventDefault() : (e) => onOpenMenu(e, card.id)}
     >
-      {!readOnly && (
+      {movable && (
         <span className="resize-handle left" onPointerDown={(e) => onBeginResize(e, card, 'start')} />
       )}
       <div className="card-content">
@@ -348,7 +363,7 @@ const BoardCard = memo(function BoardCard({
           {isExp ? '⤡' : '⤢'}
         </button>
       )}
-      {!readOnly && (
+      {movable && (
         <span className="resize-handle right" onPointerDown={(e) => onBeginResize(e, card, 'end')} />
       )}
     </div>
@@ -356,7 +371,7 @@ const BoardCard = memo(function BoardCard({
 })
 
 export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
-  const { snapshot, config, createCard, updateCard, deleteCard, saveBoard } = useStore()
+  const { snapshot, config, createCard, updateCard, deleteCard, saveBoard, openEditor, readOnly } = useStore()
   const statuses = snapshot ? cardStatuses(snapshot.project) : []
   const ask = usePrompt()
   const board = data.board
@@ -467,11 +482,13 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     }
   }, [board, preview, rowFilter, colFilter, notes, statusIdsKey, statusFilter, progressFilter])
 
+  // The project's Manuscript-row depth (#204); null when the project has none.
+  const msLevel = snapshot ? manuscriptLevel(snapshot.project) : null
   const layout = useMemo(
-    () => buildBoardLayout(effectiveBoard, characters, timeline, notes, colGroups),
-    [effectiveBoard, characters, timeline, notes, colGroups]
+    () => buildBoardLayout(effectiveBoard, characters, timeline, notes, colGroups, msLevel),
+    [effectiveBoard, characters, timeline, notes, colGroups, msLevel]
   )
-  const { cols, rows, fullCards, markers, loneCards, stackDepth } = layout
+  const { cols, rows, fullCards, markers, loneCards, stackDepth, manuscript } = layout
   const fullOrder = useMemo(() => orderedColumnIds(timeline, colGroups), [timeline, colGroups])
 
   // unit id per slot (null for collapsed-group slots), for resize hit-testing.
@@ -542,9 +559,10 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   // so they're the only ones that need measuring.
   const expandedRowIds = useMemo(() => {
     const s = new Set<string>()
-    for (const line of rows.lines)
-      if (line.kind === 'row' && (expandedLines.has(line.index) || isRowExpanded(line.char.id)))
-        s.add(line.char.id)
+    for (const line of rows.lines) {
+      const id = lineRowId(line)
+      if (id && (expandedLines.has(line.index) || isRowExpanded(id))) s.add(id)
+    }
     return s
   }, [rows.lines, expandedLines, isRowExpanded])
 
@@ -563,11 +581,11 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     for (let i = 0; i < rows.lines.length; i++) {
       const line = rows.lines[i]
       let h: number
+      const id = lineRowId(line)
       if (line.kind === 'groupHeader') h = GROUPHEAD_LINE_H * zoom
-      else if (line.kind === 'row' && expandedRowIds.has(line.char.id))
-        h = rowHeights.current.get(line.char.id) ?? rowH
+      else if (id && expandedRowIds.has(id)) h = rowHeights.current.get(id) ?? rowH
       else {
-        const depth = line.kind === 'row' ? (stackDepth.get(line.index) ?? 1) : 1
+        const depth = id ? (stackDepth.get(line.index) ?? 1) : 1
         h = depth > 1 ? depth * cardH + (depth + 1) * STACK_GAP : rowH
       }
       tops[i + 1] = tops[i] + h
@@ -646,11 +664,12 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   const rowTracks = rows.lines
     .map((line) => {
       if (line.kind === 'groupHeader') return `${GROUPHEAD_LINE_H * zoom}px`
+      const id = lineRowId(line)
       // A row grows to fit either an expanded card or an expanded header name.
-      if (line.kind === 'row' && (expandedLines.has(line.index) || isRowExpanded(line.char.id)))
+      if (id && (expandedLines.has(line.index) || isRowExpanded(id)))
         return `minmax(${rowH}px, auto)`
       // A row holding overlapping cards grows to fit the whole stack (#66).
-      const depth = line.kind === 'row' ? (stackDepth.get(line.index) ?? 1) : 1
+      const depth = id ? (stackDepth.get(line.index) ?? 1) : 1
       if (depth > 1) return `${depth * cardH + (depth + 1) * STACK_GAP}px`
       return `${rowH}px`
     })
@@ -745,6 +764,36 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     }
   }
 
+  /**
+   * Start a Manuscript-row cell (#204): its note, titled after the column, then
+   * straight into the fullscreen editor — the cell exists to be written in. The
+   * editor opens once the new card arrives with the next snapshot.
+   */
+  const pendingManuscript = useRef<string | null>(null)
+  const startManuscript = (cell: PlacedManuscriptCell): void => {
+    if (readOnly || pendingManuscript.current) return
+    pendingManuscript.current = cell.key
+    createCard({
+      boardId: board.id,
+      title: cell.label,
+      rowId: MANUSCRIPT_ROW_ID,
+      colStart: cell.unitIds[0],
+      colEnd: cell.unitIds[cell.unitIds.length - 1],
+      cell: cell.ref
+    }).catch(() => {
+      pendingManuscript.current = null
+    })
+  }
+  useEffect(() => {
+    const key = pendingManuscript.current
+    if (!key) return
+    const card = board.cards.find((c) => isManuscriptCard(c) && c.cell && cellKey(c.cell) === key)
+    const note = card && noteForCard(notes, card.noteUid)
+    if (!note) return
+    pendingManuscript.current = null
+    openEditor('note', note.id)
+  }, [board.cards, notes, openEditor])
+
   // Stable for the memoised card (#133) — it closes over nothing that changes.
   const onCardDragStart = useCallback((e: React.DragEvent, card: Card): void => {
     e.dataTransfer.setData('text/plain', card.id)
@@ -781,6 +830,12 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     return row && col ? { row, col } : null
   }
   const onGridClick = (e: React.MouseEvent): void => {
+    const msKey = (e.target as HTMLElement).closest<HTMLElement>('.manuscript-cell')?.dataset.cell
+    if (msKey) {
+      const cell = manuscript?.cells.find((c) => c.key === msKey)
+      if (cell) startManuscript(cell)
+      return
+    }
     const hit = cellFromEvent(e)
     if (hit) void createAt(hit.row, hit.col)
   }
@@ -909,6 +964,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
         hasBody={!!note?.hasBody}
         hasLinks={!!note?.related && note.related.length > 0}
         readOnly={readOnly}
+        fixed={isManuscriptCard(pc.card)}
         onOpenNote={openNote}
         onToggleReveal={toggleRevealed}
         onToggleExpand={toggleExpand}
@@ -1118,6 +1174,61 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
                       </div>
                     )
                   })}
+                  {lineLoneCards(line.index, gridRow)}
+                </Fragment>
+              )
+            }
+
+            if (line.kind === 'manuscript') {
+              if (!manuscript) return null
+              return (
+                <Fragment key={MANUSCRIPT_ROW_ID}>
+                  <div
+                    className="row-head manuscript-head"
+                    data-rowid={MANUSCRIPT_ROW_ID}
+                    style={{ gridColumn: 1, gridRow }}
+                    title="The novel's prose, one cell per column at the level chosen in Settings"
+                  >
+                    <span className="row-name">
+                      <span className="row-name-text">📖 Manuscript</span>
+                    </span>
+                  </div>
+                  {visibleSlots.map((slot) => {
+                    // A collapsed group gets its usual cell unless a wider
+                    // manuscript cell is drawn across it.
+                    if (slot.kind !== 'colGroup' || manuscript.coveredSlots.has(slot.index)) return null
+                    const count = markers.get(markerKey(line.index, slot.index))
+                    return (
+                      <div
+                        key={slot.node.id}
+                        className="cell collapsed-cell"
+                        style={{ gridColumn: slot.index + 2, gridRow }}
+                        onClick={() => toggleColGroup(slot.node.id)}
+                      >
+                        {count && count > 1 ? <span className="marker">{count}</span> : null}
+                      </div>
+                    )
+                  })}
+                  {/* One cell per column at the chosen level; a filled one sits
+                      under its card like any cell, but only an empty one starts
+                      a note when clicked. */}
+                  {manuscript.cells
+                    .filter((c) => !c.folded && inWindow(c.startSlot, c.endSlot))
+                    .map((c) => {
+                      const writable = !c.filled && !readOnly
+                      return (
+                        <div
+                          key={c.key}
+                          className={`cell manuscript-cell${writable ? '' : ' read-only'}`}
+                          data-cell={writable ? c.key : undefined}
+                          style={{ gridColumn: `${c.startSlot + 2} / ${c.endSlot + 3}`, gridRow }}
+                          title={writable ? `Start writing ${c.label}` : undefined}
+                        />
+                      )
+                    })}
+                  {fullCards
+                    .filter((pc) => pc.lineIndex === line.index && inWindow(pc.startSlot, pc.endSlot))
+                    .map((pc) => renderCard(pc, gridRow, stackDepth.get(line.index) ?? 1, false))}
                   {lineLoneCards(line.index, gridRow)}
                 </Fragment>
               )
