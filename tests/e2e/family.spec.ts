@@ -1,10 +1,11 @@
-import { test, expect, _electron as electron, type ElectronApplication, type Locator, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { launchApp, openProject } from './launch-app'
 
 /**
- * Layer 3 for the Family tab (Issue 29). Run `npm run build` first.
+ * Layer 3 for the Family tab (Issue 29).
  *
  * Everything here is something jsdom cannot answer, and each one shipped as a
  * bug in the standalone app before the merge:
@@ -157,19 +158,8 @@ test.beforeAll(async () => {
   projectDir = join(await fs.mkdtemp(join(tmpdir(), 'zn-family-e2e-')), 'ashvale-family')
   await fs.cp(join(__dirname, '../fixtures/ashvale-family'), projectDir, { recursive: true })
 
-  const env: Record<string, string> = { ...process.env } as Record<string, string>
-  // Clear or Electron starts as plain Node (a quirk of some dev shells).
-  delete env.ELECTRON_RUN_AS_NODE
-  app = await electron.launch({ args: [join(__dirname, '../../out/main/index.js')], env })
-
-  // Stub the native folder picker; there is no way to drive it from Playwright.
-  await app.evaluate(({ dialog }, dir) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [dir] })
-  }, projectDir)
-
-  window = await app.firstWindow()
-  await window.setViewportSize({ width: 1400, height: 900 })
-  await window.getByText('Open project…').click()
+  app = await launchApp()
+  window = await openProject(app, projectDir)
   await expect(window.locator('.project-title')).toHaveText(/Ashvale Family/)
   await window.getByRole('button', { name: 'Family' }).click()
   await expect(window.locator('.viewport')).toBeVisible()

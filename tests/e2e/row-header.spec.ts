@@ -1,12 +1,13 @@
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { launchApp, openProject } from './launch-app'
 import { ROW_HEADER_W_DEFAULT, ROW_HEADER_W_MIN } from '@shared/types'
 
 /**
  * Board row headers (issue #80): two lines by default, expandable to the whole
- * name, and a resizable column. Run `npm run build` first.
+ * name, and a resizable column.
  *
  * This lives here rather than in jsdom because every assertion is a real
  * measurement. Whether a name overflows two lines is a question about wrapped
@@ -119,16 +120,8 @@ test.beforeAll(async () => {
   projectDir = join(await fs.mkdtemp(join(tmpdir(), 'zn-rowhead-e2e-')), 'long-names')
   await scaffold(projectDir)
 
-  const env: Record<string, string> = { ...process.env } as Record<string, string>
-  delete env.ELECTRON_RUN_AS_NODE
-  app = await electron.launch({ args: [join(__dirname, '../../out/main/index.js')], env })
-  await app.evaluate(({ dialog }, dir) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [dir] })
-  }, projectDir)
-
-  window = await app.firstWindow()
-  await window.setViewportSize({ width: VIEWPORT_W, height: 900 })
-  await window.getByText('Open project…').click()
+  app = await launchApp()
+  window = await openProject(app, projectDir, { width: VIEWPORT_W, height: 900 })
   await expect(window.locator('.project-title')).toHaveText('Long Names')
   await expect(window.locator('.board-card').first()).toBeVisible()
 })

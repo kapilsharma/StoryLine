@@ -73,7 +73,7 @@ Run after any change, before handing off:
 3. `npm run build`
 4. Boot the app for a runtime smoke test: `env -u ELECTRON_RUN_AS_NODE npx electron .` (see [electron-gotchas.md](./electron-gotchas.md) for why the env unset matters).
 
-E2E: `npm run test:e2e` (Playwright) — run `npm run build` first, the specs launch `out/main/index.js`. To exercise data-layer TS headlessly, bundle with esbuild (`--packages=external`, alias `@shared`/`@main`) and run with `env -u ELECTRON_RUN_AS_NODE node` — output the bundle inside the repo so `node_modules` resolves.
+E2E: `npm run test:e2e` (Playwright) — builds first, then the specs launch `out/main/index.js` through `tests/e2e/launch-app.ts`, each with a throwaway userData dir (never your real recents/settings). Running `npx playwright test` directly skips the build and tests whatever stale `out/` is there. To exercise data-layer TS headlessly, bundle with esbuild (`--packages=external`, alias `@shared`/`@main`) and run with `env -u ELECTRON_RUN_AS_NODE node` — output the bundle inside the repo so `node_modules` resolves.
 
 ## Test coverage
 

@@ -1,10 +1,11 @@
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { launchApp, openProject } from './launch-app'
 
 /**
- * The Characters tab's notes column (Issue 33). Run `npm run build` first.
+ * The Characters tab's notes column (Issue 33).
  *
  * Here rather than in jsdom because the two things worth proving are layout and
  * the round-trip to disk: jsdom reports every box as 0×0, so a 15/33/50 split
@@ -25,18 +26,8 @@ test.beforeAll(async () => {
   projectDir = join(await fs.mkdtemp(join(tmpdir(), 'zn-characters-e2e-')), 'ashvale-family')
   await fs.cp(join(__dirname, '../fixtures/ashvale-family'), projectDir, { recursive: true })
 
-  const env: Record<string, string> = { ...process.env } as Record<string, string>
-  // Clear or Electron starts as plain Node (a quirk of some dev shells).
-  delete env.ELECTRON_RUN_AS_NODE
-  app = await electron.launch({ args: [join(__dirname, '../../out/main/index.js')], env })
-
-  await app.evaluate(({ dialog }, dir) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [dir] })
-  }, projectDir)
-
-  window = await app.firstWindow()
-  await window.setViewportSize({ width: 1400, height: 900 })
-  await window.getByText('Open project…').click()
+  app = await launchApp()
+  window = await openProject(app, projectDir)
   await expect(window.locator('.project-title')).toHaveText(/Ashvale Family/)
   await window.getByRole('button', { name: 'Characters' }).click()
   await window.getByRole('button', { name: /Tessa Ashvale/ }).click()
