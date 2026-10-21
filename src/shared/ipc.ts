@@ -3,8 +3,10 @@
  * The preload bridge implements `AppApi`; the renderer consumes it via
  * `window.api`.
  *
- * Convention: every mutating call returns a fresh `ProjectSnapshot` so the
- * renderer can replace its state in one step. The filesystem watcher remains a
+ * Convention: every call that changes the project returns a `SnapshotReply` —
+ * usually just what changed since the renderer's copy (#188), the whole
+ * `ProjectSnapshot` when that can't be described as a patch. The renderer merges
+ * it with `applyReply` (`src/shared/patch.ts`). The filesystem watcher remains a
  * backstop for *external* edits.
  */
 import type {
@@ -69,6 +71,23 @@ export interface ProjectSnapshot {
   boards: BoardData[]
 }
 
+/**
+ * What a call that changes the project sends back (#188).
+ *
+ * The main process holds the open project in memory (#184) and numbers every
+ * state of it. A reply is either the whole snapshot at some `version`, or the
+ * `patch` that takes the renderer's copy from `from` — the last version it was
+ * sent — to `version`. At 3,000 cards the whole snapshot is ~1 MB, ~20 ms to
+ * clone on each side of the IPC and a fresh identity for every object the board
+ * memoises on; an autosave's patch is one note.
+ *
+ * The renderer applies a patch only onto the version it names; anything else is
+ * a gap, and it asks for the whole project again (`applyReply`).
+ */
+export type SnapshotReply =
+  | { kind: 'snapshot'; version: number; snapshot: ProjectSnapshot }
+  | { kind: 'patch'; root: string; from: number; version: number; patch: ProjectPatch }
+
 /** Fields needed to create a card (and its backing note) from an empty cell. */
 export interface NewCardInput {
   boardId: string
@@ -86,8 +105,8 @@ export interface AppApi {
   // ── Project lifecycle ──
   createProject(): Promise<string | null>
   pickProject(): Promise<string | null>
-  openProject(root: string): Promise<ProjectSnapshot>
-  reloadProject(root: string): Promise<ProjectSnapshot>
+  openProject(root: string): Promise<SnapshotReply>
+  reloadProject(root: string): Promise<SnapshotReply>
   /**
    * Re-read only the entities named by a batch of watcher changes and return a
    * patch to merge into the current snapshot (#131). The focused counterpart of
@@ -96,12 +115,12 @@ export interface AppApi {
    * instead of re-reading every board. Removed entities come back as a null-value
    * op; board/project adds and removals go through `reloadProject` instead.
    */
-  reloadChanges(root: string, changes: ProjectChange[]): Promise<ProjectPatch>
+  reloadChanges(root: string, changes: ProjectChange[]): Promise<SnapshotReply>
   removeRecent(root: string): Promise<AppConfig>
   /** Update project-level metadata (name, row/timeline labels, project kind). */
-  saveProjectMeta(root: string, meta: ProjectMeta): Promise<ProjectSnapshot>
+  saveProjectMeta(root: string, meta: ProjectMeta): Promise<SnapshotReply>
   /** Persist the family → colour map used by the family tree. */
-  saveFamilyColours(root: string, families: Record<string, string>): Promise<ProjectSnapshot>
+  saveFamilyColours(root: string, families: Record<string, string>): Promise<SnapshotReply>
 
   // ── Characters (per board) ──
   /**
@@ -117,14 +136,14 @@ export interface AppApi {
     boardId: string,
     character: Character,
     addToBoard?: boolean
-  ): Promise<ProjectSnapshot>
+  ): Promise<SnapshotReply>
   /** Removes the file, its cards, and every inbound father/mother/spouse ref. */
   /**
    * Create many characters at once ("Add multiple characters", Issue #175) and
    * put them on the board. Family links between them use `newRef(i)` ids.
    */
-  addCharacters(root: string, boardId: string, characters: Character[]): Promise<ProjectSnapshot>
-  deleteCharacter(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+  addCharacters(root: string, boardId: string, characters: Character[]): Promise<SnapshotReply>
+  deleteCharacter(root: string, boardId: string, id: string): Promise<SnapshotReply>
   /**
    * Renames the character's *file* and retargets every relation pointing at the
    * old id in one batch. Ids are otherwise frozen at creation.
@@ -134,7 +153,7 @@ export interface AppApi {
     boardId: string,
     oldId: string,
     newName: string
-  ): Promise<ProjectSnapshot>
+  ): Promise<SnapshotReply>
   /**
    * Applies a Children edit by rewriting the children's `father`/`mother` —
    * children are derived, never stored on the parent.
@@ -144,24 +163,24 @@ export interface AppApi {
     boardId: string,
     parentId: string,
     childIds: string[]
-  ): Promise<ProjectSnapshot>
+  ): Promise<SnapshotReply>
 
   // ── Timeline units (per board) ──
-  saveTimelineUnit(root: string, boardId: string, unit: TimelineUnit): Promise<ProjectSnapshot>
-  deleteTimelineUnit(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+  saveTimelineUnit(root: string, boardId: string, unit: TimelineUnit): Promise<SnapshotReply>
+  deleteTimelineUnit(root: string, boardId: string, id: string): Promise<SnapshotReply>
 
   // ── Column hierarchy (per board, Issue #104) ──
   /**
    * Create or update a group. An empty `id` creates one; the label of an existing
    * group can change freely because its id — and so its note — never does.
    */
-  saveColumnGroup(root: string, boardId: string, group: ColumnGroup): Promise<ProjectSnapshot>
+  saveColumnGroup(root: string, boardId: string, group: ColumnGroup): Promise<SnapshotReply>
   /**
    * Delete a group **and everything under it** — child groups, their columns and
    * those columns' cards. The renderer asks first (listing what will go); this
    * does not.
    */
-  deleteColumnGroup(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+  deleteColumnGroup(root: string, boardId: string, id: string): Promise<SnapshotReply>
   /**
    * Put the children of `parentId` (null = top level) in the order given. Anything
    * left out keeps its relative order after the named ones.
@@ -171,7 +190,7 @@ export interface AppApi {
     boardId: string,
     parentId: string | null,
     order: ColumnRef[]
-  ): Promise<ProjectSnapshot>
+  ): Promise<SnapshotReply>
   /**
    * Move a group or column under `newParentId` (null = top level), at `index` among
    * its new siblings (omitted = last). Rejects a group moved into its own subtree.
@@ -182,7 +201,7 @@ export interface AppApi {
     ref: ColumnRef,
     newParentId: string | null,
     index?: number
-  ): Promise<ProjectSnapshot>
+  ): Promise<SnapshotReply>
   /**
    * "Break this chapter into scenes": insert a new group, labelled `label`, in the
    * place of a column and put the column under it. The column keeps its id, cards
@@ -195,20 +214,20 @@ export interface AppApi {
     unitId: string,
     label: string,
     moveNote: boolean
-  ): Promise<ProjectSnapshot>
+  ): Promise<SnapshotReply>
   /**
    * Create a whole outline of groups and columns at once ("Add multiple chapters",
    * Issue #172), appended at the top level after what is already there.
    */
-  addColumnOutline(root: string, boardId: string, items: OutlineItem[]): Promise<ProjectSnapshot>
+  addColumnOutline(root: string, boardId: string, items: OutlineItem[]): Promise<SnapshotReply>
 
   // ── Notes (per board) ──
-  saveNote(root: string, boardId: string, note: Note): Promise<ProjectSnapshot>
-  deleteNote(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
+  saveNote(root: string, boardId: string, note: Note): Promise<SnapshotReply>
+  deleteNote(root: string, boardId: string, id: string): Promise<SnapshotReply>
   /** Fetch a note's full content (incl. body) — bodies are lazy-loaded. */
   getNote(root: string, boardId: string, id: string): Promise<Note>
   /** Rename a note's markdown file; fixes `related:` links, keeps cards intact. */
-  renameNote(root: string, boardId: string, oldId: string, newName: string): Promise<ProjectSnapshot>
+  renameNote(root: string, boardId: string, oldId: string, newName: string): Promise<SnapshotReply>
 
   // ── Entity body (character / timeline markdown body) ──
   getEntityBody(root: string, boardId: string, kind: EntityBodyKind, id: string): Promise<string>
@@ -218,35 +237,35 @@ export interface AppApi {
     kind: EntityBodyKind,
     id: string,
     body: string
-  ): Promise<ProjectSnapshot>
+  ): Promise<SnapshotReply>
 
   // ── Boards ──
-  saveBoard(root: string, board: Board): Promise<ProjectSnapshot>
-  createBoard(root: string, name: string): Promise<ProjectSnapshot>
-  renameBoard(root: string, id: string, name: string): Promise<ProjectSnapshot>
-  deleteBoard(root: string, id: string): Promise<ProjectSnapshot>
+  saveBoard(root: string, board: Board): Promise<SnapshotReply>
+  createBoard(root: string, name: string): Promise<SnapshotReply>
+  renameBoard(root: string, id: string, name: string): Promise<SnapshotReply>
+  deleteBoard(root: string, id: string): Promise<SnapshotReply>
   /** Persist a new board display order; `orderedIds` becomes `project.boards`. */
-  reorderBoards(root: string, orderedIds: string[]): Promise<ProjectSnapshot>
+  reorderBoards(root: string, orderedIds: string[]): Promise<SnapshotReply>
 
   // ── Family-tree views (per board) ──
-  saveView(root: string, boardId: string, view: View): Promise<ProjectSnapshot>
+  saveView(root: string, boardId: string, view: View): Promise<SnapshotReply>
   createView(
     root: string,
     boardId: string,
     name: string,
     rootCharacterId?: string | null,
     mode?: ViewMode
-  ): Promise<ProjectSnapshot>
+  ): Promise<SnapshotReply>
   /** Copies the source view's filters; the copy gets a fresh camera. */
-  duplicateView(root: string, boardId: string, id: string, name: string): Promise<ProjectSnapshot>
-  renameView(root: string, boardId: string, id: string, name: string): Promise<ProjectSnapshot>
-  deleteView(root: string, boardId: string, id: string): Promise<ProjectSnapshot>
-  reorderViews(root: string, boardId: string, orderedIds: string[]): Promise<ProjectSnapshot>
+  duplicateView(root: string, boardId: string, id: string, name: string): Promise<SnapshotReply>
+  renameView(root: string, boardId: string, id: string, name: string): Promise<SnapshotReply>
+  deleteView(root: string, boardId: string, id: string): Promise<SnapshotReply>
+  reorderViews(root: string, boardId: string, orderedIds: string[]): Promise<SnapshotReply>
 
   // ── Cards ──
-  createCard(root: string, input: NewCardInput): Promise<ProjectSnapshot>
-  updateCard(root: string, boardId: string, card: Card): Promise<ProjectSnapshot>
-  deleteCard(root: string, boardId: string, cardId: string): Promise<ProjectSnapshot>
+  createCard(root: string, input: NewCardInput): Promise<SnapshotReply>
+  updateCard(root: string, boardId: string, card: Card): Promise<SnapshotReply>
+  deleteCard(root: string, boardId: string, cardId: string): Promise<SnapshotReply>
 
   // ── Search (Issues #59, #60) ──
   /**

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { snapshotOf } from '../replies'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -160,7 +161,7 @@ describe('buildExportBundle', () => {
     // And the published site can actually read it back — end to end through the static API.
     const api = createStaticApi(bundle)
     expect(await api.getEntityBody(STATIC_ROOT, 'main', 'colgroup', 'part-one')).toContain('Harker goes east.')
-    expect((await api.openProject(STATIC_ROOT)).boards[0].colGroups).toHaveLength(1)
+    expect((await snapshotOf(api.openProject(STATIC_ROOT))).boards[0].colGroups).toHaveLength(1)
   })
 
   it('exports a flat board with no column groups as an empty list, not a missing field', async () => {

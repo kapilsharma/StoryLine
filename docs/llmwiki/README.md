@@ -17,6 +17,7 @@ This folder is **context for AI coding agents** (Claude, or any other), not prim
 - [working-on-issues.md](./working-on-issues.md) — how work is tracked (GitHub Issues) and the per-issue flow, including conventional commits and release automation.
 - [git-golden-rules.md](./git-golden-rules.md) — the never-commit rule and the clean-baseline habit.
 - [electron-gotchas.md](./electron-gotchas.md) — environment quirks that waste time if unknown.
+- [project-index.md](./project-index.md) — planned in-memory project index (edits O(changed files), not O(project)): problem, measurements, design, acceptance targets. Read before working on that epic.
 - [`../workflow.md`](../workflow.md) — build/release/branch-protection details (release-please, installers, CI).
 
 Keep these files current: when a workflow or fact here changes, update the relevant file in the same change so the next agent inherits the correction.

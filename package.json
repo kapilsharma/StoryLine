@@ -20,6 +20,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "bench:index": "vitest run --config vitest.bench.config.ts",
     "typecheck:test": "tsc --noEmit -p tsconfig.test.json"
   },
   "devDependencies": {
@@ -43,7 +44,6 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "chokidar": "^5.0.0",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.12.0",
     "marked": "^18.0.5",

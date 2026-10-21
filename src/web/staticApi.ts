@@ -6,6 +6,7 @@ import type {
   DocExportResult,
   EntityBodyKind,
   ProjectSnapshot,
+  SnapshotReply,
   StaticExportResult
 } from '@shared/ipc'
 import type { Note } from '@shared/types'
@@ -79,6 +80,9 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
   }))
   let settings: AppSettings = bundle.settings
 
+  // Nothing in a static export ever changes, so every reply is the one version.
+  const whole = (): SnapshotReply => ({ kind: 'snapshot', version: 0, snapshot: snapshot() })
+
   const snapshot = (): ProjectSnapshot => ({
     root: STATIC_ROOT,
     project: bundle.project,
@@ -103,46 +107,46 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     // ── Project lifecycle ──
     createProject: () => denied<string | null>(),
     pickProject: () => denied<string | null>(),
-    openProject: async () => snapshot(),
-    reloadProject: async () => snapshot(),
+    openProject: async () => whole(),
+    reloadProject: async () => whole(),
     // A static export has no watcher, so nothing ever calls this — but the
-    // contract needs it. An empty patch leaves the snapshot untouched.
-    reloadChanges: async () => ({ ops: [] }),
+    // contract needs it. The bundle never changes, so the whole of it is the answer.
+    reloadChanges: async () => whole(),
     // Recents are never exported, so there is nothing to remove — succeed quietly.
     removeRecent: async () => config(),
-    saveProjectMeta: () => denied<ProjectSnapshot>(),
-    saveFamilyColours: () => denied<ProjectSnapshot>(),
+    saveProjectMeta: () => denied<SnapshotReply>(),
+    saveFamilyColours: () => denied<SnapshotReply>(),
 
     // ── Refused: anything backed by a file ──
-    saveCharacter: () => denied<ProjectSnapshot>(),
-    addCharacters: () => denied<ProjectSnapshot>(),
-    deleteCharacter: () => denied<ProjectSnapshot>(),
-    renameCharacter: () => denied<ProjectSnapshot>(),
-    setChildren: () => denied<ProjectSnapshot>(),
-    saveTimelineUnit: () => denied<ProjectSnapshot>(),
-    deleteTimelineUnit: () => denied<ProjectSnapshot>(),
-    saveColumnGroup: () => denied<ProjectSnapshot>(),
-    deleteColumnGroup: () => denied<ProjectSnapshot>(),
-    reorderColumns: () => denied<ProjectSnapshot>(),
-    moveColumn: () => denied<ProjectSnapshot>(),
-    wrapColumnInGroup: () => denied<ProjectSnapshot>(),
-    addColumnOutline: () => denied<ProjectSnapshot>(),
-    saveNote: () => denied<ProjectSnapshot>(),
-    deleteNote: () => denied<ProjectSnapshot>(),
-    renameNote: () => denied<ProjectSnapshot>(),
-    saveEntityBody: () => denied<ProjectSnapshot>(),
-    createBoard: () => denied<ProjectSnapshot>(),
-    renameBoard: () => denied<ProjectSnapshot>(),
-    deleteBoard: () => denied<ProjectSnapshot>(),
-    reorderBoards: () => denied<ProjectSnapshot>(),
-    createView: () => denied<ProjectSnapshot>(),
-    duplicateView: () => denied<ProjectSnapshot>(),
-    renameView: () => denied<ProjectSnapshot>(),
-    deleteView: () => denied<ProjectSnapshot>(),
-    reorderViews: () => denied<ProjectSnapshot>(),
-    createCard: () => denied<ProjectSnapshot>(),
-    updateCard: () => denied<ProjectSnapshot>(),
-    deleteCard: () => denied<ProjectSnapshot>(),
+    saveCharacter: () => denied<SnapshotReply>(),
+    addCharacters: () => denied<SnapshotReply>(),
+    deleteCharacter: () => denied<SnapshotReply>(),
+    renameCharacter: () => denied<SnapshotReply>(),
+    setChildren: () => denied<SnapshotReply>(),
+    saveTimelineUnit: () => denied<SnapshotReply>(),
+    deleteTimelineUnit: () => denied<SnapshotReply>(),
+    saveColumnGroup: () => denied<SnapshotReply>(),
+    deleteColumnGroup: () => denied<SnapshotReply>(),
+    reorderColumns: () => denied<SnapshotReply>(),
+    moveColumn: () => denied<SnapshotReply>(),
+    wrapColumnInGroup: () => denied<SnapshotReply>(),
+    addColumnOutline: () => denied<SnapshotReply>(),
+    saveNote: () => denied<SnapshotReply>(),
+    deleteNote: () => denied<SnapshotReply>(),
+    renameNote: () => denied<SnapshotReply>(),
+    saveEntityBody: () => denied<SnapshotReply>(),
+    createBoard: () => denied<SnapshotReply>(),
+    renameBoard: () => denied<SnapshotReply>(),
+    deleteBoard: () => denied<SnapshotReply>(),
+    reorderBoards: () => denied<SnapshotReply>(),
+    createView: () => denied<SnapshotReply>(),
+    duplicateView: () => denied<SnapshotReply>(),
+    renameView: () => denied<SnapshotReply>(),
+    deleteView: () => denied<SnapshotReply>(),
+    reorderViews: () => denied<SnapshotReply>(),
+    createCard: () => denied<SnapshotReply>(),
+    updateCard: () => denied<SnapshotReply>(),
+    deleteCard: () => denied<SnapshotReply>(),
 
     // ── Allowed: reads ──
     // Search runs over the bundle, which (unlike a live snapshot) carries every
@@ -191,7 +195,7 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     // ── Allowed: board / tree view state (in-session only) ──
     saveBoard: async (_root, board) => {
       boards = boards.map((bd) => (bd.board.id === board.id ? { ...bd, board } : bd))
-      return snapshot()
+      return whole()
     },
 
     saveView: async (_root, boardId, view) => {
@@ -200,7 +204,7 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
           ? { ...bd, views: bd.views.map((v) => (v.id === view.id ? view : v)) }
           : bd
       )
-      return snapshot()
+      return whole()
     },
 
     // Nothing changes underneath a static export — no watcher to subscribe to.

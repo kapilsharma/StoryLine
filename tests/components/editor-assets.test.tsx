@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event'
 import type { AssetRef } from '@shared/assets'
 import { EditorPage } from '@renderer/components/EditorPage'
 import { useStore } from '@renderer/store'
-import { makeApi, makeSnapshot, renderWithProviders } from './test-utils'
+import { makeApi, makeSnapshot, renderWithProviders, wholeReply } from './test-utils'
 
 /**
  * Mount the editor a render *after* the project opens, which is what happens in
@@ -49,7 +49,7 @@ const ref = (file: string): AssetRef => ({
 
 async function renderEditor(body = '', api = makeApi()) {
   Object.assign(api, {
-    openProject: vi.fn().mockResolvedValue(snapshot),
+    openProject: vi.fn().mockResolvedValue(wholeReply(snapshot)),
     getNote: vi.fn().mockResolvedValue({ id: 'note-1', uid: 'n_1', title: 'A note', body })
   })
   ;(window as unknown as { api: typeof api }).api = api
@@ -114,7 +114,7 @@ describe('inserting an asset', () => {
   it('hides the import controls in a published export', async () => {
     const api = makeApi()
     Object.assign(api, {
-      openProject: vi.fn().mockResolvedValue(snapshot),
+      openProject: vi.fn().mockResolvedValue(wholeReply(snapshot)),
       getNote: vi.fn().mockResolvedValue({ id: 'note-1', uid: 'n_1', title: 'A note', body: '' })
     })
     ;(window as unknown as { api: typeof api }).api = api

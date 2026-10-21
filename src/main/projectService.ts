@@ -207,7 +207,7 @@ async function loadOp(root: string, change: ProjectChange): Promise<PatchOp | nu
 
 /**
  * Re-read only the entities a batch of watcher changes names, for a focused
- * live-reload (#131). Duplicate events for one file (chokidar often fires add then
+ * live-reload (#131). Duplicate events for one file (a watcher can fire add then
  * change) collapse to a single read — the last event for a path wins, so a trailing
  * delete still removes it. Returns the ops in first-seen order.
  */

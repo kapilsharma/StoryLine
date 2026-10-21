@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import type { ReactElement } from 'react'
 import { vi } from 'vitest'
-import type { AppApi, BoardData, ProjectSnapshot } from '@shared/ipc'
+import type { AppApi, BoardData, ProjectSnapshot, SnapshotReply } from '@shared/ipc'
 import type { AppConfig } from '@shared/config'
 import type { Board, Character, ColumnGroup, Note, Project, TimelineUnit } from '@shared/types'
 import { SCHEMA_VERSION } from '@shared/types'
@@ -20,7 +20,7 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     pickProject: vi.fn().mockResolvedValue(null),
     openProject: vi.fn(),
     reloadProject: vi.fn(),
-    reloadChanges: vi.fn().mockResolvedValue({ ops: [] }),
+    reloadChanges: vi.fn(),
     removeRecent: vi.fn().mockResolvedValue(baseConfig),
     saveProjectMeta: vi.fn(),
     saveFamilyColours: vi.fn(),
@@ -65,9 +65,32 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     onProjectChange: vi.fn().mockReturnValue(() => {}),
     ...overrides
   }
+  // Calls that change the project reply with a `SnapshotReply` (#188). Tests
+  // state their data as plain snapshots, so each method is wrapped — still a
+  // mock, so call assertions work — to send a plain snapshot as a whole reply.
+  const wrapped = api as unknown as Record<string, unknown>
+  for (const [key, inner] of Object.entries(wrapped)) {
+    if (typeof inner !== 'function' || key === 'onProjectChange') continue
+    wrapped[key] = vi.fn((...args: unknown[]) => {
+      const out = (inner as (...a: unknown[]) => unknown)(...args)
+      return out instanceof Promise ? out.then(asReply) : asReply(out)
+    })
+  }
   ;(window as unknown as { api: AppApi }).api = api
   return api
 }
+
+let replyVersion = 0
+
+/** A plain snapshot as the whole-snapshot reply a real main process would send (#188). */
+export function wholeReply(snapshot: ProjectSnapshot): SnapshotReply {
+  return { kind: 'snapshot', version: ++replyVersion, snapshot }
+}
+
+const isSnapshot = (v: unknown): v is ProjectSnapshot =>
+  !!v && typeof v === 'object' && 'root' in v && 'boards' in v && 'project' in v && !('kind' in v)
+
+const asReply = (v: unknown): unknown => (isSnapshot(v) ? wholeReply(v) : v)
 
 /**
  * Build a `ProjectSnapshot` with sensible defaults.

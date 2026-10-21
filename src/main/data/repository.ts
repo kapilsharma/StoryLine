@@ -14,6 +14,7 @@ import {
 import { parseFrontmatter, serializeFrontmatter } from './frontmatter'
 import { uniqueSlug } from './slug'
 import { exists, readText, writeTextGuarded } from './fsutil'
+import { recordTouch } from './journal'
 import {
   characterToFrontmatter,
   columnGroupToFrontmatter,
@@ -81,6 +82,24 @@ const colGroupPath = (root: string, boardId: string, id: string): string =>
   join(colGroupsDir(root, boardId), `${id}.md`)
 const notePath = (root: string, boardId: string, id: string): string =>
   join(notesDir(root, boardId), `${id}.md`)
+
+/** Delete a project file (gone already is fine) and tell the index (#187). */
+async function removeFile(path: string): Promise<void> {
+  await fs.rm(path, { force: true })
+  recordTouch(path, 'unlink')
+}
+
+/** Rename a project file and tell the index: one path went, another appeared (#187). */
+async function moveFile(from: string, to: string): Promise<void> {
+  await fs.rename(from, to)
+  recordTouch(from, 'unlink')
+  recordTouch(to, 'change')
+}
+
+/** True when a note file with this id exists on the board — the last word on whether an id is free. */
+export function noteExists(root: string, boardId: string, id: string): Promise<boolean> {
+  return exists(notePath(root, boardId, id))
+}
 
 /** List the `.md` filename stems in a directory (returns [] if absent). */
 async function listStems(dir: string, ext: string): Promise<string[]> {
@@ -196,7 +215,7 @@ export async function writeCharacter(
 }
 
 export function deleteCharacter(root: string, boardId: string, id: string): Promise<void> {
-  return fs.rm(charPath(root, boardId, id), { force: true })
+  return removeFile(charPath(root, boardId, id))
 }
 
 /**
@@ -210,7 +229,7 @@ export async function renameCharacterFile(
   oldId: string,
   newId: string
 ): Promise<void> {
-  await fs.rename(charPath(root, boardId, oldId), charPath(root, boardId, newId))
+  await moveFile(charPath(root, boardId, oldId), charPath(root, boardId, newId))
 }
 
 // ── Timeline units (per board) ──────────────────────────────────────────────────
@@ -255,7 +274,7 @@ export async function writeTimelineUnit(
 }
 
 export function deleteTimelineUnit(root: string, boardId: string, id: string): Promise<void> {
-  return fs.rm(timelinePath(root, boardId, id), { force: true })
+  return removeFile(timelinePath(root, boardId, id))
 }
 
 // ── Column groups (per board, Issue #104) ───────────────────────────────────────
@@ -303,7 +322,7 @@ export async function writeColumnGroup(
 }
 
 export function deleteColumnGroup(root: string, boardId: string, id: string): Promise<void> {
-  return fs.rm(colGroupPath(root, boardId, id), { force: true })
+  return removeFile(colGroupPath(root, boardId, id))
 }
 
 // ── Entity body (character / timeline / colgroup markdown body, for the editor) ──
@@ -398,7 +417,7 @@ export async function listNoteMetas(root: string, boardId: string): Promise<Note
 }
 
 export function deleteNote(root: string, boardId: string, id: string): Promise<void> {
-  return fs.rm(notePath(root, boardId, id), { force: true })
+  return removeFile(notePath(root, boardId, id))
 }
 
 /** Rename a note's markdown file within a board (uid/frontmatter untouched). */
@@ -408,7 +427,7 @@ export async function renameNoteFile(
   oldId: string,
   newId: string
 ): Promise<void> {
-  await fs.rename(notePath(root, boardId, oldId), notePath(root, boardId, newId))
+  await moveFile(notePath(root, boardId, oldId), notePath(root, boardId, newId))
 }
 
 // ── Boards ───────────────────────────────────────────────────────────────────
@@ -478,8 +497,11 @@ export async function writeBoard(
   return writeTextGuarded(boardFile(root, board.id), JSON.stringify(board, null, 2) + '\n', expectedMtimeMs)
 }
 
-export function deleteBoard(root: string, boardId: string): Promise<void> {
-  return fs.rm(boardDir(root, boardId), { recursive: true, force: true })
+export async function deleteBoard(root: string, boardId: string): Promise<void> {
+  await fs.rm(boardDir(root, boardId), { recursive: true, force: true })
+  // The whole folder went; its board.json stands for it in the journal, which is
+  // enough for the index to see a board vanish and rebuild (#187).
+  recordTouch(boardFile(root, boardId), 'unlink')
 }
 
 // ── Family-tree views (per board) ────────────────────────────────────────────
@@ -521,7 +543,7 @@ export async function writeView(
 }
 
 export function deleteView(root: string, boardId: string, id: string): Promise<void> {
-  return fs.rm(viewPath(root, boardId, id), { force: true })
+  return removeFile(viewPath(root, boardId, id))
 }
 
 // ── Assets (per board, Issue #61) ────────────────────────────────────────────

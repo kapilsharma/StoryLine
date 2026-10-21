@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { applyProjectPatch, planReload, type ProjectPatch } from '@shared/patch'
+import { applyProjectPatch, applyReply, planReload, type ProjectPatch } from '@shared/patch'
 import type { BoardData, ProjectSnapshot } from '@shared/ipc'
-import type { Board, Character, Note, Project, TimelineUnit } from '@shared/types'
+import { defaultView, type Board, type Character, type Note, type Project, type TimelineUnit } from '@shared/types'
 import type { ProjectChange } from '@shared/changes'
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -208,5 +208,91 @@ describe('applyProjectPatch', () => {
       ops: [{ target: 'note', boardId: 'gone', id: 'x', value: note('x') }]
     })
     expect(next).toBe(snap) // nothing changed, no throw
+  })
+})
+
+// The project index (#187) is a patched snapshot that must deep-equal a fresh
+// load, so a patch has to put things exactly where the loader would.
+describe('applyProjectPatch keeps the loader’s order', () => {
+  it('inserts a new note or character in id order, not at the end', () => {
+    const snap = snapshot([boardData('main', { notes: [note('a'), note('c')], characters: [char('b'), char('d')] })])
+    const next = applyProjectPatch(snap, {
+      ops: [
+        { target: 'note', boardId: 'main', id: 'b', value: note('b') },
+        { target: 'note', boardId: 'main', id: 'd', value: note('d') },
+        { target: 'character', boardId: 'main', id: 'a', value: char('a') },
+        { target: 'character', boardId: 'main', id: 'c', value: char('c') }
+      ]
+    })
+    expect(next.boards[0].notes.map((n) => n.id)).toEqual(['a', 'b', 'c', 'd'])
+    expect(next.boards[0].characters.map((c) => c.id)).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('orders ids by code unit, as the loader’s sort() does', () => {
+    const snap = snapshot([boardData('main', { notes: [note('B'), note('b')] })])
+    const next = applyProjectPatch(snap, { ops: [{ target: 'note', boardId: 'main', id: 'a', value: note('a') }] })
+    expect(next.boards[0].notes.map((n) => n.id)).toEqual(['B', 'a', 'b'])
+  })
+
+  it('breaks a timeline tie on order by id, whichever arrived first', () => {
+    const snap = snapshot([boardData('main', { timeline: [unit('z', 1)] })])
+    const next = applyProjectPatch(snap, { ops: [{ target: 'timeline', boardId: 'main', id: 'a', value: unit('a', 1) }] })
+    expect(next.boards[0].timeline.map((u) => u.id)).toEqual(['a', 'z'])
+  })
+
+  it('lists views in board.views order, then the rest by id', () => {
+    const view = (id: string) => defaultView(id, id)
+    const snap = snapshot([boardData('main', { board: { ...board('main'), views: ['y', 'x'] }, views: [view('y'), view('x')] })])
+    const added = applyProjectPatch(snap, {
+      ops: [
+        { target: 'view', boardId: 'main', id: 'b', value: view('b') },
+        { target: 'view', boardId: 'main', id: 'a', value: view('a') }
+      ]
+    })
+    expect(added.boards[0].views.map((v) => v.id)).toEqual(['y', 'x', 'a', 'b'])
+
+    // A re-read board.json can reorder the views it lists.
+    const reordered = applyProjectPatch(added, {
+      ops: [{ target: 'board', boardId: 'main', board: { ...board('main'), views: ['a', 'x', 'y'] } }]
+    })
+    expect(reordered.boards[0].views.map((v) => v.id)).toEqual(['a', 'x', 'y', 'b'])
+  })
+
+  it('keeps the views array when a board edit leaves their order alone', () => {
+    const view = (id: string) => defaultView(id, id)
+    const snap = snapshot([boardData('main', { board: { ...board('main'), views: ['x'] }, views: [view('x')] })])
+    const next = applyProjectPatch(snap, { ops: [{ target: 'board', boardId: 'main', board: { ...board('main'), views: ['x'], zoom: 2 } }] })
+    expect(next.boards[0].views).toBe(snap.boards[0].views)
+  })
+})
+
+// The renderer's side of #188: replies are patches between numbered versions.
+describe('applyReply', () => {
+  const snap = snapshot([boardData('main', { notes: [note('a')] })])
+  const notePatch = (id: string) => ({ ops: [{ target: 'note' as const, boardId: 'main', id, value: note(id) }] })
+
+  it('takes a whole snapshot as it is, whatever it held', () => {
+    expect(applyReply(null, { kind: 'snapshot', version: 7, snapshot: snap })).toEqual({ snapshot: snap, version: 7 })
+  })
+
+  it('applies a patch made from the version it holds', () => {
+    const next = applyReply({ snapshot: snap, version: 7 }, { kind: 'patch', root: snap.root, from: 7, version: 8, patch: notePatch('b') })
+    expect(next?.version).toBe(8)
+    expect(next?.snapshot.boards[0].notes.map((n) => n.id)).toEqual(['a', 'b'])
+  })
+
+  it('refuses a patch from another version, another project, or with nothing held', () => {
+    const reply = { kind: 'patch' as const, root: snap.root, from: 7, version: 8, patch: notePatch('b') }
+    expect(applyReply({ snapshot: snap, version: 6 }, reply)).toBeNull()
+    expect(applyReply({ snapshot: snap, version: 7 }, { ...reply, root: '/elsewhere' })).toBeNull()
+    expect(applyReply(null, reply)).toBeNull()
+  })
+})
+
+describe('applyProjectPatch — boards project.json leaves out', () => {
+  it('keeps a board project.json does not list, after the ones it does', () => {
+    const snap = snapshot([boardData('a'), boardData('b'), boardData('c')])
+    const next = applyProjectPatch(snap, { ops: [{ target: 'project', project: { ...snap.project, boards: ['c', 'a'] } }] })
+    expect(next.boards.map((bd) => bd.board.id)).toEqual(['c', 'a', 'b'])
   })
 })
