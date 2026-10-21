@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import type { Character, TimelineUnit, ColumnGroup } from '@shared/types'
+import type { Card, Character, TimelineUnit, ColumnGroup } from '@shared/types'
+import { DEFAULT_CARD_STATUSES } from '@shared/cardStatus'
+import { FILTER_NONE } from '@renderer/components/board/grid-utils'
 import { BoardUiProvider, useBoardUi } from '@renderer/components/board/BoardUiContext'
 import { BoardFilterBar } from '@renderer/components/board/BoardFilterBar'
 import { makeBoardData } from './test-utils'
@@ -20,20 +22,23 @@ const timeline: TimelineUnit[] = [
 
 /** Mirror the live filter state out so assertions can read it. */
 function Probe(): JSX.Element {
-  const { rowFilter, colFilter } = useBoardUi()
+  const { rowFilter, colFilter, statusFilter, progressFilter } = useBoardUi()
   return (
     <div>
       <span data-testid="rows">{[...rowFilter].sort().join(',')}</span>
       <span data-testid="cols">{[...colFilter].sort().join(',')}</span>
+      <span data-testid="status">{[...statusFilter].sort().join(',')}</span>
+      <span data-testid="progress">{[...progressFilter].sort().join(',')}</span>
     </div>
   )
 }
 
-function setup(): void {
+function setup(cards: Card[] = []): void {
   const data = makeBoardData('main', { characters: chars, timeline, colGroups })
+  data.board.cards = cards
   render(
     <BoardUiProvider>
-      <BoardFilterBar data={data} />
+      <BoardFilterBar data={data} statuses={DEFAULT_CARD_STATUSES} />
       <Probe />
     </BoardUiProvider>
   )
@@ -70,5 +75,40 @@ describe('BoardFilterBar (#140)', () => {
     expect(screen.getByTestId('rows').textContent).toBe('a')
     fireEvent.click(screen.getByRole('button', { name: /Clear filters/ }))
     expect(screen.getByTestId('rows').textContent).toBe('')
+  })
+})
+
+describe('BoardFilterBar card filters (#182)', () => {
+  const card: Card = { id: 'k1', noteUid: 'n_1', rowId: 'a', colStart: 'ch1', colEnd: 'ch1' }
+
+  it('offers Status and % complete only once the board has cards', () => {
+    setup()
+    expect(screen.queryByRole('button', { name: /Status/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /% complete/ })).toBeNull()
+  })
+
+  it('unchecking a status, or "No status", filters those cards out', () => {
+    setup([card])
+    fireEvent.click(screen.getByRole('button', { name: /Status/ }))
+    fireEvent.click(screen.getByLabelText('✅ Draft done'))
+    fireEvent.click(screen.getByLabelText('No status'))
+    expect(screen.getByTestId('status').textContent).toBe(['done', FILTER_NONE].sort().join(','))
+  })
+
+  it('% complete lists every 10% step plus "Not set"', () => {
+    setup([card])
+    fireEvent.click(screen.getByRole('button', { name: /% complete/ }))
+    for (const p of [0, 10, 50, 100]) expect(screen.getByLabelText(`${p}%`)).toBeTruthy()
+    fireEvent.click(screen.getByLabelText('Not set'))
+    fireEvent.click(screen.getByLabelText('100%'))
+    expect(screen.getByTestId('progress').textContent).toBe(['100', FILTER_NONE].sort().join(','))
+  })
+
+  it('"Clear filters" also resets the card filters', () => {
+    setup([card])
+    fireEvent.click(screen.getByRole('button', { name: /% complete/ }))
+    fireEvent.click(screen.getByLabelText('0%'))
+    fireEvent.click(screen.getByRole('button', { name: /Clear filters/ }))
+    expect(screen.getByTestId('progress').textContent).toBe('')
   })
 })

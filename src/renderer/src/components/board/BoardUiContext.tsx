@@ -59,9 +59,18 @@ interface BoardUiValue {
   colFilter: Set<string>
   setRowFilter: (next: Set<string>) => void
   setColFilter: (next: Set<string>) => void
-  /** Clear both filters at once (the filter bar's "Clear"). */
+  /**
+   * Card filters (#182): the Status and % complete entries filtered *out*, as
+   * keys from `cardFilterKeys` (a status id or a step like "40", or `FILTER_NONE`).
+   * These hide single cards rather than rows or columns.
+   */
+  statusFilter: Set<string>
+  progressFilter: Set<string>
+  setStatusFilter: (next: Set<string>) => void
+  setProgressFilter: (next: Set<string>) => void
+  /** Clear every filter at once (the filter bar's "Clear filters"). */
   clearFilters: () => void
-  /** True when either filter is excluding something. */
+  /** True when any filter is excluding something. */
   filterActive: boolean
   /** Whether the filter bar is shown (the toolbar's filter button). */
   filtersOpen: boolean
@@ -95,6 +104,8 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
   const [panel, setPanel] = useState<PanelTarget | null>(null)
   const [rowFilter, setRowFilter] = useState<Set<string>>(new Set())
   const [colFilter, setColFilter] = useState<Set<string>>(new Set())
+  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set())
+  const [progressFilter, setProgressFilter] = useState<Set<string>>(new Set())
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   const openPanel = useCallback((target: PanelTarget) => setPanel(target), [])
@@ -103,8 +114,10 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
   const clearFilters = useCallback(() => {
     setRowFilter(new Set())
     setColFilter(new Set())
+    setStatusFilter(new Set())
+    setProgressFilter(new Set())
   }, [])
-  const filterActive = rowFilter.size > 0 || colFilter.size > 0
+  const filterActive = rowFilter.size > 0 || colFilter.size > 0 || statusFilter.size > 0 || progressFilter.size > 0
 
   const isExpanded = useCallback((id: string) => expanded.has(id), [expanded])
 
@@ -183,6 +196,10 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
       colFilter,
       setRowFilter,
       setColFilter,
+      statusFilter,
+      progressFilter,
+      setStatusFilter,
+      setProgressFilter,
       clearFilters,
       filterActive,
       filtersOpen,
@@ -208,6 +225,8 @@ export function BoardUiProvider({ children }: { children: ReactNode }): JSX.Elem
       closePanel,
       rowFilter,
       colFilter,
+      statusFilter,
+      progressFilter,
       clearFilters,
       filterActive,
       filtersOpen,
