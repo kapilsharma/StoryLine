@@ -3,6 +3,7 @@ import { join } from 'path'
 import { pathToFileURL } from 'url'
 import { ASSET_SCHEME } from '@shared/assets'
 import { registerIpc, disposeIpc } from './ipc'
+import { installMenu } from './menu'
 import { assetPath } from './data/repository'
 import { currentRoot } from './projectService'
 
@@ -64,6 +65,7 @@ function createWindow(): void {
   })
 
   registerIpc(mainWindow)
+  installMenu(mainWindow)
 
   // Open external links in the system browser, never in-app.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {

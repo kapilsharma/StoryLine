@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { isPlotRow } from '@shared/types'
 import { manuscriptLevel } from '@shared/manuscript'
+import { stepZoom } from '@shared/menu'
+import { useMenuCommands, useMenuState } from '../../lib/menuBridge'
 import { useStore } from '../../store'
 import { useBoardUi } from './BoardUiContext'
 import { ExportDialog } from './ExportDialog'
@@ -128,6 +130,52 @@ export function BoardToolbar(): JSX.Element {
     else delete next[key]
     void saveBoard(next)
   }
+
+  // ── The app menu (#168) ──
+  // The board's part of the View and Board menus. Every command runs what the
+  // button beside it here runs; the menu only adds another way to reach it.
+  const characters = activeBoard?.characters ?? []
+  const colGroups = activeBoard?.colGroups ?? []
+  const hasRowGroups = !!board && rowGroupNames(board, characters).length > 0
+  const levelItems = columnLevelItems(snapshot?.project, colGroupLevels(colGroups))
+  useMenuState('board', {
+    board: board
+      ? {
+          hasCards: !empty,
+          manuscript: hasManuscript ? !hideManuscript : null,
+          rowKinds: hasPlotRows ? { plot: !hidePlot, characters: !hideChars } : null,
+          hasRowGroups,
+          columnLevels: levelItems,
+          allCardsExpanded: allExpanded,
+          filtersOpen,
+          revising
+        }
+      : null
+  })
+  const saveWith = (next: (b: NonNullable<typeof board>) => NonNullable<typeof board>): void => {
+    if (board) void saveBoard(next(board))
+  }
+  useMenuCommands({
+    'view.manuscript': () => setFlag('hideManuscriptRow', !hideManuscript),
+    'view.plotRows': () => setFlag('hidePlotRows', !hidePlot),
+    'view.characterRows': () => setFlag('hideCharacterRows', !hideChars),
+    'view.collapseRows': () => saveWith((b) => withAllRowGroups(b, characters, true)),
+    'view.expandRows': () => saveWith((b) => withAllRowGroups(b, characters, false)),
+    'view.collapseLevel': ({ depth }) => saveWith((b) => withColumnsAtLevel(b, colGroups, depth)),
+    'view.expandColumns': () => saveWith((b) => withColumnsAtLevel(b, colGroups, null)),
+    'view.toggleCards': () => setAll(!allExpanded),
+    'view.filters': () => setFiltersOpen(!filtersOpen),
+    // The board's own zoom — the one Ctrl+scroll changes — not the page's.
+    'view.zoomIn': () => saveWith((b) => ({ ...b, zoom: stepZoom(b.zoom || 1, 'in') })),
+    'view.zoomOut': () => saveWith((b) => ({ ...b, zoom: stepZoom(b.zoom || 1, 'out') })),
+    'view.zoomReset': () => saveWith((b) => ({ ...b, zoom: stepZoom(b.zoom || 1, 'reset') })),
+    'board.revision': () => setRevising(!revising),
+    'board.revealAll': () => revealAll(true),
+    'board.hideAll': () => revealAll(false),
+    'file.exportBoard': () => {
+      if (board) setExporting(true)
+    }
+  })
 
   return (
     <div className="header-toolbar">

@@ -25,6 +25,7 @@ import type {
 import type { AppConfig, AppSettings } from './config'
 import type { ProjectMeta } from './project'
 import type { ProjectChange } from './changes'
+import type { MenuCommand, MenuState } from './menu'
 import type { ProjectPatch } from './patch'
 import type { SearchHit, SearchScope } from './search'
 import type { AssetImport, AssetRef } from './assets'
@@ -292,6 +293,12 @@ export interface AppApi {
 
   // ── Live reload ──
   onProjectChange(listener: (change: ProjectChange) => void): () => void
+
+  // ── App menu (Issue #168) ──
+  /** Tell the main process what the menu applies to, so it can rebuild it. */
+  setMenuState(state: MenuState): void
+  /** Called with each menu click the window has to act on. Returns an unsubscribe. */
+  onMenuCommand(listener: (command: MenuCommand) => void): () => void
 
   // ── Static site export (Issue #48) ──
   /**

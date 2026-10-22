@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppApi } from '@shared/ipc'
 import type { ProjectChange } from '@shared/changes'
+import type { MenuCommand } from '@shared/menu'
 
 /**
  * The bridge between the renderer and the main-process services. Implements
@@ -81,6 +82,13 @@ const api: AppApi = {
     const handler = (_e: unknown, change: ProjectChange): void => listener(change)
     ipcRenderer.on('project:change', handler)
     return () => ipcRenderer.removeListener('project:change', handler)
+  },
+
+  setMenuState: (state) => ipcRenderer.send('menu:state', state),
+  onMenuCommand: (listener: (command: MenuCommand) => void) => {
+    const handler = (_e: unknown, command: MenuCommand): void => listener(command)
+    ipcRenderer.on('menu:command', handler)
+    return () => ipcRenderer.removeListener('menu:command', handler)
   },
 
   exportStaticSite: (root) => ipcRenderer.invoke('static:export', root),

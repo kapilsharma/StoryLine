@@ -210,6 +210,10 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     // Nothing changes underneath a static export — no watcher to subscribe to.
     onProjectChange: () => () => {},
 
+    // A published site runs in a browser: there is no app menu to drive (#168).
+    setMenuState: () => {},
+    onMenuCommand: () => () => {},
+
     // Re-exporting from a browser has nowhere to write a folder to.
     exportStaticSite: () => denied<StaticExportResult | null>(),
     // Document export needs a native save dialog, which a static site has not.

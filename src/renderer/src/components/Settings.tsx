@@ -27,7 +27,16 @@ import {
 } from '@shared/project'
 import { useStore } from '../store'
 
-export function Settings(): JSX.Element {
+interface SettingsProps {
+  /**
+   * File › Publish Static Site was chosen (#168): start the export as if the
+   * Publish button were clicked, then report back so it runs only once.
+   */
+  publishRequested?: boolean
+  onPublishStarted?: () => void
+}
+
+export function Settings({ publishRequested = false, onPublishStarted }: SettingsProps = {}): JSX.Element {
   const { snapshot, config, saveProjectMeta, updateSettings, exportStaticSite, readOnly } = useStore()
   const [exporting, setExporting] = useState(false)
   const [exportStatus, setExportStatus] = useState<string | null>(null)
@@ -51,6 +60,15 @@ export function Settings(): JSX.Element {
       setExporting(false)
     }
   }
+
+  // Asked for from the menu (#168): run the same export the button does, here,
+  // where its result is shown.
+  useEffect(() => {
+    if (!publishRequested) return
+    onPublishStarted?.()
+    if (!readOnly) void runExport()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publishRequested])
 
   // Project-level form. One piece of state for the whole editable metadata set —
   // name, the column levels (#104), the row label (#62) and the project kind (#63).

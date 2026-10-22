@@ -17,6 +17,7 @@ import { NoteSidePanel } from './NoteSidePanel'
 import { useBoardUi } from './BoardUiContext'
 import { addBoardMember, nonMembers } from './grid-utils'
 import { rowLabel, timelineLabel } from '@shared/project'
+import { useMenuCommands } from '../../lib/menuBridge'
 
 const MIME_BOARD = 'application/x-znstoryline-board'
 
@@ -165,6 +166,21 @@ export function BoardsView(): JSX.Element {
     presets.push({ name: name.trim(), hiddenRows: [...board.hiddenRows], hiddenCols: [...board.hiddenCols] })
     saveBoard({ ...board, presets })
   }
+
+  // The Board menu (#168) runs the same actions as the tab strip and the buttons
+  // above the grid. Each is greyed out in the menu when it doesn't apply.
+  useMenuCommands({
+    'board.new': () => void onAddBoard(),
+    'board.rename': () => {
+      if (board) void onRenameBoard(board)
+    },
+    'board.delete': () => {
+      if (board) onDeleteBoard(board)
+    },
+    'board.addColumn': onAddColumn,
+    'board.addRow': onAddRow,
+    'board.savePreset': () => void savePreset()
+  })
 
   /**
    * Characters in this board's folder that are not on its grid — someone entered

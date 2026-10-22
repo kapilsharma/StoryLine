@@ -99,6 +99,8 @@ interface StoreValue {
   saveProjectMeta: (meta: ProjectMeta) => Promise<void>
   saveFamilyColours: (families: Record<string, string>) => Promise<void>
   updateSettings: (settings: AppSettings) => Promise<void>
+  /** Show or hide the editors' word count (#194) — Ctrl+Alt+W, or the View menu (#168). */
+  toggleWordCount: () => void
 
   // Per-board mutations operate on the active board.
   /**
@@ -425,17 +427,20 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
   // Mac types "∑" for W. Read through a ref so the listener is attached once.
   const configRef = useRef(config)
   configRef.current = config
+  const toggleWordCount = useCallback(() => {
+    const settings = configRef.current?.settings
+    if (settings) void updateSettings({ ...settings, showWordCount: !settings.showWordCount })
+  }, [updateSettings])
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (!(e.ctrlKey || e.metaKey) || !e.altKey || e.shiftKey || e.code !== 'KeyW') return
-      const settings = configRef.current?.settings
-      if (!settings) return
+      if (!configRef.current?.settings) return
       e.preventDefault()
-      void updateSettings({ ...settings, showWordCount: !settings.showWordCount })
+      toggleWordCount()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [updateSettings])
+  }, [toggleWordCount])
 
   const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null)
   const openEditor = useCallback((kind: EditorKind, id: string) => {
@@ -530,6 +535,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       removeRecent,
       closeProject,
       updateSettings,
+      toggleWordCount,
       saveProjectMeta: (meta) => mutate((root) => api.saveProjectMeta(root, meta)),
       searchNotes,
       importAsset,
@@ -583,7 +589,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       revealTarget,
       revealCharacter
     }),
-    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, mutate, mutateBoard, getNote, searchNotes, importAsset, pickAsset, exportStaticSite, exportDocument, getEntityBody, editorTarget, openEditor, closeEditor, revealTarget, revealCharacter]
+    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, toggleWordCount, mutate, mutateBoard, getNote, searchNotes, importAsset, pickAsset, exportStaticSite, exportDocument, getEntityBody, editorTarget, openEditor, closeEditor, revealTarget, revealCharacter]
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

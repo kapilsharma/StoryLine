@@ -10,6 +10,7 @@ import { BoardToolbar } from './board/BoardToolbar'
 import { FamilyView } from './tree/FamilyView'
 import { GroupSwitcher } from './GroupSwitcher'
 import { pluralize } from '../lib/text'
+import { useMenuCommands, useMenuState } from '../lib/menuBridge'
 import { hasFamilyFeatures, rowLabel, timelineLabel } from '@shared/project'
 
 type Tab = 'boards' | 'characters' | 'family' | 'timeline' | 'notes' | 'settings'
@@ -26,6 +27,9 @@ const TABS: Array<{ key: Tab; label: string }> = [
 export function ProjectView(): JSX.Element {
   const { snapshot, closeProject, readOnly, revealTarget } = useStore()
   const [tab, setTab] = useState<Tab>('boards')
+  // File › Publish Static Site (#168) runs the export on the Settings tab, where
+  // its progress and result are shown; set until Settings has started it.
+  const [publishRequested, setPublishRequested] = useState(false)
 
   // "Edit" on the board's character-note popup (issue #41) asks for a character;
   // the tab it lives on is this component's business. CharacterEditor picks the
@@ -41,13 +45,31 @@ export function ProjectView(): JSX.Element {
     if (familyHidden && tab === 'family') setTab('boards')
   }, [familyHidden, tab])
 
-  if (!snapshot) return <></>
-
   // Both axes are named after the project's own labels (#62) — "Chapters" and
   // "Characters" are only the defaults.
-  const project = snapshot.project
-  const timelineTabLabel = pluralize(timelineLabel(project))
-  const rowTabLabel = pluralize(rowLabel(project))
+  const project = snapshot?.project
+  const timelineTabLabel = project ? pluralize(timelineLabel(project)) : ''
+  const rowTabLabel = project ? pluralize(rowLabel(project)) : ''
+
+  // The project's part of the app menu (#168): the tab, and the Go menu's names.
+  useMenuState('project', {
+    tab,
+    hasFamily: !familyHidden,
+    rowsLabel: rowTabLabel,
+    columnsLabel: timelineTabLabel
+  })
+  useMenuCommands({
+    go: ({ tab: next }) => {
+      if (next !== 'family' || !familyHidden) setTab(next)
+    },
+    'file.settings': () => setTab('settings'),
+    'file.publish': () => {
+      setTab('settings')
+      setPublishRequested(true)
+    }
+  })
+
+  if (!snapshot || !project) return <></>
   const tabLabel = (t: (typeof TABS)[number]): string =>
     t.key === 'timeline' ? timelineTabLabel : t.key === 'characters' ? rowTabLabel : t.label
 
@@ -92,7 +114,12 @@ export function ProjectView(): JSX.Element {
           {tab === 'family' && !familyHidden && <FamilyView />}
           {tab === 'timeline' && <TimelineEditor />}
           {tab === 'notes' && <NotesBrowser />}
-          {tab === 'settings' && <Settings />}
+          {tab === 'settings' && (
+            <Settings
+              publishRequested={publishRequested}
+              onPublishStarted={() => setPublishRequested(false)}
+            />
+          )}
         </main>
       </div>
     </BoardUiProvider>
