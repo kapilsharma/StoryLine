@@ -4,6 +4,7 @@ import { PromptProvider } from './components/PromptModal'
 import { Dashboard } from './components/Dashboard'
 import { ProjectView } from './components/ProjectView'
 import { EditorPage } from './components/EditorPage'
+import { useMenuCommands, useMenuState } from './lib/menuBridge'
 
 export interface AppProps {
   /** Published static build — see `StoreValue.readOnly`. */
@@ -51,6 +52,39 @@ function CreditFooter(): JSX.Element {
   )
 }
 
+/**
+ * The app's part of the menu (#168): whether a project is open, the recent
+ * projects, word count — and the File items that need no project to act on.
+ */
+function AppMenu(): null {
+  const {
+    snapshot,
+    readOnly,
+    config,
+    editorTarget,
+    newProject,
+    openPicker,
+    openByPath,
+    closeProject,
+    toggleWordCount
+  } = useStore()
+  useMenuState('app', {
+    project: !!snapshot,
+    readOnly,
+    editorOpen: !!editorTarget,
+    recents: (config?.recents ?? []).map((r) => ({ name: r.name, path: r.path })),
+    wordCount: config?.settings.showWordCount ?? true
+  })
+  useMenuCommands({
+    'file.new': () => void newProject(),
+    'file.open': () => void openPicker(),
+    'file.openRecent': ({ path }) => void openByPath(path),
+    'file.close': closeProject,
+    'view.wordCount': toggleWordCount
+  })
+  return null
+}
+
 function Root(): JSX.Element {
   const { snapshot, editorTarget, readOnly } = useStore()
   // The published build boots straight into its one project, so show a neutral
@@ -63,6 +97,7 @@ function Root(): JSX.Element {
           state, so closing returns to exactly where you were. */}
       {editorTarget && <EditorPage key={`${editorTarget.kind}:${editorTarget.id}`} target={editorTarget} />}
       <ErrorToast />
+      <AppMenu />
       {readOnly && <CreditFooter />}
     </>
   )

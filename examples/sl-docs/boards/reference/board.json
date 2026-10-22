@@ -932,6 +932,34 @@
       "rowId": "board-export",
       "colStart": "watch",
       "colEnd": "watch"
+    },
+    {
+      "id": "card-a3e01681",
+      "noteUid": "n_a3e0c168",
+      "rowId": "app-menu",
+      "colStart": "what",
+      "colEnd": "what"
+    },
+    {
+      "id": "card-a3e01682",
+      "noteUid": "n_a3e1c168",
+      "rowId": "app-menu",
+      "colStart": "how",
+      "colEnd": "how"
+    },
+    {
+      "id": "card-a3e01683",
+      "noteUid": "n_a3e2c168",
+      "rowId": "app-menu",
+      "colStart": "options",
+      "colEnd": "options"
+    },
+    {
+      "id": "card-a3e01684",
+      "noteUid": "n_a3e3c168",
+      "rowId": "app-menu",
+      "colStart": "watch",
+      "colEnd": "watch"
     }
   ],
   "hiddenRows": [],
@@ -1048,6 +1076,7 @@
     "proj-settings",
     "app-settings",
     "editor-styles",
+    "app-menu",
     "export",
     "board-export",
     "readonly"
@@ -1083,6 +1112,7 @@
     "proj-settings",
     "app-settings",
     "editor-styles",
+    "app-menu",
     "export",
     "board-export",
     "readonly"

@@ -63,6 +63,8 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
     updateCard: vi.fn(),
     deleteCard: vi.fn(),
     onProjectChange: vi.fn().mockReturnValue(() => {}),
+    setMenuState: vi.fn(),
+    onMenuCommand: vi.fn().mockReturnValue(() => {}),
     ...overrides
   }
   // Calls that change the project reply with a `SnapshotReply` (#188). Tests
@@ -70,7 +72,8 @@ export function makeApi(overrides: Partial<AppApi> = {}): AppApi {
   // mock, so call assertions work — to send a plain snapshot as a whole reply.
   const wrapped = api as unknown as Record<string, unknown>
   for (const [key, inner] of Object.entries(wrapped)) {
-    if (typeof inner !== 'function' || key === 'onProjectChange') continue
+    if (typeof inner !== 'function' || key === 'onProjectChange' || key === 'onMenuCommand' || key === 'setMenuState')
+      continue
     wrapped[key] = vi.fn((...args: unknown[]) => {
       const out = (inner as (...a: unknown[]) => unknown)(...args)
       return out instanceof Promise ? out.then(asReply) : asReply(out)
