@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.19.0](https://github.com/kapilsharma/StoryLine/compare/2.18.0...2.19.0) (2026-10-22)
+
+
+### Features
+
+* **#168:** add a custom app menu ([3e475bd](https://github.com/kapilsharma/StoryLine/commit/3e475bd5290799db0400f54b0d786237435cbc0c))
+* **#168:** add a custom app menu ([f0c3f22](https://github.com/kapilsharma/StoryLine/commit/f0c3f2245afcc2c8fe43a8ecabbcec2b2836e88a))
+
 ## [2.18.0](https://github.com/kapilsharma/StoryLine/compare/2.17.0...2.18.0) (2026-10-21)
 
 
