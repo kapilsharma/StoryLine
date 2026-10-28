@@ -3,7 +3,7 @@ import { useStore } from '../store'
 import { CharacterEditor } from './CharacterEditor'
 import { TimelineEditor } from './TimelineEditor'
 import { NotesBrowser } from './NotesBrowser'
-import { Settings } from './Settings'
+import { Settings, type SettingsCategory } from './Settings'
 import { BoardsView } from './board/BoardsView'
 import { BoardUiProvider } from './board/BoardUiContext'
 import { BoardToolbar } from './board/BoardToolbar'
@@ -30,6 +30,8 @@ export function ProjectView(): JSX.Element {
   // File › Publish Static Site (#168) runs the export on the Settings tab, where
   // its progress and result are shown; set until Settings has started it.
   const [publishRequested, setPublishRequested] = useState(false)
+  // Kept here, not in Settings, so coming back to the tab opens the same category (#210).
+  const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>('general')
 
   // "Edit" on the board's character-note popup (issue #41) asks for a character;
   // the tab it lives on is this component's business. CharacterEditor picks the
@@ -118,6 +120,8 @@ export function ProjectView(): JSX.Element {
             <Settings
               publishRequested={publishRequested}
               onPublishStarted={() => setPublishRequested(false)}
+              category={settingsCategory}
+              onCategoryChange={setSettingsCategory}
             />
           )}
         </main>

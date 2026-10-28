@@ -21,11 +21,23 @@ import { DEFAULT_CARD_STATUSES, cardStatuses } from '@shared/cardStatus'
 import {
   DEFAULT_ROW_LABEL,
   DEFAULT_TIMELINE_LABEL,
+  hasFamilyFeatures,
   readMeta,
   timelineLevelLabels,
   type ProjectMeta
 } from '@shared/project'
 import { useStore } from '../store'
+
+export type SettingsCategory = 'general' | 'project' | 'publish' | 'family' | 'editor'
+
+/** The list down the left of the page (#210); one shows on the right at a time. */
+const CATEGORIES: Array<{ key: SettingsCategory; label: string }> = [
+  { key: 'general', label: 'General' },
+  { key: 'project', label: 'Project' },
+  { key: 'publish', label: 'Publish' },
+  { key: 'family', label: 'Family tree' },
+  { key: 'editor', label: 'Editor' }
+]
 
 interface SettingsProps {
   /**
@@ -34,10 +46,27 @@ interface SettingsProps {
    */
   publishRequested?: boolean
   onPublishStarted?: () => void
+  /**
+   * The open category, when the parent keeps it — so leaving the Settings tab
+   * and coming back lands where you were. Without it the page keeps its own.
+   */
+  category?: SettingsCategory
+  onCategoryChange?: (category: SettingsCategory) => void
 }
 
-export function Settings({ publishRequested = false, onPublishStarted }: SettingsProps = {}): JSX.Element {
+export function Settings({
+  publishRequested = false,
+  onPublishStarted,
+  category,
+  onCategoryChange
+}: SettingsProps = {}): JSX.Element {
   const { snapshot, config, saveProjectMeta, updateSettings, exportStaticSite, readOnly } = useStore()
+  const [ownCategory, setOwnCategory] = useState<SettingsCategory>('general')
+  const chosen = category ?? ownCategory
+  const choose = (next: SettingsCategory): void => {
+    setOwnCategory(next)
+    onCategoryChange?.(next)
+  }
   const [exporting, setExporting] = useState(false)
   const [exportStatus, setExportStatus] = useState<string | null>(null)
 
@@ -66,7 +95,9 @@ export function Settings({ publishRequested = false, onPublishStarted }: Setting
   useEffect(() => {
     if (!publishRequested) return
     onPublishStarted?.()
-    if (!readOnly) void runExport()
+    if (readOnly) return
+    choose('publish')
+    void runExport()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publishRequested])
 
@@ -85,8 +116,13 @@ export function Settings({ publishRequested = false, onPublishStarted }: Setting
   // on the array's identity, which changes with every snapshot.
   const savedLevels = snapshot ? JSON.stringify(timelineLevelLabels(snapshot.project)) : ''
   const savedStatuses = snapshot ? JSON.stringify(cardStatuses(snapshot.project)) : ''
+  // The form fills a render after the project arrives; until then its empty values
+  // are not edits, and must not light up the unsaved mark on Project.
+  const [metaLoaded, setMetaLoaded] = useState(false)
   useEffect(() => {
-    if (snapshot) setMeta(readMeta(snapshot.project))
+    if (!snapshot) return
+    setMeta(readMeta(snapshot.project))
+    setMetaLoaded(true)
   }, [
     snapshot?.project.name,
     savedLevels,
@@ -101,12 +137,13 @@ export function Settings({ publishRequested = false, onPublishStarted }: Setting
 
   const saved = readMeta(snapshot.project)
   const projectDirty =
-    meta.name !== saved.name ||
-    JSON.stringify(meta.timelineLevelLabels) !== JSON.stringify(saved.timelineLevelLabels) ||
-    meta.rowLabel !== saved.rowLabel ||
-    meta.kind !== saved.kind ||
-    meta.manuscriptLevel !== saved.manuscriptLevel ||
-    JSON.stringify(meta.cardStatuses) !== JSON.stringify(saved.cardStatuses)
+    metaLoaded &&
+    (meta.name !== saved.name ||
+      JSON.stringify(meta.timelineLevelLabels) !== JSON.stringify(saved.timelineLevelLabels) ||
+      meta.rowLabel !== saved.rowLabel ||
+      meta.kind !== saved.kind ||
+      meta.manuscriptLevel !== saved.manuscriptLevel ||
+      JSON.stringify(meta.cardStatuses) !== JSON.stringify(saved.cardStatuses))
   const setField = <K extends keyof ProjectMeta>(key: K, value: ProjectMeta[K]): void =>
     setMeta((m) => ({ ...m, [key]: value }))
 
@@ -169,455 +206,504 @@ export function Settings({ publishRequested = false, onPublishStarted }: Setting
     </div>
   )
 
+  // Publish needs a writable project; Family tree only means something where the
+  // Family tab exists (#63). A hidden category falls back to General.
+  const categories = CATEGORIES.filter(
+    (c) =>
+      (c.key !== 'publish' || !readOnly) &&
+      (c.key !== 'family' || hasFamilyFeatures(snapshot.project))
+  )
+  const active = categories.some((c) => c.key === chosen) ? chosen : 'general'
+  const activeLabel = categories.find((c) => c.key === active)?.label
+
   return (
     <div className="settings">
-      <section className="settings-group">
-        <h2>Project</h2>
-        <div className="form-row">
-          <label htmlFor="project-name">Project name</label>
-          <input
-            id="project-name"
-            value={meta.name}
-            onChange={(e) => setField('name', e.target.value)}
-          />
-        </div>
-        <div className="form-row">
-          <label id="project-levels-label">Column levels</label>
-          <ol className="level-list" aria-labelledby="project-levels-label">
-            {levels.map((label, i) => (
-              <li key={i} className="level-row">
-                <input
-                  aria-label={`Level ${i + 1} name`}
-                  value={label}
-                  placeholder={i === levels.length - 1 ? DEFAULT_TIMELINE_LABEL : `Level ${i + 1}`}
-                  onChange={(e) => setLevel(i, e.target.value)}
-                />
-                <button
-                  className="icon-btn"
-                  title="Remove this level"
-                  aria-label={`Remove level ${i + 1}`}
-                  disabled={levels.length === 1}
-                  onClick={() =>
-                    setField(
-                      'timelineLevelLabels',
-                      levels.filter((_, idx) => idx !== i)
-                    )
-                  }
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ol>
-          <div className="level-actions">
-            <button
-              className="btn small"
-              onClick={() => setField('timelineLevelLabels', ['', ...levels])}
-            >
-              + Level above
-            </button>
-            <button
-              className="btn small"
-              onClick={() => setField('timelineLevelLabels', [...levels, ''])}
-            >
-              + Level below
-            </button>
-          </div>
-          <span className="muted small">
-            Outermost first — "Novel", "Part", "Chapter", "Scene". The last level is what cards sit
-            on; the others group it and can each carry a note. One level is a plain list. A level is
-            named by its depth, so adding one above renames what is already at the top.
-          </span>
-        </div>
-        <div className="form-row">
-          <label htmlFor="project-manuscript">Manuscript row</label>
-          <select
-            id="project-manuscript"
-            value={meta.manuscriptLevel === null ? '' : String(meta.manuscriptLevel)}
-            onChange={(e) =>
-              setField('manuscriptLevel', e.target.value === '' ? null : Number(e.target.value))
-            }
+      <nav
+        className="settings-nav"
+        role="tablist"
+        aria-label="Settings categories"
+        aria-orientation="vertical"
+      >
+        {categories.map((c) => (
+          <button
+            key={c.key}
+            role="tab"
+            aria-selected={active === c.key}
+            className={`settings-nav-item${active === c.key ? ' active' : ''}`}
+            // Project is the one category that waits for a Save, and its button is
+            // out of sight while another category is open.
+            title={c.key === 'project' && projectDirty ? 'Unsaved project changes' : undefined}
+            onClick={() => choose(c.key)}
           >
-            <option value="">Off</option>
-            {levels.map((label, i) => (
-              <option key={i} value={String(i)}>
-                {label.trim() || (i === levels.length - 1 ? DEFAULT_TIMELINE_LABEL : `Level ${i + 1}`)}
-              </option>
-            ))}
-            {/* A level since removed from the list stays selectable as it is, so
-                opening Settings never silently changes what the row snaps to. */}
-            {meta.manuscriptLevel !== null && meta.manuscriptLevel >= levels.length && (
-              <option value={String(meta.manuscriptLevel)}>Level {meta.manuscriptLevel + 1}</option>
+            {c.label}
+            {c.key === 'project' && projectDirty && (
+              <span className="settings-dirty" aria-hidden="true">
+                •
+              </span>
             )}
-          </select>
-          <span className="muted small">
-            A row on top of every board for the novel itself, one cell per column at this level —
-            per Chapter, say, each spanning its scenes. Show or hide it per board with 📖.
-          </span>
-        </div>
-        <div className="form-row">
-          <label htmlFor="project-row-label">Row label</label>
-          <input
-            id="project-row-label"
-            value={meta.rowLabel}
-            placeholder={DEFAULT_ROW_LABEL}
-            onChange={(e) => setField('rowLabel', e.target.value)}
-          />
-          <span className="muted small">
-            Names the Characters tab — "Characters", "Topics", "Phases".
-          </span>
-        </div>
-        <div className="form-row">
-          <label htmlFor="project-kind">Project kind</label>
-          <select
-            id="project-kind"
-            value={meta.kind}
-            onChange={(e) => setField('kind', e.target.value as ProjectKind)}
-          >
-            <option value="story">Story — rows are people</option>
-            <option value="general">General — rows are anything else</option>
-          </select>
-          <span className="muted small">
-            A general project hides the Family tab and the family fields on a row, which have no
-            meaning when rows are topics or phases.
-          </span>
-        </div>
-        <div className="form-row">
-          <label id="project-statuses-label">Card statuses</label>
-          <ol className="level-list" aria-labelledby="project-statuses-label">
-            {statuses.map((s, i) => (
-              <li key={i} className="level-row">
-                <input
-                  className="status-icon-input"
-                  aria-label={`Status ${i + 1} icon`}
-                  value={s.icon}
-                  placeholder="🙂"
-                  onChange={(e) => setStatusField(i, 'icon', e.target.value)}
+          </button>
+        ))}
+      </nav>
+
+      <div className="settings-pane" role="tabpanel" aria-label={activeLabel}>
+        {active === 'general' && (
+          <section className="settings-group">
+            <h2>General</h2>
+            <div className="form-row">
+              <label>Theme</label>
+              <select
+                value={settings.theme}
+                onChange={(e) => updateSettings({ ...settings, theme: e.target.value as Theme })}
+              >
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </div>
+            <div className="form-row">
+              <label>Card font size ({settings.cardFontSize}px)</label>
+              <input
+                type="range"
+                min={CARD_FONT_MIN}
+                max={CARD_FONT_MAX}
+                value={settings.cardFontSize}
+                onChange={(e) => updateSettings({ ...settings, cardFontSize: Number(e.target.value) })}
+              />
+              <span className="muted small">Base text size on board cards (scales with zoom).</span>
+            </div>
+            <div className="form-row">
+              <label>% complete bar</label>
+              <span className="progress-colors">
+                <label className="theme-color">
+                  <input
+                    type="color"
+                    aria-label="Bar colour at 0%"
+                    value={settings.progressColorStart}
+                    onChange={(e) => updateSettings({ ...settings, progressColorStart: e.target.value })}
+                  />
+                  <span className="muted small">0%</span>
+                </label>
+                <span
+                  className="progress-preview"
+                  style={{
+                    ['--progress-0' as string]: settings.progressColorStart,
+                    ['--progress-100' as string]: settings.progressColorEnd
+                  }}
                 />
-                <input
-                  aria-label={`Status ${i + 1} meaning`}
-                  value={s.label}
-                  placeholder="What this status means"
-                  onChange={(e) => setStatusField(i, 'label', e.target.value)}
-                />
+                <label className="theme-color">
+                  <input
+                    type="color"
+                    aria-label="Bar colour at 100%"
+                    value={settings.progressColorEnd}
+                    onChange={(e) => updateSettings({ ...settings, progressColorEnd: e.target.value })}
+                  />
+                  <span className="muted small">100%</span>
+                </label>
                 <button
-                  className="icon-btn"
-                  title="Move up"
-                  aria-label={`Move status ${i + 1} up`}
-                  disabled={i === 0}
-                  onClick={() => moveStatus(i, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  className="icon-btn"
-                  title="Move down"
-                  aria-label={`Move status ${i + 1} down`}
-                  disabled={i === statuses.length - 1}
-                  onClick={() => moveStatus(i, 1)}
-                >
-                  ↓
-                </button>
-                <button
-                  className="icon-btn"
-                  title="Remove this status"
-                  aria-label={`Remove status ${i + 1}`}
+                  className="btn small"
                   onClick={() =>
-                    setField(
-                      'cardStatuses',
-                      statuses.filter((_, idx) => idx !== i)
-                    )
+                    updateSettings({
+                      ...settings,
+                      progressColorStart: DEFAULT_SETTINGS.progressColorStart,
+                      progressColorEnd: DEFAULT_SETTINGS.progressColorEnd
+                    })
                   }
                 >
-                  ✕
+                  Reset
                 </button>
-              </li>
-            ))}
-          </ol>
-          <div className="level-actions">
-            <button
-              className="btn small"
-              onClick={() =>
-                setField('cardStatuses', [...statuses, { id: '', icon: '', label: '' }])
-              }
-            >
-              + Status
-            </button>
-            <button
-              className="btn small"
-              disabled={JSON.stringify(statuses) === JSON.stringify(DEFAULT_CARD_STATUSES)}
-              onClick={() => setField('cardStatuses', DEFAULT_CARD_STATUSES)}
-            >
-              Reset to defaults
-            </button>
-          </div>
-          <span className="muted small">
-            Where a scene stands. The icon shows at the left of its card; pick a status from the
-            dropdown when the note is open. The order here is the order in the dropdown. Changing an
-            icon or meaning updates every card at once; a removed status simply stops showing.
-          </span>
-        </div>
-        {readOnly ? (
-          // Project metadata lives in project.json, so it can't change here.
-          // Appearance settings below are session-local and do work.
-          <p className="muted small">
-            Project details are read-only in a published board. The appearance settings below still
-            work — they apply to your browser for this visit only.
-          </p>
-        ) : (
-          <>
-            <button
-              className="btn primary"
-              disabled={!projectDirty || !meta.name.trim()}
-              onClick={() => saveProjectMeta(meta)}
-            >
-              Save project settings
-            </button>
-            <p className="muted small folder-path">{snapshot.root}</p>
-          </>
+              </span>
+              <span className="muted small">
+                The strip along the bottom of a card whose note has a % complete; its colour moves from
+                the first to the second as the scene nears done.
+              </span>
+            </div>
+            <div className="form-row">
+              <label htmlFor="board-note-view">Note opened from a board</label>
+              <select
+                id="board-note-view"
+                value={settings.boardNoteView}
+                onChange={(e) =>
+                  updateSettings({ ...settings, boardNoteView: e.target.value as BoardNoteView })
+                }
+              >
+                <option value="popup">Popup over the board</option>
+                <option value="panel">Panel beside the board</option>
+              </select>
+              <span className="muted small">
+                The popup is a read-only preview with an <strong>Edit</strong> button. The panel takes a
+                draggable half of the boards page, keeps the plot visible, and is edited in place —
+                click any line to write.
+              </span>
+            </div>
+          </section>
         )}
-      </section>
 
-      {!readOnly && (
-        <section className="settings-group">
-          <h2>Publish</h2>
-          <p className="muted small">
-            Export every board as a self-contained static site — a folder you can upload anywhere,
-            or open straight in a browser. Same output as{' '}
-            <code>npm run export:static</code>.
-          </p>
-          <button className="btn" disabled={exporting} onClick={() => void runExport()}>
-            {exporting ? 'Exporting…' : 'Export static site'}
-          </button>
-          {exportStatus && <p className="muted small">{exportStatus}</p>}
-        </section>
-      )}
+        {active === 'project' && (
+          <section className="settings-group">
+            <h2>Project</h2>
+            <div className="form-row">
+              <label htmlFor="project-name">Project name</label>
+              <input
+                id="project-name"
+                value={meta.name}
+                onChange={(e) => setField('name', e.target.value)}
+              />
+            </div>
+            <div className="form-row">
+              <label id="project-levels-label">Column levels</label>
+              <ol className="level-list" aria-labelledby="project-levels-label">
+                {levels.map((label, i) => (
+                  <li key={i} className="level-row">
+                    <input
+                      aria-label={`Level ${i + 1} name`}
+                      value={label}
+                      placeholder={i === levels.length - 1 ? DEFAULT_TIMELINE_LABEL : `Level ${i + 1}`}
+                      onChange={(e) => setLevel(i, e.target.value)}
+                    />
+                    <button
+                      className="icon-btn"
+                      title="Remove this level"
+                      aria-label={`Remove level ${i + 1}`}
+                      disabled={levels.length === 1}
+                      onClick={() =>
+                        setField(
+                          'timelineLevelLabels',
+                          levels.filter((_, idx) => idx !== i)
+                        )
+                      }
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <div className="level-actions">
+                <button
+                  className="btn small"
+                  onClick={() => setField('timelineLevelLabels', ['', ...levels])}
+                >
+                  + Level above
+                </button>
+                <button
+                  className="btn small"
+                  onClick={() => setField('timelineLevelLabels', [...levels, ''])}
+                >
+                  + Level below
+                </button>
+              </div>
+              <span className="muted small">
+                Outermost first — "Novel", "Part", "Chapter", "Scene". The last level is what cards sit
+                on; the others group it and can each carry a note. One level is a plain list. A level is
+                named by its depth, so adding one above renames what is already at the top.
+              </span>
+            </div>
+            <div className="form-row">
+              <label htmlFor="project-manuscript">Manuscript row</label>
+              <select
+                id="project-manuscript"
+                value={meta.manuscriptLevel === null ? '' : String(meta.manuscriptLevel)}
+                onChange={(e) =>
+                  setField('manuscriptLevel', e.target.value === '' ? null : Number(e.target.value))
+                }
+              >
+                <option value="">Off</option>
+                {levels.map((label, i) => (
+                  <option key={i} value={String(i)}>
+                    {label.trim() || (i === levels.length - 1 ? DEFAULT_TIMELINE_LABEL : `Level ${i + 1}`)}
+                  </option>
+                ))}
+                {/* A level since removed from the list stays selectable as it is, so
+                    opening Settings never silently changes what the row snaps to. */}
+                {meta.manuscriptLevel !== null && meta.manuscriptLevel >= levels.length && (
+                  <option value={String(meta.manuscriptLevel)}>Level {meta.manuscriptLevel + 1}</option>
+                )}
+              </select>
+              <span className="muted small">
+                A row on top of every board for the novel itself, one cell per column at this level —
+                per Chapter, say, each spanning its scenes. Show or hide it per board with 📖.
+              </span>
+            </div>
+            <div className="form-row">
+              <label htmlFor="project-row-label">Row label</label>
+              <input
+                id="project-row-label"
+                value={meta.rowLabel}
+                placeholder={DEFAULT_ROW_LABEL}
+                onChange={(e) => setField('rowLabel', e.target.value)}
+              />
+              <span className="muted small">
+                Names the Characters tab — "Characters", "Topics", "Phases".
+              </span>
+            </div>
+            <div className="form-row">
+              <label htmlFor="project-kind">Project kind</label>
+              <select
+                id="project-kind"
+                value={meta.kind}
+                onChange={(e) => setField('kind', e.target.value as ProjectKind)}
+              >
+                <option value="story">Story — rows are people</option>
+                <option value="general">General — rows are anything else</option>
+              </select>
+              <span className="muted small">
+                A general project hides the Family tab and the family fields on a row, which have no
+                meaning when rows are topics or phases.
+              </span>
+            </div>
+            <div className="form-row">
+              <label id="project-statuses-label">Card statuses</label>
+              <ol className="level-list" aria-labelledby="project-statuses-label">
+                {statuses.map((s, i) => (
+                  <li key={i} className="level-row">
+                    <input
+                      className="status-icon-input"
+                      aria-label={`Status ${i + 1} icon`}
+                      value={s.icon}
+                      placeholder="🙂"
+                      onChange={(e) => setStatusField(i, 'icon', e.target.value)}
+                    />
+                    <input
+                      aria-label={`Status ${i + 1} meaning`}
+                      value={s.label}
+                      placeholder="What this status means"
+                      onChange={(e) => setStatusField(i, 'label', e.target.value)}
+                    />
+                    <button
+                      className="icon-btn"
+                      title="Move up"
+                      aria-label={`Move status ${i + 1} up`}
+                      disabled={i === 0}
+                      onClick={() => moveStatus(i, -1)}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className="icon-btn"
+                      title="Move down"
+                      aria-label={`Move status ${i + 1} down`}
+                      disabled={i === statuses.length - 1}
+                      onClick={() => moveStatus(i, 1)}
+                    >
+                      ↓
+                    </button>
+                    <button
+                      className="icon-btn"
+                      title="Remove this status"
+                      aria-label={`Remove status ${i + 1}`}
+                      onClick={() =>
+                        setField(
+                          'cardStatuses',
+                          statuses.filter((_, idx) => idx !== i)
+                        )
+                      }
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <div className="level-actions">
+                <button
+                  className="btn small"
+                  onClick={() =>
+                    setField('cardStatuses', [...statuses, { id: '', icon: '', label: '' }])
+                  }
+                >
+                  + Status
+                </button>
+                <button
+                  className="btn small"
+                  disabled={JSON.stringify(statuses) === JSON.stringify(DEFAULT_CARD_STATUSES)}
+                  onClick={() => setField('cardStatuses', DEFAULT_CARD_STATUSES)}
+                >
+                  Reset to defaults
+                </button>
+              </div>
+              <span className="muted small">
+                Where a scene stands. The icon shows at the left of its card; pick a status from the
+                dropdown when the note is open. The order here is the order in the dropdown. Changing an
+                icon or meaning updates every card at once; a removed status simply stops showing.
+              </span>
+            </div>
+            {readOnly ? (
+              // Project metadata lives in project.json, so it can't change here.
+              // The other categories are session-local and do work.
+              <p className="muted small">
+                Project details are read-only in a published board. The other categories still work —
+                they apply to your browser for this visit only.
+              </p>
+            ) : (
+              <>
+                <button
+                  className="btn primary"
+                  disabled={!projectDirty || !meta.name.trim()}
+                  onClick={() => saveProjectMeta(meta)}
+                >
+                  Save project settings
+                </button>
+                <p className="muted small folder-path">{snapshot.root}</p>
+              </>
+            )}
+          </section>
+        )}
 
-      <section className="settings-group">
-        <h2>Application</h2>
-        <div className="form-row">
-          <label>Theme</label>
-          <select
-            value={settings.theme}
-            onChange={(e) => updateSettings({ ...settings, theme: e.target.value as Theme })}
-          >
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </div>
-        <div className="form-row">
-          <label>Card font size ({settings.cardFontSize}px)</label>
-          <input
-            type="range"
-            min={CARD_FONT_MIN}
-            max={CARD_FONT_MAX}
-            value={settings.cardFontSize}
-            onChange={(e) => updateSettings({ ...settings, cardFontSize: Number(e.target.value) })}
-          />
-          <span className="muted small">Base text size on board cards (scales with zoom).</span>
-        </div>
-        <div className="form-row">
-          <label>% complete bar</label>
-          <span className="progress-colors">
-            <label className="theme-color">
-              <input
-                type="color"
-                aria-label="Bar colour at 0%"
-                value={settings.progressColorStart}
-                onChange={(e) => updateSettings({ ...settings, progressColorStart: e.target.value })}
-              />
-              <span className="muted small">0%</span>
-            </label>
-            <span
-              className="progress-preview"
-              style={{
-                ['--progress-0' as string]: settings.progressColorStart,
-                ['--progress-100' as string]: settings.progressColorEnd
-              }}
-            />
-            <label className="theme-color">
-              <input
-                type="color"
-                aria-label="Bar colour at 100%"
-                value={settings.progressColorEnd}
-                onChange={(e) => updateSettings({ ...settings, progressColorEnd: e.target.value })}
-              />
-              <span className="muted small">100%</span>
-            </label>
-            <button
-              className="btn small"
-              onClick={() =>
-                updateSettings({
-                  ...settings,
-                  progressColorStart: DEFAULT_SETTINGS.progressColorStart,
-                  progressColorEnd: DEFAULT_SETTINGS.progressColorEnd
-                })
-              }
-            >
-              Reset
+        {active === 'publish' && (
+          <section className="settings-group">
+            <h2>Publish</h2>
+            <p className="muted small">
+              Export every board as a self-contained static site — a folder you can upload anywhere,
+              or open straight in a browser. Same output as{' '}
+              <code>npm run export:static</code>.
+            </p>
+            <button className="btn" disabled={exporting} onClick={() => void runExport()}>
+              {exporting ? 'Exporting…' : 'Export static site'}
             </button>
-          </span>
-          <span className="muted small">
-            The strip along the bottom of a card whose note has a % complete; its colour moves from
-            the first to the second as the scene nears done.
-          </span>
-        </div>
-        <div className="form-row">
-          <label htmlFor="board-note-view">Note opened from a board</label>
-          <select
-            id="board-note-view"
-            value={settings.boardNoteView}
-            onChange={(e) =>
-              updateSettings({ ...settings, boardNoteView: e.target.value as BoardNoteView })
-            }
-          >
-            <option value="popup">Popup over the board</option>
-            <option value="panel">Panel beside the board</option>
-          </select>
-          <span className="muted small">
-            The popup is a read-only preview with an <strong>Edit</strong> button. The panel takes a
-            draggable half of the boards page, keeps the plot visible, and is edited in place —
-            click any line to write.
-          </span>
-        </div>
-        <div className="form-row">
-          <label>Editor preview position</label>
-          <select
-            value={settings.previewPosition}
-            onChange={(e) =>
-              updateSettings({ ...settings, previewPosition: e.target.value as PreviewPosition })
-            }
-          >
-            <option value="left">Left</option>
-            <option value="right">Right</option>
-          </select>
-          <span className="muted small">Which side the rendered preview sits on in the editor.</span>
-        </div>
-        <div className="form-row">
-          <label htmlFor="word-count">Word count in editors</label>
-          <select
-            id="word-count"
-            value={settings.showWordCount ? 'shown' : 'hidden'}
-            onChange={(e) => updateSettings({ ...settings, showWordCount: e.target.value === 'shown' })}
-          >
-            <option value="shown">Shown</option>
-            <option value="hidden">Hidden</option>
-          </select>
-          <span className="muted small">
-            The note's word count, at the bottom left of the editor. <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+
-            <kbd>W</kbd> switches it anywhere in the app.
-          </span>
-        </div>
-      </section>
+            {exportStatus && <p className="muted small">{exportStatus}</p>}
+          </section>
+        )}
 
-      <section className="settings-group">
-        <h2>Family tree</h2>
-        <p className="muted small">
-          Node size and spacing on the Family tab, in world units at 100% zoom. Wider nodes fit
-          longer names; larger gaps make a dense tree readable at the cost of more panning.
-        </p>
-        {(
-          [
-            ['nodeWidth', 'Node width', 100, 400],
-            ['nodeHeight', 'Node height', 40, 160],
-            ['generationGap', 'Generation gap', 40, 260],
-            ['siblingGap', 'Sibling gap', 8, 120],
-            ['partnerGap', 'Partner gap', 8, 120],
-            ['nodeFontSize', 'Node font size', 9, 24]
-          ] as const
-        ).map(([key, label, min, max]) => (
-          <div className="form-row" key={key}>
-            <label>
-              {label} ({settings[key]}
-              {key === 'nodeFontSize' ? 'px' : ''})
-            </label>
-            <input
-              type="range"
-              min={min}
-              max={max}
-              value={settings[key]}
-              onChange={(e) => updateSettings({ ...settings, [key]: Number(e.target.value) })}
-            />
-          </div>
-        ))}
-      </section>
+        {active === 'family' && (
+          <section className="settings-group">
+            <h2>Family tree</h2>
+            <p className="muted small">
+              Node size and spacing on the Family tab, in world units at 100% zoom. Wider nodes fit
+              longer names; larger gaps make a dense tree readable at the cost of more panning.
+            </p>
+            {(
+              [
+                ['nodeWidth', 'Node width', 100, 400],
+                ['nodeHeight', 'Node height', 40, 160],
+                ['generationGap', 'Generation gap', 40, 260],
+                ['siblingGap', 'Sibling gap', 8, 120],
+                ['partnerGap', 'Partner gap', 8, 120],
+                ['nodeFontSize', 'Node font size', 9, 24]
+              ] as const
+            ).map(([key, label, min, max]) => (
+              <div className="form-row" key={key}>
+                <label>
+                  {label} ({settings[key]}
+                  {key === 'nodeFontSize' ? 'px' : ''})
+                </label>
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  value={settings[key]}
+                  onChange={(e) => updateSettings({ ...settings, [key]: Number(e.target.value) })}
+                />
+              </div>
+            ))}
+          </section>
+        )}
 
-      <section className="settings-group">
-        <h2>Editor settings</h2>
-        <p className="muted small">
-          Colours &amp; sizes for the markdown preview (editor and note popup). Each colour has a
-          separate value for the light and dark themes.
-        </p>
+        {active === 'editor' && (
+          <section className="settings-group">
+            <h2>Editor</h2>
+            <div className="form-row">
+              <label>Editor preview position</label>
+              <select
+                value={settings.previewPosition}
+                onChange={(e) =>
+                  updateSettings({ ...settings, previewPosition: e.target.value as PreviewPosition })
+                }
+              >
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+              <span className="muted small">Which side the rendered preview sits on in the editor.</span>
+            </div>
+            <div className="form-row">
+              <label htmlFor="word-count">Word count in editors</label>
+              <select
+                id="word-count"
+                value={settings.showWordCount ? 'shown' : 'hidden'}
+                onChange={(e) => updateSettings({ ...settings, showWordCount: e.target.value === 'shown' })}
+              >
+                <option value="shown">Shown</option>
+                <option value="hidden">Hidden</option>
+              </select>
+              <span className="muted small">
+                The note's word count, at the bottom left of the editor. <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+
+                <kbd>W</kbd> switches it anywhere in the app.
+              </span>
+            </div>
 
-        <h3 className="settings-subhead">Headings</h3>
-        {es.headings.map((h, i) => (
-          <div className="style-row" key={`h${i}`}>
-            <label>Heading {i + 1}</label>
-            <input
-              type="number"
-              min={10}
-              max={48}
-              value={h.size}
-              onChange={(e) => updateHeading(i, { size: Number(e.target.value) })}
-            />
-            <span className="muted small">px</span>
-            {themeColorPickers(h.color, (theme, v) => updateHeadingColor(i, theme, v))}
-          </div>
-        ))}
+            <h3 className="settings-subhead">Preview styles</h3>
+            <p className="muted small">
+              Colours &amp; sizes for the markdown preview (editor and note popup). Each colour has a
+              separate value for the light and dark themes.
+            </p>
 
-        <h3 className="settings-subhead">Text</h3>
-        <div className="style-row">
-          <label>Normal text</label>
-          <input
-            type="number"
-            min={BODY_SIZE_MIN}
-            max={BODY_SIZE_MAX}
-            value={es.bodySize}
-            onChange={(e) => updateStyles({ bodySize: Number(e.target.value) })}
-          />
-          <span className="muted small">px</span>
-          {themeColorPickers(es.bodyColor, (theme, v) => setColor('bodyColor', theme, v))}
-        </div>
-        {colorRow('Bold', 'bold')}
-        {colorRow('Italic', 'italic')}
-        {colorRow('Bold-italic', 'boldItalic')}
-        {colorRow('Strikethrough', 'strikethrough')}
-        {colorRow('Link', 'linkColor')}
+            <h3 className="settings-subhead">Headings</h3>
+            {es.headings.map((h, i) => (
+              <div className="style-row" key={`h${i}`}>
+                <label>Heading {i + 1}</label>
+                <input
+                  type="number"
+                  min={10}
+                  max={48}
+                  value={h.size}
+                  onChange={(e) => updateHeading(i, { size: Number(e.target.value) })}
+                />
+                <span className="muted small">px</span>
+                {themeColorPickers(h.color, (theme, v) => updateHeadingColor(i, theme, v))}
+              </div>
+            ))}
 
-        <h3 className="settings-subhead">Backgrounds</h3>
-        {colorRow('Highlight', 'highlightBg')}
-        {colorRow('Inline code', 'inlineCodeBg')}
-        {colorRow('Code block', 'codeBlockBg')}
-        {colorRow('Blockquote accent', 'blockquoteColor')}
+            <h3 className="settings-subhead">Text</h3>
+            <div className="style-row">
+              <label>Normal text</label>
+              <input
+                type="number"
+                min={BODY_SIZE_MIN}
+                max={BODY_SIZE_MAX}
+                value={es.bodySize}
+                onChange={(e) => updateStyles({ bodySize: Number(e.target.value) })}
+              />
+              <span className="muted small">px</span>
+              {themeColorPickers(es.bodyColor, (theme, v) => setColor('bodyColor', theme, v))}
+            </div>
+            {colorRow('Bold', 'bold')}
+            {colorRow('Italic', 'italic')}
+            {colorRow('Bold-italic', 'boldItalic')}
+            {colorRow('Strikethrough', 'strikethrough')}
+            {colorRow('Link', 'linkColor')}
 
-        <h3 className="settings-subhead">Body</h3>
-        <div className="form-row">
-          <label>Preview font</label>
-          <select
-            value={es.bodyFont}
-            onChange={(e) => updateStyles({ bodyFont: e.target.value as PreviewFont })}
-          >
-            <option value="sans">Sans-serif</option>
-            <option value="serif">Serif</option>
-            <option value="mono">Monospace</option>
-          </select>
-        </div>
-        <div className="form-row">
-          <label>Line height</label>
-          <input
-            type="number"
-            step={0.1}
-            min={1.2}
-            max={2.4}
-            value={es.lineHeight}
-            onChange={(e) => updateStyles({ lineHeight: Number(e.target.value) })}
-          />
-        </div>
+            <h3 className="settings-subhead">Backgrounds</h3>
+            {colorRow('Highlight', 'highlightBg')}
+            {colorRow('Inline code', 'inlineCodeBg')}
+            {colorRow('Code block', 'codeBlockBg')}
+            {colorRow('Blockquote accent', 'blockquoteColor')}
 
-        <button className="btn" onClick={() => updateStyles(DEFAULT_EDITOR_STYLES)}>
-          Reset editor styles to defaults
-        </button>
-      </section>
+            <h3 className="settings-subhead">Body</h3>
+            <div className="form-row">
+              <label>Preview font</label>
+              <select
+                value={es.bodyFont}
+                onChange={(e) => updateStyles({ bodyFont: e.target.value as PreviewFont })}
+              >
+                <option value="sans">Sans-serif</option>
+                <option value="serif">Serif</option>
+                <option value="mono">Monospace</option>
+              </select>
+            </div>
+            <div className="form-row">
+              <label>Line height</label>
+              <input
+                type="number"
+                step={0.1}
+                min={1.2}
+                max={2.4}
+                value={es.lineHeight}
+                onChange={(e) => updateStyles({ lineHeight: Number(e.target.value) })}
+              />
+            </div>
+
+            <button className="btn" onClick={() => updateStyles(DEFAULT_EDITOR_STYLES)}>
+              Reset editor styles to defaults
+            </button>
+          </section>
+        )}
+      </div>
     </div>
   )
 }

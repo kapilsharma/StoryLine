@@ -7,4 +7,4 @@ tags:
   - files
 created: '2026-08-17'
 ---
-Its path is shown in Settings, under the save button.
+Its path is shown in **Settings → Project**, under the save button.

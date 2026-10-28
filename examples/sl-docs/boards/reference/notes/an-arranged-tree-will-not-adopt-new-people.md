@@ -9,4 +9,4 @@ created: '2026-08-17'
 ---
 That is the point of freezing it — an arrangement that took real work should not be rearranged because someone new was entered elsewhere.
 
-Add them explicitly from the toolbar. Node size and spacing live in Settings and apply to every tree.
+Add them explicitly from the toolbar. Node size and spacing live in **Settings → Family tree** and apply to every tree.

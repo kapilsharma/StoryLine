@@ -7,4 +7,4 @@ tags:
   - settings
 created: '2026-08-17'
 ---
-This section is the one part of Settings that does not save automatically.
+The **Project** category is the one part of Settings that does not save automatically. Until you save, **Project** in the list on the left shows a dot.

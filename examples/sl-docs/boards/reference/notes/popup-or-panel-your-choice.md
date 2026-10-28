@@ -8,7 +8,7 @@ tags:
   - settings
 created: '2026-08-17'
 ---
-**Settings → Application → Note opened from a board** decides what a click on a card or a row header opens.
+**Settings → General → Note opened from a board** decides what a click on a card or a row header opens.
 
 *Popup over the board* is the default: a read-only preview in the middle of the window, with **Edit** for the fullscreen editor. Quick to open, quick to dismiss — but on a busy board the grid showing through behind it is a lot to look at.
 

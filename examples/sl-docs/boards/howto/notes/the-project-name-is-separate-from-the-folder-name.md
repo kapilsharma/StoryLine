@@ -7,4 +7,4 @@ tags:
   - files
 created: '2026-08-17'
 ---
-Renaming the folder does not rename the project — that is the **Project name** field in Settings.
+Renaming the folder does not rename the project — that is the **Project name** field in **Settings → Project**.

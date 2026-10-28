@@ -9,4 +9,4 @@ created: '2026-08-17'
 ---
 Theme, card font size and preview position apply the moment you change them — they are app settings, stored outside the project.
 
-The **Project** section at the top edits `project.json` and needs the **Save project settings** button.
+The **Project** category edits `project.json` and needs the **Save project settings** button.

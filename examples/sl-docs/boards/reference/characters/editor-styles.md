@@ -8,4 +8,4 @@ tags:
   - settings
   - editor
 ---
-Per-theme colours and sizes for the Markdown preview.
+Per-theme colours and sizes for the Markdown preview, under **Settings → Editor**.
