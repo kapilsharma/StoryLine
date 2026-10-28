@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.20.0](https://github.com/kapilsharma/StoryLine/compare/2.19.0...2.20.0) (2026-10-28)
+
+
+### Features
+
+* **#210:** split Settings into categories ([7fcf805](https://github.com/kapilsharma/StoryLine/commit/7fcf805ff31db53cb650866f108bd768896f7972))
+* **#210:** split Settings into categories ([fee8a1c](https://github.com/kapilsharma/StoryLine/commit/fee8a1c9047fb12cc653c73f60408b24601d5509))
+
 ## [2.19.0](https://github.com/kapilsharma/StoryLine/compare/2.18.0...2.19.0) (2026-10-22)
 
 
