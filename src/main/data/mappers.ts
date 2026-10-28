@@ -10,6 +10,7 @@ import type {
 import { GENDERS, SCHEMA_VERSION, defaultView } from '@shared/types'
 import { toPartialDate } from '@shared/dates'
 import { normalizeProgress } from '@shared/cardProgress'
+import { assetFile } from '@shared/assets'
 
 /**
  * Conversion between parsed frontmatter (`Record<string, unknown>`) and typed
@@ -263,6 +264,9 @@ export function frontmatterToNote(data: Record<string, unknown>, id: string, bod
   if (progress !== undefined) note.progress = progress
   // Trimmed at the ends only — inner line breaks are the author's layout.
   if (typeof data.hover === 'string' && data.hover.trim()) note.hover = data.hover.trim()
+  // Only a board asset reference counts; anything else (a URL, a path out of the
+  // folder) is ignored on read, so the card stays a text card.
+  if (typeof data.image === 'string' && assetFile(data.image.trim())) note.image = data.image.trim()
   return note
 }
 
@@ -273,6 +277,7 @@ export function noteToFrontmatter(n: Note): Record<string, unknown> {
     ...(n.status ? { status: n.status } : {}),
     ...(n.progress !== undefined ? { progress: n.progress } : {}),
     ...(n.hover?.trim() ? { hover: n.hover.trim() } : {}),
+    ...(n.image ? { image: n.image } : {}),
     ...(n.tags?.length ? { tags: n.tags } : {}),
     ...(n.boards?.length ? { boards: n.boards } : {}),
     ...(n.related?.length

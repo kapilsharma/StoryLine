@@ -262,6 +262,7 @@ takes the same route in the opposite direction.
 | `title` | The text shown on the card — the one-line beat. |
 | `status` | Id of a card status (§8). Absent = no status. |
 | `hover` | Hover text: a short plain-text reminder shown when the mouse rests on the card (line breaks kept). Absent = none. A quick summary of the scene when present. |
+| `image` | Makes the card an **image card**: `assets/<file>`, a picture in the board's `assets/` folder (png, jpg, gif, webp, svg or avif), drawn on the card. Absent = an ordinary text card. Anything that is not an `assets/<file>` path is ignored. |
 | `tags` | Free tags. |
 | `boards` | Board ids the note belongs to. |
 | `related` | Links to other notes **by filename** (`x.md`), with an optional comment. |
@@ -414,6 +415,7 @@ to **not edit the same card in the app at the same time** — or close the app.
 | Rewrite a scene / card text | Note's body, and/or `title` (keep it one short line — it is the card). |
 | Set a scene's progress | Note's `status:` to an id from §8. Remove the line for "no status". |
 | Add a quick reminder to a card | Note's `hover:` — a sentence or two of plain text. Remove the line for none. |
+| Turn a card into an image card | Put the picture in `boards/<boardId>/assets/` and set the note's `image: assets/<file>`. Remove the line to make it a text card again. |
 | Move a card | In `board.json`, change its `rowId` and/or `colStart`/`colEnd`. `colStart` must not come after `colEnd` in the column sequence; `rowId` must be in `members`. |
 | Delete a card | Remove it from `cards[]`. Leave the note file unless asked to delete it too. |
 | **Add a card** | (1) Create `notes/<slug-of-title>.md` (if the name is taken, add `-2`, `-3`…) with a **new** `uid` `n_` + 8 random lowercase hex digits, unique on the board, `title`, `boards: [<boardId>]`, `created: '<today>'`. (2) Append `{ "id": "card-<8 random hex>", "noteUid": "<that uid>", "rowId": …, "colStart": …, "colEnd": … }` to `cards[]`. |

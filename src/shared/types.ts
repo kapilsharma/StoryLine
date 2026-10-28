@@ -202,6 +202,14 @@ export interface Note {
    * breaks are kept. Absent = no tooltip.
    */
   hover?: string
+  /**
+   * Picture for an image card (Issue #218), as a board asset reference —
+   * `assets/<file>`, the same spelling a markdown embed uses (see
+   * `shared/assets.ts`). Set = the card is drawn as an image card; absent = a
+   * text card, as every card was before. Choosing Text clears it; the file
+   * itself stays in the board's assets folder.
+   */
+  image?: string
   /** Raw markdown body, preserved verbatim on write. May be omitted in list views (lazy). */
   body: string
 

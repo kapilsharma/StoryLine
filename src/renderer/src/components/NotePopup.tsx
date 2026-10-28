@@ -4,6 +4,7 @@ import { cardStatuses } from '@shared/cardStatus'
 import { useStore } from '../store'
 import { CardStatusSelect } from './CardStatusSelect'
 import { CardProgressSelect } from './CardProgressSelect'
+import { CardImage } from './CardImageField'
 import { usePrompt } from './PromptModal'
 import { MarkdownPreview } from './MarkdownPreview'
 
@@ -114,6 +115,8 @@ export function NotePopup({ note, onClose, onOpenNote }: Props): JSX.Element {
             onChange={(next) => void changeProgress(next)}
           />
         </div>
+
+        {note.image && <CardImage image={note.image} className="note-popup-image" />}
 
         {note.tags && note.tags.length > 0 && (
           <div className="tag-row">

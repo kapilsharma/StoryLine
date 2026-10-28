@@ -2,7 +2,12 @@ import { app } from 'electron'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import type { AppConfig, RecentProject } from '@shared/config'
-import { DEFAULT_SETTINGS, normalizeEditorStyles } from '@shared/config'
+import {
+  DEFAULT_SETTINGS,
+  clampCardImageHeight,
+  normalizeCardImageTitle,
+  normalizeEditorStyles
+} from '@shared/config'
 
 /**
  * App-level config persisted as JSON in Electron's userData dir — recents and
@@ -32,6 +37,8 @@ function parseConfig(text: string): AppConfig {
   const settings = { ...DEFAULT_SETTINGS, ...parsed.settings }
   // Coerce legacy single-string preview colours into the per-theme shape (Issue 14).
   settings.editorStyles = normalizeEditorStyles(settings.editorStyles)
+  settings.cardImageMaxHeight = clampCardImageHeight(settings.cardImageMaxHeight)
+  settings.cardImageTitle = normalizeCardImageTitle(settings.cardImageTitle)
   return { recents: parsed.recents ?? [], settings }
 }
 

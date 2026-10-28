@@ -72,7 +72,8 @@ const api: AppApi = {
   searchNotes: (root, query, scope) => ipcRenderer.invoke('search:notes', root, query, scope),
 
   importAsset: (root, boardId, file) => ipcRenderer.invoke('asset:import', root, boardId, file),
-  pickAsset: (root, boardId) => ipcRenderer.invoke('asset:pick', root, boardId),
+  listImageAssets: (root, boardId) => ipcRenderer.invoke('asset:listImages', root, boardId),
+  pickAsset: (root, boardId, imagesOnly) => ipcRenderer.invoke('asset:pick', root, boardId, imagesOnly),
 
   createCard: (root, input) => ipcRenderer.invoke('card:create', root, input),
   updateCard: (root, boardId, card) => ipcRenderer.invoke('card:update', root, boardId, card),

@@ -187,6 +187,7 @@ export function createStaticApi(bundle: ExportBundle): AppApi {
     // Assets are copied into the exported folder, so there is nothing to import.
     importAsset: () => denied<AssetRef>(),
     pickAsset: async () => null,
+    listImageAssets: async () => [],
 
     getNote: async (_root, boardId, id) => fullNote(boardId, id),
     getEntityBody: async (_root, boardId, kind: EntityBodyKind, id) =>

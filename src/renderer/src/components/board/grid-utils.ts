@@ -586,6 +586,30 @@ function unitsInSpan(
   return visible.slice(lowerBound(visPositions, lo), lowerBound(visPositions, hi + 1))
 }
 
+/**
+ * Space an image card's frame takes beyond its picture (Issue #218): its 3px
+ * padding and 2px border, top and bottom. Kept in step with `.board-card.image-card`.
+ */
+export const IMAGE_CARD_CHROME = 10
+
+/**
+ * Outer height of an image card on the board (#218): the picture at its
+ * configured maximum, scaled by zoom, plus a one-line caption when the title
+ * sits below it, plus the frame. Pure, so a row's height is known before any
+ * image has loaded — the row window needs exact offsets.
+ */
+export function imageCardHeight(
+  maxHeight: number,
+  zoom: number,
+  title: 'right' | 'below' | 'none',
+  cardFont: number
+): number {
+  const picture = Math.round(maxHeight * zoom)
+  // The title's line box (line-height 1.25) plus the gap above it.
+  const caption = title === 'below' ? Math.ceil(cardFont * 1.25) + 3 : 0
+  return picture + caption + IMAGE_CARD_CHROME
+}
+
 export interface PlacedCard {
   card: Card
   note: Note | undefined
@@ -624,6 +648,12 @@ export interface BoardLayout {
    * `lineIndex`; absent means one. The grid uses it to grow the row track.
    */
   stackDepth: Map<number, number>
+  /**
+   * Row lines holding at least one image card (Issue #218), shown or lone. The
+   * grid gives these lines the taller image card height, worked out rather than
+   * measured, so the row window's offsets stay exact.
+   */
+  imageLines: Set<number>
   /** The Manuscript row's cells (#204); null when the row isn't shown. */
   manuscript: ManuscriptLayout | null
 }
@@ -854,7 +884,11 @@ export function buildBoardLayout(
     manuscriptLayout = { lineIndex: 0, cells: placed, coveredSlots }
   }
 
-  return { cols, rows, fullCards, markers, loneCards, stackDepth, manuscript: manuscriptLayout }
+  const imageLines = new Set<number>()
+  for (const pc of fullCards) if (pc.note?.image) imageLines.add(pc.lineIndex)
+  for (const pc of loneCards) if (pc.note?.image) imageLines.add(pc.lineIndex)
+
+  return { cols, rows, fullCards, markers, loneCards, stackDepth, imageLines, manuscript: manuscriptLayout }
 }
 
 // ── Reordering (custom row/group sort, persisted in board JSON) ──────────────
