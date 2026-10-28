@@ -7,4 +7,4 @@ group: Settings
 tags:
   - settings
 ---
-Name, axis labels, project kind.
+The **Project** category of Settings: name, column levels, manuscript row, row label, project kind, card statuses.

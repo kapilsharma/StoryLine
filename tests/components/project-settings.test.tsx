@@ -20,7 +20,8 @@ async function renderSettings(project = {}) {
   const api = makeApi({ openProject: vi.fn().mockResolvedValue(makeSnapshot({ project })) })
   renderWithProviders(<Settings />, { bootRoot: '/project' })
   await waitFor(() => expect(api.openProject).toHaveBeenCalled())
-  await screen.findByText('Project')
+  // Settings opens on General (#210); these fields live under Project.
+  await userEvent.click(await screen.findByRole('tab', { name: 'Project' }))
   // The form fills from the project in an effect, a tick after the heading appears —
   // so wait for it, or a test that reads a field straight away races it.
   await waitFor(() => expect(screen.getByLabelText<HTMLInputElement>('Project name').value).not.toBe(''))
@@ -178,6 +179,7 @@ describe('Settings — project metadata', () => {
     const api = makeApi({ openProject: vi.fn().mockResolvedValue(makeSnapshot()) })
     renderWithProviders(<Settings />, { bootRoot: '/project', readOnly: true })
     await waitFor(() => expect(api.openProject).toHaveBeenCalled())
+    await userEvent.click(await screen.findByRole('tab', { name: 'Project' }))
     expect(await screen.findByText(/read-only in a published board/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Save project settings' })).not.toBeInTheDocument()
   })

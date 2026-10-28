@@ -7,6 +7,6 @@ tags:
   - editor
 created: '2026-08-17'
 ---
-**Editor preview position** in Settings puts the rendered side wherever you prefer.
+**Editor preview position** in **Settings → Editor** puts the rendered side wherever you prefer.
 
 The title sits in the top bar with the tag field just below it; tags are comma-separated.

@@ -156,6 +156,7 @@ describe('Settings — Manuscript row (#204)', () => {
     const api = makeApi({ openProject: vi.fn().mockResolvedValue(makeSnapshot({ project })) })
     renderWithProviders(<Settings />, { bootRoot: '/project' })
     await waitFor(() => expect(api.openProject).toHaveBeenCalled())
+    await userEvent.click(await screen.findByRole('tab', { name: 'Project' }))
     await waitFor(() => expect(screen.getByLabelText<HTMLInputElement>('Project name').value).not.toBe(''))
     return api
   }

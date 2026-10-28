@@ -7,6 +7,8 @@ tags:
   - settings
 created: '2026-08-17'
 ---
-This section does not auto-save — the button under it commits the change, and stays disabled until something is different.
+The **Project** category does not auto-save — the button under it commits the change, and stays disabled until something is different.
 
-The rest of the Settings tab saves instantly, which is a distinction worth remembering.
+While it has unsaved changes, **Project** in the list on the left carries a dot, so you can look at another category and come back without losing them.
+
+Every other category saves instantly, which is a distinction worth remembering.

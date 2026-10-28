@@ -758,11 +758,53 @@ textarea {
 }
 
 /* ── Settings ── */
+/* Categories on the left, the chosen one on the right (#210). The pane scrolls
+   on its own so the list stays put. */
 .settings {
+  display: flex;
+  height: 100%;
+}
+.settings-nav {
+  flex: 0 0 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1.5rem 0.75rem;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: none;
+  background: none;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: left;
+}
+.settings-nav-item:hover {
+  background: var(--panel);
+  color: var(--fg);
+}
+.settings-nav-item.active {
+  background: var(--accent);
+  color: #fff;
+}
+.settings-dirty {
+  font-weight: 700;
+}
+.settings-pane {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
   padding: 1.5rem 2rem;
-  max-width: 560px;
 }
 .settings-group {
+  max-width: 560px;
   margin-bottom: 2rem;
 }
 .settings-group h2 {

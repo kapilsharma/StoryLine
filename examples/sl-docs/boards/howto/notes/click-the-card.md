@@ -8,4 +8,4 @@ tags:
   - editor
 created: '2026-08-17'
 ---
-The note opens: rendered body, tags, related links. By default that is a popup over the board; switch **Note opened from a board** to *Panel beside the board* in Settings and it opens on the right instead, editable in place.
+The note opens: rendered body, tags, related links. By default that is a popup over the board; switch **Note opened from a board** to *Panel beside the board* in **Settings → General** and it opens on the right instead, editable in place.
