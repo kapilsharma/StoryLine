@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.21.0](https://github.com/kapilsharma/StoryLine/compare/2.20.0...2.21.0) (2026-10-28)
+
+
+### Features
+
+* **218:** card with images ([347027c](https://github.com/kapilsharma/StoryLine/commit/347027c7cea01161bfa2dfd262c18d7459699b3a))
+* **218:** card with images ([5ca2317](https://github.com/kapilsharma/StoryLine/commit/5ca231731152ab6f44aa145f13e8c9f22a26a2cd))
+
 ## [2.20.0](https://github.com/kapilsharma/StoryLine/compare/2.19.0...2.20.0) (2026-10-28)
 
 
