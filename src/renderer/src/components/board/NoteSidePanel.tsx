@@ -4,6 +4,7 @@ import { cardStatuses } from '@shared/cardStatus'
 import { useStore } from '../../store'
 import { CardStatusSelect } from '../CardStatusSelect'
 import { CardProgressSelect } from '../CardProgressSelect'
+import { CardImage, CardImageField } from '../CardImageField'
 import { usePrompt } from '../PromptModal'
 import { LiveMarkdownEditor } from '../LiveMarkdownEditor'
 import { WordCount } from '../WordCount'
@@ -55,6 +56,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
   const [body, setBody] = useState('')
   const [status, setStatus] = useState<string | undefined>(undefined)
   const [progress, setProgress] = useState<number | undefined>(undefined)
+  const [image, setImage] = useState<string | undefined>(undefined)
   const [loaded, setLoaded] = useState(false)
   const noteRef = useRef<Note | null>(null)
   const dirty = useRef(false)
@@ -85,6 +87,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
           setBody(n.body)
           setStatus(n.status)
           setProgress(n.progress)
+          setImage(n.image)
           setLoaded(true)
         })
         .catch(() => !cancelled && setLoaded(true))
@@ -145,7 +148,13 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
     saveMeta({ progress: next })
   }
 
-  const saveMeta = (patch: Partial<Pick<Note, 'status' | 'progress'>>): void => {
+  // So is the picture of an image card (#218) — chosen, or cleared by Text.
+  const changeImage = (next: string | undefined): void => {
+    setImage(next)
+    saveMeta({ image: next })
+  }
+
+  const saveMeta = (patch: Partial<Pick<Note, 'status' | 'progress' | 'image'>>): void => {
     if (target.kind !== 'note' || !noteRef.current) return
     noteRef.current = { ...noteRef.current, ...patch }
     saveNote({
@@ -247,6 +256,7 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
       {target.kind === 'note' ? (
         readOnly ? (
           <>
+            {image && <CardImage image={image} className="note-panel-image" />}
             {(noteRef.current?.tags ?? []).length > 0 && (
               <div className="tag-row">
                 {(noteRef.current?.tags ?? []).map((t) => (
@@ -263,29 +273,36 @@ export function NoteSidePanel({ target, onClose, onOpenNote, style }: Props): JS
             )}
           </>
         ) : (
-          <>
-            <input
-              className="note-tags-input"
-              value={tags}
-              placeholder="tags, comma separated"
-              aria-label="Tags"
-              onChange={(e) => {
-                dirty.current = true
-                setTags(e.target.value)
-              }}
-            />
-            <textarea
-              className="note-hover-input"
-              value={hover}
-              rows={2}
-              placeholder="hover text — shown when the mouse rests on the card (optional)"
-              aria-label="Hover text"
-              onChange={(e) => {
-                dirty.current = true
-                setHover(e.target.value)
-              }}
-            />
-          </>
+          <CardImageField
+            className="note-panel-fields"
+            image={image}
+            onChange={changeImage}
+            tags={
+              <input
+                className="note-tags-input"
+                value={tags}
+                placeholder="tags, comma separated"
+                aria-label="Tags"
+                onChange={(e) => {
+                  dirty.current = true
+                  setTags(e.target.value)
+                }}
+              />
+            }
+            hover={
+              <textarea
+                className="note-hover-input"
+                value={hover}
+                rows={2}
+                placeholder="hover text — shown when the mouse rests on the card (optional)"
+                aria-label="Hover text"
+                onChange={(e) => {
+                  dirty.current = true
+                  setHover(e.target.value)
+                }}
+              />
+            }
+          />
         )
       ) : target.kind === 'character' ? (
         <p className="muted small note-panel-hint">

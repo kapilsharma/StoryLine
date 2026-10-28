@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type {
   BoardNoteView,
+  CardImageTitle,
   EditorColorKey,
   EditorStyles,
   PreviewFont,
@@ -13,6 +14,8 @@ import {
   BODY_SIZE_MIN,
   CARD_FONT_MIN,
   CARD_FONT_MAX,
+  CARD_IMAGE_HEIGHT_MAX,
+  CARD_IMAGE_HEIGHT_MIN,
   DEFAULT_EDITOR_STYLES,
   DEFAULT_SETTINGS
 } from '@shared/config'
@@ -269,6 +272,44 @@ export function Settings({
                 onChange={(e) => updateSettings({ ...settings, cardFontSize: Number(e.target.value) })}
               />
               <span className="muted small">Base text size on board cards (scales with zoom).</span>
+            </div>
+            <div className="form-row">
+              <label htmlFor="card-image-height">
+                Image card height ({settings.cardImageMaxHeight}px)
+              </label>
+              <input
+                id="card-image-height"
+                type="range"
+                min={CARD_IMAGE_HEIGHT_MIN}
+                max={CARD_IMAGE_HEIGHT_MAX}
+                step={10}
+                value={settings.cardImageMaxHeight}
+                onChange={(e) =>
+                  updateSettings({ ...settings, cardImageMaxHeight: Number(e.target.value) })
+                }
+              />
+              <span className="muted small">
+                Tallest a picture is drawn on an image card (scales with zoom). A row holding an image
+                card grows to fit it; wide pictures keep their shape.
+              </span>
+            </div>
+            <div className="form-row">
+              <label htmlFor="card-image-title">Image card title</label>
+              <select
+                id="card-image-title"
+                value={settings.cardImageTitle}
+                onChange={(e) =>
+                  updateSettings({ ...settings, cardImageTitle: e.target.value as CardImageTitle })
+                }
+              >
+                <option value="right">Text on right</option>
+                <option value="below">Text below</option>
+                <option value="none">No text</option>
+              </select>
+              <span className="muted small">
+                Where an image card shows its title. With no text the title is still in the note and
+                the hover.
+              </span>
             </div>
             <div className="form-row">
               <label>% complete bar</label>

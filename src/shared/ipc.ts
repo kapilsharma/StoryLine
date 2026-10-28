@@ -288,8 +288,16 @@ export interface AppApi {
    * anything over {@link MAX_ASSET_BYTES}.
    */
   importAsset(root: string, boardId: string, file: AssetImport): Promise<AssetRef>
-  /** Open the OS file picker and import whatever is chosen. Null if cancelled. */
-  pickAsset(root: string, boardId: string): Promise<AssetRef | null>
+  /**
+   * Open the OS file picker and import whatever is chosen. Null if cancelled.
+   * `imagesOnly` leaves PDFs out of the picker — an image card's picture (#218).
+   */
+  pickAsset(root: string, boardId: string, imagesOnly?: boolean): Promise<AssetRef | null>
+  /**
+   * The pictures already in `boards/<boardId>/assets/`, by filename, sorted —
+   * so an image card can reuse one rather than copy it in again (#218).
+   */
+  listImageAssets(root: string, boardId: string): Promise<string[]>
 
   // ── Live reload ──
   onProjectChange(listener: (change: ProjectChange) => void): () => void

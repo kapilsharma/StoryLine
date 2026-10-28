@@ -18,6 +18,8 @@ import {
   withCardFilters,
   cardFilterKeys,
   FILTER_NONE,
+  imageCardHeight,
+  IMAGE_CARD_CHROME,
   rowGroupNames,
   colGroupDepths,
   colGroupLevels,
@@ -652,5 +654,57 @@ describe('collapse / expand all groups (#164)', () => {
       'Collapse Chapter',
       'Collapse level 3'
     ])
+  })
+})
+
+/**
+ * Image cards (Issue #218): which lines grow, and by how much. Worked out, not
+ * measured, so the row window's offsets are exact before any picture loads.
+ */
+describe('image cards (#218)', () => {
+  const notes: Note[] = [
+    { id: 'pic', uid: 'n_pic', title: 'Pic', image: 'assets/pic.png', body: '' },
+    { id: 'txt', uid: 'n_txt', title: 'Txt', body: '' }
+  ]
+  const card = (id: string, rowId: string, noteUid: string, col = 'ch1'): Card => ({
+    id,
+    noteUid,
+    rowId,
+    colStart: col,
+    colEnd: col
+  })
+
+  it('marks only the lines holding an image card', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [card('p', 'a', 'n_pic'), card('t', 'b', 'n_txt')] }),
+      chars,
+      timeline,
+      notes
+    )
+    expect([...layout.imageLines]).toEqual([layout.rows.lineOfChar.get('a')])
+  })
+
+  it('counts an image card shown alone in a collapsed cell', () => {
+    const layout = buildBoardLayout(
+      board({ cards: [card('p', 'b', 'n_pic', 'ch4')], collapsedColGroups: ['c2'] }),
+      chars,
+      timeline,
+      notes
+    )
+    expect(layout.loneCards).toHaveLength(1)
+    expect(layout.imageLines.has(layout.rows.lineOfChar.get('b')!)).toBe(true)
+  })
+
+  it('marks nothing on a board of text cards', () => {
+    const layout = buildBoardLayout(board({ cards: [card('t', 'a', 'n_txt')] }), chars, timeline, notes)
+    expect(layout.imageLines.size).toBe(0)
+  })
+
+  it('sizes the card from the picture height, zoom and title position', () => {
+    expect(imageCardHeight(120, 1, 'right', 13)).toBe(120 + IMAGE_CARD_CHROME)
+    expect(imageCardHeight(120, 1, 'none', 13)).toBe(120 + IMAGE_CARD_CHROME)
+    expect(imageCardHeight(120, 0.5, 'right', 13)).toBe(60 + IMAGE_CARD_CHROME)
+    // Below adds one caption line (line-height 1.25) and its gap.
+    expect(imageCardHeight(120, 1, 'below', 16)).toBe(120 + 20 + 3 + IMAGE_CARD_CHROME)
   })
 })

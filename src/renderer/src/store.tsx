@@ -136,8 +136,10 @@ interface StoreValue {
   searchNotes: (query: string, scope?: SearchScope) => Promise<SearchHit[]>
   /** Copy a file into the active board's assets folder (Issue #61). */
   importAsset: (file: AssetImport) => Promise<AssetRef>
+  /** Pictures already in the active board's assets folder (#218). */
+  listImageAssets: () => Promise<string[]>
   /** Open the OS picker and import the chosen file into the active board. */
-  pickAsset: () => Promise<AssetRef | null>
+  pickAsset: (imagesOnly?: boolean) => Promise<AssetRef | null>
   /**
    * Export the whole project as a static site (Issue #48). Opens a native
    * folder picker for the destination; null if cancelled.
@@ -482,11 +484,18 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
     return api.importAsset(root, boardId, file)
   }, [])
 
-  const pickAsset = useCallback(async (): Promise<AssetRef | null> => {
+  const pickAsset = useCallback(async (imagesOnly?: boolean): Promise<AssetRef | null> => {
     const root = rootRef.current
     const boardId = activeBoardRef.current
     if (!root || !boardId) return null
-    return api.pickAsset(root, boardId)
+    return api.pickAsset(root, boardId, imagesOnly)
+  }, [])
+
+  const listImageAssets = useCallback(async (): Promise<string[]> => {
+    const root = rootRef.current
+    const boardId = activeBoardRef.current
+    if (!root || !boardId) return []
+    return api.listImageAssets(root, boardId)
   }, [])
 
   const exportStaticSite = useCallback(async (): Promise<StaticExportResult | null> => {
@@ -540,6 +549,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       searchNotes,
       importAsset,
       pickAsset,
+      listImageAssets,
       exportStaticSite,
       exportDocument,
       saveFamilyColours: (families) => mutate((root) => api.saveFamilyColours(root, families)),
@@ -589,7 +599,7 @@ export function StoreProvider({ children, readOnly = false, bootRoot }: StorePro
       revealTarget,
       revealCharacter
     }),
-    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, toggleWordCount, mutate, mutateBoard, getNote, searchNotes, importAsset, pickAsset, exportStaticSite, exportDocument, getEntityBody, editorTarget, openEditor, closeEditor, revealTarget, revealCharacter]
+    [config, snapshot, loading, error, clearError, readOnly, boards, activeBoardId, activeBoard, graph, views, activeViewId, activeView, newProject, openPicker, openByPath, removeRecent, closeProject, updateSettings, toggleWordCount, mutate, mutateBoard, getNote, searchNotes, importAsset, pickAsset, listImageAssets, exportStaticSite, exportDocument, getEntityBody, editorTarget, openEditor, closeEditor, revealTarget, revealCharacter]
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

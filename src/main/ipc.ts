@@ -13,6 +13,7 @@ import { applyMeta } from '@shared/project'
 import { buildMarkdownExport } from '@shared/exportMarkdown'
 import type { SearchScope } from '@shared/search'
 import type { AssetImport } from '@shared/assets'
+import { isImageAsset } from '@shared/assets'
 import { assignFamilyColours, familiesIn } from '@shared/families'
 import { buildGraph } from '@shared/graph'
 import { filterSelection } from '@shared/selection'
@@ -65,6 +66,7 @@ import {
   writeNote,
   writeProject,
   writeAsset,
+  listAssets,
   writeTimelineUnit,
   writeView
 } from './data/repository'
@@ -917,14 +919,17 @@ export function registerIpc(window: BrowserWindow): void {
     return ref
   })
 
-  ipcMain.handle('asset:pick', async (_e, root: string, boardId: string) => {
+  ipcMain.handle('asset:listImages', async (_e, root: string, boardId: string) =>
+    (await listAssets(root, boardId)).filter(isImageAsset)
+  )
+
+  ipcMain.handle('asset:pick', async (_e, root: string, boardId: string, imagesOnly?: boolean) => {
+    const images = { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif'] }
     const result = await dialog.showOpenDialog(window, {
       title: 'Choose an image to add',
       properties: ['openFile'],
-      filters: [
-        { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif'] },
-        { name: 'PDF', extensions: ['pdf'] }
-      ]
+      // An image card's picture (#218) can't be a PDF; a note can link one.
+      filters: imagesOnly ? [images] : [images, { name: 'PDF', extensions: ['pdf'] }]
     })
     if (result.canceled || result.filePaths.length === 0) return null
     const source = result.filePaths[0]

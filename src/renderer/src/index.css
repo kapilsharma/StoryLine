@@ -1287,6 +1287,77 @@ textarea {
 .link-icon {
   font-size: 0.8em;
 }
+/* An image card (issue #218): the picture at the configured height, the title
+   beside it, under it, or left off. The padding here plus the 2px border is
+   IMAGE_CARD_CHROME in grid-utils.ts — change them together. */
+.board-card.image-card {
+  padding: 3px;
+}
+.card-image-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 0.4rem;
+  overflow: hidden;
+}
+.card-image-body.title-right {
+  align-items: center;
+}
+/* Title off: the picture alone, centred in the card. */
+.card-image-body.title-none {
+  justify-content: center;
+}
+/* A wide picture leaves room under it; picture and caption sit centred as one. */
+.card-image-body.title-below {
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+/* Sized by its own shape within both limits — a square on a narrow card is
+   held by the width, a tall one by the height — and never stretched. */
+.card-image {
+  flex: none;
+  width: auto;
+  height: auto;
+  max-height: var(--card-image-h, 120px);
+  max-width: 100%;
+  min-width: 0;
+  align-self: center;
+  border-radius: 4px;
+}
+.card-image-body.title-right .card-image {
+  /* Leave the title room to be read on a one-column card. */
+  max-width: 60%;
+}
+.card-image-body.title-right .card-title {
+  flex: 1;
+  min-width: 0;
+  max-height: 100%;
+  padding-right: 14px;
+}
+.card-image-body.title-below .card-image {
+  align-self: center;
+}
+.card-image-body.title-below .card-title {
+  padding: 0 14px 0 0.15rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.board-card.expanded .card-image-body.title-below .card-title {
+  white-space: normal;
+}
+/* Title off: the status / 📝 / 🔗 markers sit over the picture's corner. */
+.card-image-badges {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: var(--card-bg);
+  font-size: var(--card-font, 13px);
+  line-height: 1.25;
+  pointer-events: none;
+}
 /* Marks a card whose note has a body (issue #46) — same 📝 the board uses for a
    character with a note, so the two read as one convention. */
 .card-note-icon {
@@ -2553,4 +2624,157 @@ ol.footnotes li {
   display: block;
   margin: 0.5rem 0;
   font-size: 0.85rem;
+}
+/* Text / Image card choice (issue #218): the toggle starts the tags row, and an
+   image card's picture box sits to the left of the tags and hover text. The
+   wrapper carries the margins the inputs had on their own, so they drop theirs. */
+.card-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+.card-fields.note-panel-fields {
+  margin: 0.5rem 0.9rem 0;
+}
+.card-fields.editor-fields {
+  margin: 0.6rem 1rem 0;
+}
+.card-fields .note-tags-input,
+.card-fields .note-hover-input,
+.card-fields .editor-tags-input,
+.card-fields .editor-hover-input {
+  margin: 0;
+}
+.card-fields-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.card-fields-tags {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.card-fields-tags > input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.card-kind-toggle {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.card-kind-toggle button {
+  border: none;
+  background: var(--bg);
+  color: var(--muted);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.card-kind-toggle button + button {
+  border-left: 1px solid var(--border);
+}
+.card-kind-toggle button.active {
+  background: var(--accent);
+  color: #fff;
+}
+.card-kind-toggle button:disabled {
+  cursor: default;
+}
+.card-image-box {
+  flex: none;
+  width: 6.5rem;
+  height: 6.5rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+.card-image-box.empty {
+  border-style: dashed;
+}
+.card-image-box:disabled {
+  cursor: default;
+}
+.card-image-box img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.card-image-error {
+  margin: 0;
+}
+/* The picture, read-only, in the popup and a read-only panel. */
+.card-image-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 12rem;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.note-popup-image {
+  margin: 0.4rem 0 0.6rem;
+}
+.note-panel-image {
+  margin: 0.5rem 0.9rem 0;
+}
+/* The image chooser (#218): upload a new picture, or reuse one already in the
+   board's assets folder. A full-width row under the fields. */
+.card-image-chooser {
+  flex-basis: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem;
+  background: var(--bg);
+}
+.card-image-chooser-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.card-image-chooser-close {
+  margin-left: auto;
+}
+.card-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  max-height: 14rem;
+  overflow: auto;
+}
+.card-image-thumb {
+  aspect-ratio: 1;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+.card-image-thumb:hover {
+  border-color: var(--accent);
+}
+.card-image-thumb.current {
+  border: 2px solid var(--accent);
+}
+.card-image-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }

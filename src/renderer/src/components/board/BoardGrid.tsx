@@ -8,6 +8,8 @@ import {
 import type { BoardData } from '@shared/ipc'
 import { cardStatuses, findCardStatus } from '@shared/cardStatus'
 import { DEFAULT_SETTINGS } from '@shared/config'
+import type { CardImageTitle } from '@shared/config'
+import { desktopAssetResolver, staticAssetResolver } from '@shared/assets'
 import { MANUSCRIPT_ROW_ID, cellKey, isManuscriptCard, manuscriptLevel } from '@shared/manuscript'
 import { useStore } from '../../store'
 import { usePrompt } from '../PromptModal'
@@ -16,6 +18,7 @@ import { CardHoverTipHost, showCardHoverTip, hideCardHoverTip } from './CardHove
 import {
   buildBoardLayout,
   columnWindow,
+  imageCardHeight,
   markerKey,
   noteForCard,
   orderedColumnIds,
@@ -211,8 +214,19 @@ function RowHeadName({
 interface BoardCardProps {
   pc: PlacedCard
   gridRow: number
+  /** This card's own height: the compact one, or the image one (#218). */
   cardH: number
+  /**
+   * Height of one stack level on this card's line — the image card height when
+   * the line holds one (#218), so a text card stacked with an image card still
+   * lands on its own level.
+   */
+  slotH: number
   lineDepth: number
+  /** Resolved picture URL for an image card (#218); undefined = a text card. */
+  image?: string
+  /** Where an image card's title sits (#218). */
+  imageTitle: CardImageTitle
   masked: boolean
   isExp: boolean
   expandable: boolean
@@ -248,7 +262,10 @@ const BoardCard = memo(function BoardCard({
   pc,
   gridRow,
   cardH,
+  slotH,
   lineDepth,
+  image,
+  imageTitle,
   masked,
   isExp,
   expandable,
@@ -271,9 +288,38 @@ const BoardCard = memo(function BoardCard({
 }: BoardCardProps): JSX.Element {
   const card = pc.card
   const movable = !readOnly && !fixed
+  // A hidden card hides its picture too — it would give the scene away (#67).
+  const pictured = !!image && !masked
+  const titleContent = masked ? (
+    <span className="card-masked" aria-label="Hidden — click to reveal">
+      • • •
+    </span>
+  ) : (
+    <>
+      {/* Where the scene stands, leftmost so a glance down a row reads as
+          a progress bar (#108). */}
+      {statusIcon && (
+        <span className="card-status-icon" title={statusLabel}>
+          {statusIcon}{' '}
+        </span>
+      )}
+      {/* A card whose note has a body opens onto more than its title, so
+          it says so up front (#46). */}
+      {hasBody && (
+        <span className="card-note-icon" title="Has note details">
+          📝{' '}
+        </span>
+      )}
+      {/* With the title off (#218), the picture carries the card and only the
+          markers stay, over its corner. */}
+      {!(pictured && imageTitle === 'none') && title}
+      {hasLinks && <span className="link-icon"> 🔗</span>}
+    </>
+  )
+  const showBadges = pictured && imageTitle === 'none' && (!!statusIcon || hasBody || hasLinks)
   return (
     <div
-      className={`board-card${progress !== undefined ? ' has-progress' : ''}${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}${readOnly ? ' read-only' : ''}${fixed ? ' manuscript-card' : ''}`}
+      className={`board-card${pictured ? ' image-card' : ''}${progress !== undefined ? ' has-progress' : ''}${isExp ? ' expanded' : ''}${masked ? ' masked' : ''}${readOnly ? ' read-only' : ''}${fixed ? ' manuscript-card' : ''}`}
       draggable={movable}
       onDragStart={
         !movable
@@ -298,7 +344,7 @@ const BoardCard = memo(function BoardCard({
         ...(lineDepth > 1
           ? {
               alignSelf: 'start',
-              marginTop: `${STACK_GAP + pc.stackIndex * (cardH + STACK_GAP)}px`
+              marginTop: `${STACK_GAP + pc.stackIndex * (slotH + STACK_GAP)}px`
             }
           : {})
       }}
@@ -316,34 +362,17 @@ const BoardCard = memo(function BoardCard({
       {movable && (
         <span className="resize-handle left" onPointerDown={(e) => onBeginResize(e, card, 'start')} />
       )}
-      <div className="card-content">
-        <div className="card-title">
-          {masked ? (
-            <span className="card-masked" aria-label="Hidden — click to reveal">
-              • • •
-            </span>
-          ) : (
-            <>
-              {/* Where the scene stands, leftmost so a glance down a row reads as
-                  a progress bar (#108). */}
-              {statusIcon && (
-                <span className="card-status-icon" title={statusLabel}>
-                  {statusIcon}{' '}
-                </span>
-              )}
-              {/* A card whose note has a body opens onto more than its title, so
-                  it says so up front (#46). */}
-              {hasBody && (
-                <span className="card-note-icon" title="Has note details">
-                  📝{' '}
-                </span>
-              )}
-              {title}
-              {hasLinks && <span className="link-icon"> 🔗</span>}
-            </>
-          )}
+      {pictured ? (
+        <div className={`card-image-body title-${imageTitle}`}>
+          <img className="card-image" src={image} alt="" loading="lazy" draggable={false} />
+          {imageTitle !== 'none' && <div className="card-title">{titleContent}</div>}
+          {showBadges && <div className="card-image-badges">{titleContent}</div>}
         </div>
-      </div>
+      ) : (
+        <div className="card-content">
+          <div className="card-title">{titleContent}</div>
+        </div>
+      )}
       {/* Says "rest the mouse here" (#116) — in the corner, so it sits in one
           place on every card and a glance down a row finds the ones with a hint. */}
       {hoverText && (
@@ -351,7 +380,7 @@ const BoardCard = memo(function BoardCard({
           ℹ️
         </span>
       )}
-      {expandable && !readOnly && (
+      {expandable && !readOnly && !(pictured && imageTitle === 'none') && (
         <button
           className="card-expand"
           title={isExp ? 'Collapse card' : 'Expand card'}
@@ -458,6 +487,13 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
   // Card text scales with zoom so the amount of visible text is consistent
   // across zoom levels; base size is the user's setting.
   const cardFont = (config?.settings.cardFontSize ?? 13) * zoom
+  // Image cards (#218): one height for every image card, from the settings.
+  // Text cards beside them keep the compact height; only the row grows.
+  const imageMaxH = config?.settings.cardImageMaxHeight ?? DEFAULT_SETTINGS.cardImageMaxHeight
+  const imageTitle = config?.settings.cardImageTitle ?? DEFAULT_SETTINGS.cardImageTitle
+  const imageCardH = Math.max(cardH, imageCardHeight(imageMaxH, zoom, imageTitle, cardFont))
+  // The board's assets are served differently in the app and in a published site.
+  const resolveAsset = readOnly ? staticAssetResolver : desktopAssetResolver
 
   // Apply the transient filters (#140 rows/columns, #182 cards), then any live
   // resize preview, before computing layout. Filtering goes first so the preview
@@ -488,7 +524,11 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     () => buildBoardLayout(effectiveBoard, characters, timeline, notes, colGroups, msLevel),
     [effectiveBoard, characters, timeline, notes, colGroups, msLevel]
   )
-  const { cols, rows, fullCards, markers, loneCards, stackDepth, manuscript } = layout
+  const { cols, rows, fullCards, markers, loneCards, stackDepth, imageLines, manuscript } = layout
+  // A line's stack-level height and its compact row height: taller on a line
+  // that holds an image card (#218).
+  const slotHOf = (lineIndex: number): number => (imageLines.has(lineIndex) ? imageCardH : cardH)
+  const rowHOf = (lineIndex: number): number => (imageLines.has(lineIndex) ? imageCardH + 16 : rowH)
   const fullOrder = useMemo(() => orderedColumnIds(timeline, colGroups), [timeline, colGroups])
 
   // unit id per slot (null for collapsed-group slots), for resize hit-testing.
@@ -583,15 +623,17 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
       let h: number
       const id = lineRowId(line)
       if (line.kind === 'groupHeader') h = GROUPHEAD_LINE_H * zoom
-      else if (id && expandedRowIds.has(id)) h = rowHeights.current.get(id) ?? rowH
+      else if (id && expandedRowIds.has(id)) h = rowHeights.current.get(id) ?? rowHOf(line.index)
       else {
         const depth = id ? (stackDepth.get(line.index) ?? 1) : 1
-        h = depth > 1 ? depth * cardH + (depth + 1) * STACK_GAP : rowH
+        h = depth > 1 ? depth * slotHOf(line.index) + (depth + 1) * STACK_GAP : rowHOf(line.index)
       }
       tops[i + 1] = tops[i] + h
     }
     return tops
-  }, [rows.lines, expandedRowIds, zoom, rowH, cardH, stackDepth, cols.depth, measureTick])
+    // slotHOf/rowHOf are derived from imageLines, imageCardH, cardH and rowH.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows.lines, expandedRowIds, zoom, rowH, cardH, imageLines, imageCardH, stackDepth, cols.depth, measureTick])
 
   const [rowWin, setRowWin] = useState<Win | null>(null)
   const recomputeRowWin = useCallback(() => {
@@ -667,11 +709,11 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
       const id = lineRowId(line)
       // A row grows to fit either an expanded card or an expanded header name.
       if (id && (expandedLines.has(line.index) || isRowExpanded(id)))
-        return `minmax(${rowH}px, auto)`
+        return `minmax(${rowHOf(line.index)}px, auto)`
       // A row holding overlapping cards grows to fit the whole stack (#66).
       const depth = id ? (stackDepth.get(line.index) ?? 1) : 1
-      if (depth > 1) return `${depth * cardH + (depth + 1) * STACK_GAP}px`
-      return `${rowH}px`
+      if (depth > 1) return `${depth * slotHOf(line.index) + (depth + 1) * STACK_GAP}px`
+      return `${rowHOf(line.index)}px`
     })
     .join(' ')
 
@@ -679,6 +721,7 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     gridTemplateColumns: `${headerW}px repeat(${cols.slots.length}, ${colW}px)`,
     gridTemplateRows: `${`${GROUP_H}px `.repeat(cols.depth)}${COLHEAD_H}px ${rowTracks}`,
     ['--card-font' as string]: `${cardFont}px`,
+    ['--card-image-h' as string]: `${Math.round(imageMaxH * zoom)}px`,
     ['--progress-0' as string]: config?.settings.progressColorStart ?? DEFAULT_SETTINGS.progressColorStart,
     ['--progress-100' as string]: config?.settings.progressColorEnd ?? DEFAULT_SETTINGS.progressColorEnd
   }
@@ -942,14 +985,18 @@ export function BoardGrid({ data }: { data: BoardData }): JSX.Element {
     // away just as opening it would (#67).
     const masked = revising && !isRevealed(pc.card.id)
     const status = findCardStatus(statuses, note?.status)
+    const image = note?.image ? resolveAsset(board.id, note.image) : undefined
     return (
       <BoardCard
         // A lone card can show in more than one collapsed run (#161).
         key={readOnly ? `lone-${pc.card.id}-${pc.startSlot}` : pc.card.id}
         pc={pc}
         gridRow={gridRow}
-        cardH={cardH}
+        cardH={image ? imageCardH : cardH}
+        slotH={slotHOf(pc.lineIndex)}
         lineDepth={lineDepth}
+        image={image}
+        imageTitle={imageTitle}
         masked={masked}
         isExp={!readOnly && isExpanded(pc.card.id)}
         // Board cards show the title only; expand reveals a long title in full.

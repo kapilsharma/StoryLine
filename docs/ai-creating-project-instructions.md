@@ -229,7 +229,9 @@ The beat in detail: what happens, why it matters, what changes.
 - `boards` — `[<boardId>]`. `created` — today, quoted.
 - Optional: `tags` (list), `related` (list of `{ file: other-note.md, comment: … }`),
   `hover` (plain text, a sentence or two — shown as a tooltip when the mouse rests
-  on the card; good for a one-line reminder of what the scene is for).
+  on the card; good for a one-line reminder of what the scene is for),
+  `image` (`assets/<file>` — makes it an image card showing that picture from the
+  board's `assets/` folder; only use it when you have actually put the file there).
 - Body — the detail. `[[other-note-id]]` links to another note on the same board.
 - **Only use the keys above** — the app drops unknown note keys when it saves.
 

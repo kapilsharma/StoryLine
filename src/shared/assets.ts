@@ -89,6 +89,11 @@ export const staticAssetResolver: AssetResolver = (boardId, src) => {
   return file ? `${ASSETS_DIR}/${boardId}/${encodeURIComponent(file)}` : src
 }
 
+/** True if the file can be drawn as a picture — an image card's (#218). Case-insensitive. */
+export function isImageAsset(name: string): boolean {
+  return isAllowedAsset(name) && !name.toLowerCase().endsWith('.pdf')
+}
+
 /** True if the extension is one we accept. Case-insensitive. */
 export function isAllowedAsset(name: string): boolean {
   const lower = name.toLowerCase()

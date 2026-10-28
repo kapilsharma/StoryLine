@@ -5,6 +5,7 @@ import { useStore, type EditorTarget } from '../store'
 import { BlockPreview } from './BlockPreview'
 import { WordCount } from './WordCount'
 import { useAssetInsert } from './useAssetInsert'
+import { CardImageField } from './CardImageField'
 import {
   HEADING_LEVELS,
   INLINE_TOOLS,
@@ -41,6 +42,7 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
   const [title, setTitle] = useState('')
   const [tags, setTags] = useState('')
   const [hover, setHover] = useState('')
+  const [image, setImage] = useState<string | undefined>(undefined)
   const [body, setBody] = useState('')
   const [loaded, setLoaded] = useState(false)
   // Caret position, mirrored into state only so the heading dropdown can show
@@ -66,6 +68,7 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
           setTitle(n.title)
           setTags((n.tags ?? []).join(', '))
           setHover(n.hover ?? '')
+          setImage(n.image)
           setBody(n.body)
           setLoaded(true)
         })
@@ -103,6 +106,21 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, tags, hover, body])
 
+
+  // An image card's picture (#218) is a pick, not typing: saved at once, and put
+  // on the ref so the next debounced save carries it rather than undoing it.
+  const changeImage = (next: string | undefined): void => {
+    setImage(next)
+    if (readOnly || !noteRef.current) return
+    noteRef.current = { ...noteRef.current, image: next }
+    saveNote({
+      ...noteRef.current,
+      title: title.trim() || noteRef.current.title,
+      tags: parseTags(tags),
+      hover: hover.trim() || undefined,
+      body
+    })
+  }
 
   const displayName =
     kind === 'note'
@@ -259,28 +277,35 @@ export function EditorPage({ target }: { target: EditorTarget }): JSX.Element {
       </header>
 
       {kind === 'note' ? (
-        <>
-          <input
-            className="editor-tags-input"
-            value={tags}
-            placeholder="tags, comma separated"
-            onChange={(e) => {
-              dirty.current = true
-              setTags(e.target.value)
-            }}
-          />
-          <textarea
-            className="editor-hover-input"
-            value={hover}
-            rows={2}
-            placeholder="hover text — a reminder shown when the mouse rests on the card (optional)"
-            aria-label="Hover text"
-            onChange={(e) => {
-              dirty.current = true
-              setHover(e.target.value)
-            }}
-          />
-        </>
+        <CardImageField
+          className="editor-fields"
+          image={image}
+          onChange={changeImage}
+          tags={
+            <input
+              className="editor-tags-input"
+              value={tags}
+              placeholder="tags, comma separated"
+              onChange={(e) => {
+                dirty.current = true
+                setTags(e.target.value)
+              }}
+            />
+          }
+          hover={
+            <textarea
+              className="editor-hover-input"
+              value={hover}
+              rows={2}
+              placeholder="hover text — a reminder shown when the mouse rests on the card (optional)"
+              aria-label="Hover text"
+              onChange={(e) => {
+                dirty.current = true
+                setHover(e.target.value)
+              }}
+            />
+          }
+        />
       ) : (
         <p className="muted small editor-frontmatter-hint">
           Editing the notes/research body. Fields (name, colour, etc.) are edited in the{' '}

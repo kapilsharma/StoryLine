@@ -20,6 +20,13 @@ export type PreviewPosition = 'left' | 'right'
  */
 export type BoardNoteView = 'popup' | 'panel'
 
+/**
+ * Where an image card puts its title on the board (Issue #218): beside the
+ * picture, under it, or nowhere — the picture alone, with the title still in
+ * the popup, the panel and the hover.
+ */
+export type CardImageTitle = 'right' | 'below' | 'none'
+
 export interface RecentProject {
   name: string
   /** Absolute path to the project folder. */
@@ -42,6 +49,13 @@ export interface AppSettings {
   progressColorStart: string
   /** Bar colour on a card at 100% complete (Issue #165). */
   progressColorEnd: string
+  /**
+   * Tallest an image card's picture is drawn on the board, in px at 100% zoom
+   * (Issue #218); scales with zoom. A row holding an image card grows to fit it.
+   */
+  cardImageMaxHeight: number
+  /** Where an image card's title sits on the board (#218). */
+  cardImageTitle: CardImageTitle
   /** Popup over the board, or panel beside it, when a note is opened (#83). */
   boardNoteView: BoardNoteView
   /**
@@ -73,6 +87,21 @@ export interface AppSettings {
 /** Clamp range for the card font size, shared by UI and rendering. */
 export const CARD_FONT_MIN = 9
 export const CARD_FONT_MAX = 24
+
+/** Clamp range for an image card's picture height (#218), shared by UI and rendering. */
+export const CARD_IMAGE_HEIGHT_MIN = 40
+export const CARD_IMAGE_HEIGHT_MAX = 400
+
+/** A hand-edited or missing image height, pulled into the usable range. */
+export function clampCardImageHeight(raw: unknown): number {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return DEFAULT_SETTINGS.cardImageMaxHeight
+  return Math.min(CARD_IMAGE_HEIGHT_MAX, Math.max(CARD_IMAGE_HEIGHT_MIN, Math.round(raw)))
+}
+
+/** A hand-edited image-title position falls back to the default. */
+export function normalizeCardImageTitle(raw: unknown): CardImageTitle {
+  return raw === 'right' || raw === 'below' || raw === 'none' ? raw : DEFAULT_SETTINGS.cardImageTitle
+}
 
 /** The note panel's share of the boards page: default, and the drag limits (#83). */
 export const NOTE_PANEL_FRACTION_DEFAULT = 0.5
@@ -253,6 +282,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   cardFontSize: 13,
   progressColorStart: '#d93a3a',
   progressColorEnd: '#2e9e4f',
+  cardImageMaxHeight: 120,
+  cardImageTitle: 'right',
   previewPosition: 'left',
   // The view the app has always had. Someone who prefers the side panel says so
   // in Settings; nobody is moved off what they are used to by an update.
