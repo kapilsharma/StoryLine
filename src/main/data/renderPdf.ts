@@ -37,6 +37,10 @@ const PRINT_CSS = `
   pre { background: #f4f4f5; padding: 0.75em 1em; border-radius: 6px; overflow-x: auto; }
   blockquote { border-left: 3px solid #ccc; padding-left: 1em; color: #555; margin-left: 0; }
   img { max-width: 100%; }
+  table { border-collapse: collapse; margin: 0.6em 0; }
+  th, td { border: 1px solid #ccc; padding: 0.3em 0.6em; }
+  th { background: #f4f4f5; }
+  th:not([align]) { text-align: left; }
 `
 
 function escapeHtml(text: string): string {

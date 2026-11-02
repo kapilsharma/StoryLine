@@ -734,6 +734,28 @@ textarea {
   border-left: 3px solid var(--md-quote);
   color: var(--md-quote);
 }
+/* Bordered so a table reads as one block, and block-level so a long row
+   scrolls rather than widening the pane (Issue #222). */
+.markdown table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  margin: 0.6rem 0;
+  border-collapse: collapse;
+}
+.markdown th,
+.markdown td {
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.6rem;
+}
+.markdown th {
+  background: var(--panel);
+}
+/* Headers default to left like their columns; `:---:` / `---:` still win. */
+.markdown th:not([align]) {
+  text-align: left;
+}
 .related-list {
   border-top: 1px solid var(--border);
   padding-top: 0.8rem;
