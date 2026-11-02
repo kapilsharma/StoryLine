@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.22.0](https://github.com/kapilsharma/StoryLine/compare/2.21.0...2.22.0) (2026-11-02)
+
+
+### Features
+
+* **#222:** bordered markdown tables with left-aligned headers ([92412a8](https://github.com/kapilsharma/StoryLine/commit/92412a8059d2ae8c9a450dff71ef15bf6d85040b))
+* **#222:** bordered markdown tables with left-aligned headers ([35056c8](https://github.com/kapilsharma/StoryLine/commit/35056c87880b4d06ccdbbe85823c34a543dd32e9))
+
 ## [2.21.0](https://github.com/kapilsharma/StoryLine/compare/2.20.0...2.21.0) (2026-10-28)
 
 
