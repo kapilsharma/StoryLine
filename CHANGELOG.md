@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.22.1](https://github.com/kapilsharma/StoryLine/compare/2.22.0...2.22.1) (2026-11-03)
+
+
+### Bug Fixes
+
+* **#213:** resolve npm audit vulnerabilities ([4d2f2ba](https://github.com/kapilsharma/StoryLine/commit/4d2f2ba9ea499016603fbc3ab72f463aa111cebc))
+* **#213:** resolve npm audit vulnerabilities ([9d7e593](https://github.com/kapilsharma/StoryLine/commit/9d7e593debccae75f6fe23b73f9e5503877fe483))
+
 ## [2.22.0](https://github.com/kapilsharma/StoryLine/compare/2.21.0...2.22.0) (2026-11-02)
 
 
